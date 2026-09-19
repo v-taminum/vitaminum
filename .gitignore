@@ -1,1 +1,2 @@
-assets/config.js
+# Config publik ikut di-commit (anon key aman disebar).
+# Kredensial admin TIDAK ada di file mana pun (login via Supabase Auth email).
