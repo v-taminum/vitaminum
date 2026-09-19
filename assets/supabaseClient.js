@@ -10,7 +10,7 @@ function normalizeKey(k) {
   return String(k || "").trim().replace(/^['"]|['"];?$/g, "").trim();
 }
 
-const RAW = window.VITAMINUM_ENV || {};
+const RAW = { ...(window.VITAMINUM_ENV || {}), ...(window.VITAMINUM_LOCAL || {}) };
 const SUPABASE_URL = normalizeUrl(RAW.SUPABASE_URL);
 const SUPABASE_ANON_KEY = normalizeKey(RAW.SUPABASE_ANON_KEY);
 export const isConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
