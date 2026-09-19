@@ -207,7 +207,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
 <script src="./assets/config.js"></script>
 <script type="module">
-import { sb, isConfigured, configError } from "./assets/supabaseClient.js";
+import { sb, isConfigured, configError, hasAdminKey } from "./assets/supabaseClient.js";
 if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
@@ -312,7 +312,18 @@ $("#btnTest").onclick = async () => {
     const t0 = Date.now();
     const { error } = await sb().from("app_settings").select("key", { count: "exact", head: true });
     if (error) throw error;
-    Swal.fire({ icon: "success", title: "Koneksi OK", text: `Database terbaca dalam ${Date.now() - t0} ms.`, timer: 2500, showConfirmButton: false });
+    let keyMsg = "kunci admin: TIDAK ADA di config (wajar di situs live; aktivasi hanya dari localhost)";
+    if (hasAdminKey) {
+      try {
+        const rk = await sb().rpc("has_admin_key");
+        keyMsg = rk.error
+          ? "kunci admin: gagal dicek (" + rk.error.message + ")"
+          : "kunci admin: " + (rk.data ? "AKTIF dan cocok" : "TIDAK COCOK dengan database");
+      } catch {}
+    }
+    const msg = `Koneksi OK (${Date.now() - t0} ms). ${keyMsg}.`;
+    $("#authMsg").textContent = msg;
+    Swal.fire({ icon: "success", title: "Koneksi OK", text: msg, timer: 3500, showConfirmButton: false });
   } catch (e) { showAuthError("Test koneksi gagal", e); Swal.fire({ icon: "error", title: "Koneksi gagal", text: e.message || e }); }
 };
 $("#btnOut").onclick = async () => { await sb().auth.signOut(); location.reload(); };

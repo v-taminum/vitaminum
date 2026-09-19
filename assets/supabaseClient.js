@@ -14,6 +14,7 @@ const RAW = window.VITAMINUM_ENV || {};
 const SUPABASE_URL = normalizeUrl(RAW.SUPABASE_URL);
 const SUPABASE_ANON_KEY = normalizeKey(RAW.SUPABASE_ANON_KEY);
 export const isConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+export const hasAdminKey = Boolean(String(RAW.ADMIN_KEY || "").trim());
 export const configError = !isConfigured
   ? "assets/config.js belum diisi."
   : (() => {
