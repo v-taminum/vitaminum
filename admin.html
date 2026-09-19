@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#255746">
+<title>Admin Vitaminum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
+  --bg-color:#ffffff;--text-color:#0e201b;--text-muted:#575757;
+  --white:#ffffff;--border-color:#90c5ad;
+  --danger:#b3261e;
+  --shadow:0 10px 15px -3px rgba(46,109,85,.10),0 4px 6px -4px rgba(46,109,85,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Quicksand',sans-serif}
+body{background:var(--bg-color);color:var(--text-color);line-height:1.5}
+a{color:inherit;text-decoration:none}ul{list-style:none}
+.container{max-width:1366px;margin:0 auto;padding:0 32px}
+main.container{padding-bottom:2.5rem}
+/* samakan header toko */
+header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sticky;top:0;z-index:1000}
+.navbar{display:flex;align-items:center;justify-content:space-between;padding:1rem 32px;gap:1rem;flex-wrap:wrap}
+.nav-left{display:flex;align-items:center;gap:1rem}
+.logo{display:flex;align-items:center;gap:.5rem;font-size:1.35rem;font-weight:700;color:var(--primary-dark)}
+.logo i{background:var(--primary);color:#fff;padding:.4rem;border-radius:8px;font-size:1.25rem}
+.logo-img:empty{display:none}
+.logo-img img{width:32px;height:32px;object-fit:cover;border-radius:8px;display:block}
+.nav-right{display:flex;align-items:center;gap:.6rem;margin-left:auto}
+/* tombol samakan toko */
+.btn{padding:.5rem 1rem;border-radius:6px;font-weight:600;cursor:pointer;border:none;transition:.2s;font-size:.88rem;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:.4rem}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border:1px solid var(--primary);color:var(--primary-dark)}
+.btn-danger{background:var(--danger);color:#fff}.btn:disabled{opacity:.5}
+/* hero judul */
+.hero{background:linear-gradient(135deg,#f1f8f4 0%,#ddeee4 100%);border-radius:12px;margin:2rem 0 1.5rem;padding:2rem;display:flex;flex-direction:column;gap:.4rem}
+.hero h1{font-size:1.6rem}.hero p{color:var(--text-muted);font-weight:500;font-size:.92rem}
+/* statistik ala features-bar */
+.features-bar{display:grid;grid-template-columns:1fr;gap:1rem;background:var(--white);padding:1.25rem;border-radius:12px;margin-bottom:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.02);border:1px solid #eef4f0}
+@media(min-width:768px){.features-bar{grid-template-columns:repeat(2,1fr)}}
+.feature-item{display:flex;align-items:center;gap:.8rem}
+.feature-item i{font-size:1.4rem;background:var(--primary-light);color:var(--primary-dark);padding:.7rem;border-radius:50%}
+.feature-text b{font-size:1.15rem;display:block}.feature-text span{font-size:.78rem;color:var(--text-muted);font-weight:500}
+/* tabs */
+.content{min-width:0;margin-top:2rem}
+.content > :first-child{margin-top:0 !important}
+#app .hero{margin-top:0}
+.headnav{display:flex;gap:.25rem;overflow-x:auto;flex:1;justify-content:center;scrollbar-width:none}
+.headnav::-webkit-scrollbar{display:none}
+@media(max-width:1100px){.headnav{order:3;flex-basis:100%;justify-content:flex-start}}
+.tab{flex-shrink:0;border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;display:inline-flex;align-items:center;gap:.6rem;white-space:nowrap}
+.tab:hover{background:var(--primary-light)}
+.tab.on{background:var(--primary);color:#fff}
+.pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pill-ok{background:var(--primary-light);color:var(--primary-dark)}
+.pill-off{background:#fdecea;color:var(--danger)}
+.card h2{display:flex;align-items:center;gap:.5rem;font-size:1.1rem;margin-bottom:10px}.muted{color:var(--text-muted);font-size:.82rem}
+code{background:var(--primary-light);color:var(--primary-dark);padding:1px 7px;border-radius:6px;font-size:.75rem}
+tbody tr:nth-child(even){background:#f7fbf8}
+tbody tr:hover{background:#eef6f0}
+.set-item{border:1px solid var(--border-color);border-radius:10px;padding:12px;background:#fbfdfb}
+.set-item strong{font-size:.88rem}
+.set-group{font-size:.95rem;margin:14px 0 2px;display:flex;align-items:center;gap:.5rem}
+.set-group:first-child{margin-top:0}
+.set-group-desc{margin:0 0 10px}
+#setList .grid2{margin-bottom:6px}
+.set-logo-prev{max-width:120px;max-height:48px;border-radius:8px;background:#eef4f0;object-fit:contain;border:1px solid var(--border-color);margin:4px 0}
+.set-item input[type="file"]{min-height:0}
+/* simetri: kartu sama tinggi per baris, isi sejajar */
+.grid2{align-items:stretch}
+.set-item{display:flex;flex-direction:column;height:100%}
+.set-item label{flex:1;display:flex;flex-direction:column}
+.set-item textarea{flex:1;min-height:78px;resize:vertical}
+.set-item input{min-height:46px}
+.table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
+.table-wrap th:first-child,.table-wrap td:first-child{text-align:center;width:64px}
+.table-wrap th:last-child,.table-wrap td:last-child{text-align:center;width:130px}
+.table-wrap td .row{justify-content:center;flex-wrap:nowrap}
+/* kartu konten */
+.card{background:var(--white);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.02)}
+.muted{color:var(--text-muted);font-size:.82rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--bg-color);color:var(--text-color);font-weight:500}
+input[type="file"]{padding:.5rem .8rem;min-height:46px;cursor:pointer}
+input[type="file"]::file-selector-button{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:.5rem .9rem;font-weight:700;font-family:inherit;font-size:.82rem;margin-right:.7rem;cursor:pointer}
+input[type="file"]::file-selector-button:hover{background:var(--primary-dark)}
+input[type="text"],input[type="number"],select{min-height:46px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
+.grid2{display:grid;gap:10px}.grid2 > *,.grid3 > *{min-width:0}@media(min-width:720px){.grid2{grid-template-columns:1fr 1fr}}
+.grid3{display:grid;gap:10px}.span2{grid-column:span 2}@media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}@media(max-width:719px){.span2{grid-column:auto}}
+.table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+th,td{padding:.6rem;text-align:left;vertical-align:top;border-bottom:1px solid #e6f0ea}
+th{background:var(--primary-light);color:var(--primary-dark);font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eef4f0}
+.stock-low{color:var(--danger);font-weight:700}
+/* login */
+.login-wrap{max-width:380px;margin:5rem auto}
+#cfgWarn{margin-top:1.5rem}
+.login-card{display:grid;gap:12px;text-align:center;padding:2.25rem 1.75rem}
+.login-logo{width:56px;height:56px;margin:0 auto;border-radius:16px;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:1.7rem}
+.login-card h1{font-size:1.3rem}
+.login-card .muted{margin-top:-8px}
+.login-card label{text-align:left}
+.login-card .btn{width:100%;padding:.7rem}
+.linklike{background:none;border:0;color:var(--primary-dark);font-weight:700;cursor:pointer;font-size:.82rem;justify-self:center}
+.linklike:hover{text-decoration:underline}
+#authMsg:empty{display:none}
+#authMsg{color:var(--danger);font-weight:600}
+.pass-wrap{position:relative;display:block}
+.check{display:flex;align-items:center;gap:.6rem;cursor:pointer;font-weight:600}
+.check input{appearance:none;-webkit-appearance:none;width:22px;height:22px;min-height:0;padding:0;border:2px solid var(--border-color);border-radius:6px;display:grid;place-items:center;cursor:pointer;background:#fff;flex-shrink:0}
+.check input:checked{background:var(--primary);border-color:var(--primary)}
+.check input:checked::after{content:"";width:6px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg) translate(-.5px,-1px)}
+.check input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.rp-wrap{position:relative;display:block}
+.rp-wrap .rp-cur{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--primary-dark);font-size:.85rem}
+.rp-wrap input{padding-left:38px}
+.rp-preview{color:var(--primary-dark);font-weight:700;font-size:.78rem;min-height:1.1em;display:block}
+.pass-wrap input{padding-right:44px}
+.pass-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;color:var(--text-muted);font-size:1.15rem;cursor:pointer;border-radius:8px;display:grid;place-items:center}
+.pass-eye:hover{background:#eef4f0}
+.warn{background:#fff8e1;border:1px solid #f0c36d;border-radius:8px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:1rem}
+.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,80px);background:var(--primary-dark);color:#fff;padding:.7rem 1.2rem;border-radius:8px;font-weight:600;font-size:.85rem;transition:.25s;opacity:0;z-index:2000}
+.toast.show{transform:translate(-50%,0);opacity:1}
+@media(max-width:768px){.container,.navbar{padding-left:16px;padding-right:16px}.navbar{flex-wrap:wrap;gap:.75rem .5rem}.logo{font-size:1.05rem;white-space:nowrap}.nav-right{gap:.4rem;flex-shrink:0;margin-left:auto}.nav-right .btn{padding:.45rem .65rem;font-size:.78rem;white-space:nowrap}.headnav{order:3;flex-basis:100%;justify-content:flex-start}.hero{margin:1rem 0;padding:1.4rem}.tab{padding:.55rem .8rem;font-size:.8rem}.login-wrap{margin:2.5rem auto}.features-bar{padding:1rem}.card{padding:1rem}}
+@media(max-width:380px){.logo{font-size:1rem}.nav-right .btn{font-size:.75rem;padding:.4rem .55rem}}
+</style>
+</head>
+<body>
+<header id="siteHeader">
+  <div class="container navbar">
+    <div class="nav-left">
+      <a href="./index.html" class="logo" id="brandLogo"><span class="logo-img"></span><span class="logo-text">Vitaminum</span></a>
+    </div>
+    <nav class="headnav" id="tabs">
+       <button class="tab on" data-t="settings"><i class="fa-solid fa-gear"></i> Info Aplikasi</button>
+      <button class="tab" data-t="prods"><i class="fa-solid fa-box"></i> Produk</button>
+    </nav>
+    <div class="nav-right">
+      <a href="./index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
+      <button class="btn btn-primary" id="btnOut" style="display:none"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card" id="cfgWarn" style="display:none"><i class="fa-solid fa-triangle-exclamation"></i> <b>assets/config.js</b> belum diisi. Copy <code>assets/config.example.js</code> → <code>assets/config.js</code> lalu isi <code>SUPABASE_URL</code> + <code>SUPABASE_ANON_KEY</code>.</div>
+
+  <!-- LOGIN -->
+  <div class="login-wrap" id="authCard">
+    <form class="card login-card" id="loginForm">
+      <span class="login-logo"><i class="fa-solid fa-blender"></i></span>
+      <h1>Admin Vitaminum</h1>
+      <p class="muted">Masuk untuk mengelola toko</p>
+      <label>Username<input id="username" type="text" placeholder="admin" autocomplete="username"></label>
+      <label>Password<span class="pass-wrap"><input id="pass" type="password" placeholder="••••••••" autocomplete="current-password"><button class="pass-eye" id="passEye" type="button" aria-label="Tampilkan password"><i class="fa-solid fa-eye" id="eyeOpen"></i><i class="fa-solid fa-eye-slash" id="eyeShut" style="display:none"></i></button></span></label>
+      <button class="btn btn-primary" id="btnIn" type="submit"><i class="fa-solid fa-right-to-bracket"></i> Masuk</button>
+      <button class="btn btn-outline" id="btnTest" type="button"><i class="fa-solid fa-wifi"></i> Test Koneksi</button>
+      <p class="muted" id="authMsg"></p>
+    </form>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="app" style="display:none">
+    <div class="content">
+    <section class="card" data-pane="settings">
+      <h2><i class="fa-solid fa-gear"></i> Info Aplikasi</h2>
+      <div id="setList" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-primary" id="setSaveAll"><i class="fa-solid fa-floppy-disk"></i> Simpan Semua</button>
+      </div>
+    </section>
+
+    <section class="card" data-pane="prods" style="display:none">
+      <h2><i class="fa-solid fa-box"></i> Produk</h2>
+      <div class="grid3">
+        <label>Nama<input id="pName" placeholder="Orange Carrot Sunshine"></label>
+        <label>Harga Jual<span class="rp-wrap"><span class="rp-cur">Rp</span><input id="pPrice" type="text" inputmode="numeric" placeholder="20.000"></span></label>
+        <label>Stok<input id="pStock" type="number" value="50"></label>
+        <label>Ukuran<input id="pUnit" value="350 ml"></label>
+        <label class="span2">Foto<input id="pFile" type="file" accept="image/*"></label>
+      </div>
+      <label style="margin-top:8px">Deskripsi<textarea id="pDesc" rows="2" placeholder="350 ml • Mata & Imunitas"></textarea></label>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="pActive" checked> Aktif (Tampil Di Toko)</label>
+      <div class="row" style="margin-top:10px"><button class="btn btn-primary" id="pSave">Simpan Produk</button><button class="btn btn-outline" id="pReset">Reset</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Foto</th><th>Nama</th><th>Harga / Stok</th><th>Aktif</th><th>Aksi</th></tr></thead><tbody id="pRows"></tbody></table></div>
+    </section>
+    </div>
+  </div>
+</main>
+
+<script src="./assets/config.js"></script>
+<script type="module">
+import { sb, isConfigured, configError } from "./assets/supabaseClient.js";
+if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
+else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
+const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
+const fmt = (n) => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n||0);
+const fmtNum = (n) => new Intl.NumberFormat("id-ID").format(n || 0);
+const parseRp = (s) => +(String(s == null ? "" : s).replace(/\D/g, "") || 0);
+function bindRp(input, preview) {
+  const render = () => {
+    const d = input.value.replace(/\D/g, "").slice(0, 12);
+    input.value = d ? fmtNum(+d) : "";
+    if (preview) preview.textContent = d ? fmt(+d) : "";
+  };
+  input.addEventListener("input", render); render();
+}
+const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
+function toast(msg, icon = "success") {
+  Toast.fire({ icon, title: msg });
+}
+async function askDelete(title, text) {
+  const r = await Swal.fire({ title, text, icon: "warning", showCancelButton: true, confirmButtonText: "Ya, hapus", cancelButtonText: "Batal", confirmButtonColor: "#b3261e" });
+  return r.isConfirmed;
+}
+let editingProduct = null;
+
+// LOGIN LOKAL (tidak pakai Supabase Auth — Supabase murni database)
+const CFG = window.VITAMINUM_ENV || {};
+const ADMIN_USER = String(CFG.ADMIN_USER || "admin").trim().toLowerCase();
+const ADMIN_HASH = String(CFG.ADMIN_PASS_HASH || "").trim().toLowerCase();
+const cleanUsername = (u) => String(u || "").trim().toLowerCase().replace(/\s+/g, "");
+async function sha256hex(s) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+const isLogged = () => sessionStorage.getItem("vit_admin") === "1";
+function refreshAuth() {
+  const on = isLogged();
+  const chrome = on ? "" : "none"; // halaman login: fullscreen tanpa header
+  $("#siteHeader").style.display = chrome;
+  $("#btnOut").style.display = on ? "" : "none";
+  $("#authCard").style.display = on ? "none" : "";
+  $("#app").style.display = on ? "" : "none";
+  if (on) loadAll();
+}
+function showAuthError(title, err) {
+  console.error(title, err);
+  $("#authMsg").textContent = title + ": " + (err?.message || err);
+}
+async function doLogin() {
+  const user = cleanUsername($("#username").value);
+  if (!ADMIN_HASH) { $("#authMsg").textContent = "ADMIN_PASS_HASH belum diisi di assets/config.js."; return; }
+  if (!user) { $("#authMsg").textContent = "Isi username dulu."; return; }
+  const h = await sha256hex($("#pass").value);
+  if (user === ADMIN_USER && h === ADMIN_HASH) {
+    sessionStorage.setItem("vit_admin", "1");
+    $("#authMsg").textContent = ""; refreshAuth();
+  } else $("#authMsg").textContent = "Username/password salah.";
+}
+$("#loginForm").addEventListener("submit", (e) => { e.preventDefault(); doLogin(); });
+$("#passEye").onclick = () => {
+  const inp = $("#pass"), show = inp.type === "password";
+  inp.type = show ? "text" : "password";
+  $("#eyeOpen").style.display = show ? "none" : "";
+  $("#eyeShut").style.display = show ? "" : "none";
+  $("#passEye").setAttribute("aria-label", show ? "Sembunyikan password" : "Tampilkan password");
+  inp.focus();
+};
+$("#btnTest").onclick = async () => {
+  try {
+    const t0 = Date.now();
+    const { error } = await sb().from("app_settings").select("key", { count: "exact", head: true });
+    if (error) throw error;
+    Swal.fire({ icon: "success", title: "Koneksi OK", text: `Database terbaca dalam ${Date.now() - t0} ms.`, timer: 2500, showConfirmButton: false });
+  } catch (e) { showAuthError("Test koneksi gagal", e); Swal.fire({ icon: "error", title: "Koneksi gagal", text: e.message || e }); }
+};
+$("#btnOut").onclick = () => { sessionStorage.removeItem("vit_admin"); location.reload(); };
+
+$("#tabs").onclick = (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  $$("#tabs .tab").forEach((t) => t.classList.toggle("on", t === b));
+  $$("#app [data-pane]").forEach((p) => (p.style.display = p.dataset.pane === b.dataset.t ? "" : "none"));
+  b.scrollIntoView({ inline: "nearest", block: "nearest" });
+  window.scrollTo(0, 0);
+};
+
+const SETTING_GROUPS = [
+  { id: "identitas", title: "Identitas Aplikasi", desc: "Nama, logo, dan favicon yang tampil di toko." },
+  { id: "toko", title: "Pengaturan Toko", desc: "Teks dan angka operasional toko." },
+];
+const SETTINGS_META = {
+  app_name: { label: "Nama Aplikasi", desc: "Nama toko di header dan judul browser", kind: "text", group: "identitas" },
+  app_logo: { label: "Logo", desc: "Gambar logo toko (kotak, maks 2 MB)", kind: "image", group: "identitas" },
+  app_favicon: { label: "Favicon", desc: "Ikon kecil di tab browser (persegi)", kind: "image", group: "identitas" },
+  hero_banner: { label: "Gambar Banner Hero", desc: "Foto besar di beranda (landscape, maks 2 MB)", kind: "image", group: "identitas" },
+  free_ongkir_min: { label: "Minimal Gratis Ongkir (Rp)", desc: "Contoh: 50000", kind: "number", group: "toko" },
+  wa_number: { label: "Nomor WhatsApp Toko", desc: "Format 628..., dipakai tombol pemesanan WhatsApp", kind: "text", group: "toko" },
+  jam_operasional: { label: "Jam Operasional", desc: "Pisahkan baris dengan Enter agar tampil rapi di footer toko.", kind: "textarea", group: "toko" },
+  alamat: { label: "Alamat", desc: "Alamat toko di tengah footer, tampil tebal", kind: "textarea", group: "toko" },
+  footer_description: { label: "Deskripsi Footer", desc: "Teks di bawah logo pada kartu Deskripsi Footer", kind: "textarea", group: "toko" },
+  pesan_pengiriman: { label: "Pesan Pengiriman", desc: "Pesan sorotan di bawah jam operasional pada footer toko.", kind: "textarea", group: "toko" },
+  hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
+  hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
+};
+const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "wa_number"];
+const prettyKey = (k) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+async function loadSettings() {
+  const { data, error } = await sb().from("app_settings").select("*").order("key");
+  if (error) return toast(error.message, "error");
+  const box = $("#setList"); box.innerHTML = "";
+  window._setInputs = [];
+  const byKey = Object.fromEntries((data || []).map((r) => [r.key, r]));
+  // Metadata menjadi sumber form agar pengaturan baru tetap bisa diisi walau barisnya belum ada di database.
+  const settingDefaults = {
+    footer_description: "Penyedia jus buah dan minuman kesehatan botolan terpercaya dengan kualitas kesegaran terjaga setiap harinya. Jelajahi media sosial kami.",
+    jam_operasional: "Senin - Jumat: 08:00 - 19:00\nSabtu - Minggu: 08:00 - 20:00",
+    pesan_pengiriman: "Pengiriman Tanpa Ongkir Hanya Sampai Pukul 15:00 Setiap Harinya Untuk Radius 5Km!",
+  };
+  META_ORDER.forEach((key) => {
+    if (!byKey[key]) byKey[key] = { key, value: settingDefaults[key] || "" };
+  });
+  const groups = [...SETTING_GROUPS];
+  const retiredSettings = new Set(["promo_topbar"]);
+  const extra = (data || []).filter((r) => !retiredSettings.has(r.key) && !(SETTINGS_META[r.key] || {}).group && !META_ORDER.includes(r.key));
+  if (extra.length) groups.push({ id: "lainnya", title: "Lainnya", desc: "" });
+  groups.forEach((g) => {
+    const keys = [
+      ...META_ORDER.filter((k) => ((SETTINGS_META[k] || {}).group || "toko") === g.id),
+      ...(g.id === "lainnya" ? extra.map((r) => r.key) : []),
+    ];
+    if (!keys.length) return;
+    const h = document.createElement("h3"); h.className = "set-group"; h.textContent = g.title; box.append(h);
+    if (g.desc) { const p = document.createElement("p"); p.className = "muted set-group-desc"; p.textContent = g.desc; box.append(p); }
+    const grid = document.createElement("div"); grid.className = "grid2"; box.append(grid);
+    keys.forEach((k) => {
+      const r = byKey[k], meta = SETTINGS_META[k] || {};
+      const raw = typeof r.value === "string" ? r.value : JSON.stringify(r.value);
+      const kind = meta.kind || (/title|promo|subtitle|operasional/.test(k) || raw.length > 60 ? "textarea" : "text");
+      const d = document.createElement("div"); d.className = "set-item";
+      const lab = document.createElement("label");
+      const strong = document.createElement("strong"); strong.textContent = meta.label || prettyKey(k);
+      lab.append(strong);
+      if (meta.desc) { const h2 = document.createElement("span"); h2.className = "muted"; h2.textContent = meta.desc; lab.append(h2); }
+      if (kind === "image") {
+        const prev = document.createElement("img"); prev.className = "set-logo-prev";
+        prev.onerror = () => { prev.style.display = "none"; };
+        if (raw) prev.src = raw; else prev.style.display = "none";
+        const hidden = document.createElement("input"); hidden.type = "hidden"; hidden.value = raw || "";
+        const file = document.createElement("input"); file.type = "file"; file.accept = "image/*";
+        file.addEventListener("change", async () => {
+          if (!file.files[0]) return;
+          if (file.files[0].size > 2 * 1024 * 1024) return toast("Maksimal 2 MB", "error");
+          file.disabled = true;
+          const url = await uploadImage(file.files[0]);
+          file.disabled = false;
+          if (url) {
+            hidden.value = url; prev.src = url; prev.style.display = "";
+            const { error: saveErr } = await sb().from("app_settings").upsert({ key: k, value: url });
+            toast(saveErr ? saveErr.message : "Gambar tersimpan ke database", saveErr ? "error" : "success");
+            if (!saveErr) applyIdentity();
+          }
+        });
+        lab.append(prev, file);
+        window._setInputs.push({ key: k, inp: hidden });
+      } else {
+        const inp = document.createElement(kind === "textarea" ? "textarea" : "input");
+        if (kind === "number") { inp.type = "text"; inp.inputMode = "numeric"; inp.dataset.rp = "1"; }
+        inp.value = raw;
+        lab.append(inp);
+        if (inp.dataset.rp) {
+          const prev = document.createElement("span"); prev.className = "rp-preview"; lab.append(prev);
+          bindRp(inp, prev);
+        }
+        window._setInputs.push({ key: k, inp });
+      }
+      d.append(lab); grid.append(d);
+    });
+  });
+  if (!(data || []).length) box.innerHTML = '<p class="muted">Belum ada pengaturan.</p>';
+}
+$("#setSaveAll").onclick = async () => {
+  const btn = $("#setSaveAll"); btn.disabled = true;
+  try {
+    for (const { key, inp } of (window._setInputs || [])) {
+      let v = inp.value.trim();
+      if (inp.dataset.rp) v = parseRp(v);
+      else { try { v = JSON.parse(v); } catch {} }
+      const { error } = await sb().from("app_settings").upsert({ key, value: v });
+      if (error) throw error;
+    }
+    toast("Semua pengaturan tersimpan", "success");
+    applyIdentity();
+  } catch (e) { toast(e.message, "error"); }
+  btn.disabled = false;
+};
+
+async function loadAll() { await Promise.all([loadSettings(), loadProducts(), applyIdentity()]); }
+async function applyIdentity() {
+  try {
+    const { data, error } = await sb().from("app_settings").select("key,value");
+    if (error) throw error;
+    const s = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    const brand = document.getElementById("brandLogo");
+    if (brand) {
+      const slot = brand.querySelector(".logo-img"), txt = brand.querySelector(".logo-text");
+      if (slot) {
+        slot.innerHTML = "";
+        if (s.app_logo) {
+          const img = document.createElement("img");
+          img.src = s.app_logo; img.alt = s.app_name || "logo";
+          img.onerror = () => { slot.innerHTML = ""; };
+          slot.append(img);
+        }
+      }
+      if (txt) txt.textContent = s.app_name || "Vitaminum";
+    }
+    if (s.app_name) document.title = "Admin " + s.app_name;
+    if (s.app_favicon) {
+      let l = document.querySelector('link[rel="icon"]');
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.append(l); }
+      l.href = s.app_favicon;
+    }
+  } catch (e) { console.warn("identity skip:", e.message); }
+}
+
+async function uploadImage(file) {
+  if (!file) return "";
+  const path = `p_${Date.now()}_${file.name.replace(/\W+/g, "_")}`;
+  const { error } = await sb().storage.from("product-images").upload(path, file, { upsert: true });
+  if (error) { toast(error.message, "error"); return ""; }
+  return sb().storage.from("product-images").getPublicUrl(path).data.publicUrl;
+}
+async function loadProducts() {
+  const { data, error } = await sb().from("products").select("*").order("id", { ascending: false }).limit(100);
+  if (error) return toast(error.message, "error");
+  $("#pRows").innerHTML = (data || []).map((p) => `<tr>
+    <td>${p.image_url ? `<img class="thumb" src="${p.image_url}" loading="lazy">` : "<span class='muted'>—</span>"}</td>
+    <td><b>${p.name}</b><br><span class="muted">${p.description || "-"}</span></td>
+    <td><b>${fmt(p.price)}</b><br><span class="muted ${p.stock < 10 ? "stock-low" : ""}">stok ${p.stock}</span></td>
+    <td>${p.is_active ? '<span class="pill-ok">Aktif</span>' : '<span class="pill-off">Nonaktif</span>'}</td>
+    <td><div class="row"><button class="btn btn-outline" data-edit="${p.id}">Edit</button><button class="btn btn-danger" data-del="${p.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada produk.</td></tr>';
+}
+bindRp($("#pPrice"));
+$("#pSave").onclick = async () => {
+  const img = await uploadImage($("#pFile").files[0]);
+  const payload = {
+    name: $("#pName").value.trim(),
+    price: parseRp($("#pPrice").value), stock: +$("#pStock").value || 0,
+    unit: $("#pUnit").value, description: $("#pDesc").value, is_active: $("#pActive").checked,
+    ...(img ? { image_url: img } : {}),
+  };
+  if (!payload.name) return toast("Nama wajib diisi", "error");
+  const res = editingProduct
+    ? await sb().from("products").update(payload).eq("id", editingProduct)
+    : await sb().from("products").insert(payload);
+  if (res.error) return toast(res.error.message, "error");
+  toast("Produk tersimpan"); $("#pReset").click(); loadProducts();
+};
+$("#pReset").onclick = () => { editingProduct = null; ["pName","pDesc"].forEach((id) => (document.getElementById(id).value = "")); $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); };
+$("#pRows").onclick = async (e) => {
+  const del = e.target.dataset?.del, ed = e.target.dataset?.edit;
+  if (del && (await askDelete("Hapus produk?", "Produk hilang dari toko."))) { const { error } = await sb().from("products").delete().eq("id", del); toast(error ? error.message : "Dihapus", error ? "error" : "success"); loadProducts(); }
+  if (ed) {
+    const { data } = await sb().from("products").select("*").eq("id", ed).single();
+    editingProduct = ed; $("#pName").value = data.name;
+    $("#pPrice").value = data.price; $("#pPrice").dispatchEvent(new Event("input")); $("#pStock").value = data.stock; $("#pUnit").value = data.unit;
+    $("#pDesc").value = data.description; $("#pActive").checked = data.is_active; scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
+
+if (isConfigured && !configError) {
+  refreshAuth();
+}
+</script>
+</body>
+</html>
