@@ -29,6 +29,35 @@ if (!SITE_URL || /localhost|127\.0\.0\.1/.test(SITE_URL)) {
 }
 
 const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
+// Dimensi gambar untuk og:image:width/height (WA HP butuh ini agar preview konsisten).
+// Murni stdlib: baca header PNG/JPEG saja.
+function probeDims(buf) {
+  try {
+    if (buf[0] === 0x89 && buf[1] === 0x50) {
+      return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20), type: "image/png" };
+    }
+    if (buf[0] === 0xff && buf[1] === 0xd8) {
+      let i = 2;
+      while (i + 9 < buf.length) {
+        if (buf[i] !== 0xff) break;
+        const m = buf[i + 1];
+        if (m === 0xc0 || m === 0xc1 || m === 0xc2) {
+          return { w: buf.readUInt16BE(i + 7), h: buf.readUInt16BE(i + 5), type: "image/jpeg" };
+        }
+        i += 2 + buf.readUInt16BE(i + 2);
+      }
+    }
+  } catch {}
+  return null;
+}
+async function probeImage(url) {
+  try {
+    const r = await fetch(url, { headers: { Range: "bytes=0-65535" } });
+    if (!r.ok && r.status !== 206) return null;
+    const dim = probeDims(Buffer.from(await r.arrayBuffer()));
+    return dim;
+  } catch { return null; }
+}
 const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const rupiah = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 
@@ -63,6 +92,11 @@ for (const p of products) {
   const desc = [d, p.unit, rupiah(p.price), stockTxt, `Pesan via WhatsApp di ${brand}.`]
     .filter(Boolean).join(" • ");
   const img = p.image_url || "";
+  const dim = img ? await probeImage(img) : null;
+  const imgTags = img
+    ? `<meta property="og:image" content="${esc(img)}">\n<meta property="og:image:alt" content="${esc(p.name)}">` +
+      (dim ? `\n<meta property="og:image:type" content="${dim.type}">\n<meta property="og:image:width" content="${dim.w}">\n<meta property="og:image:height" content="${dim.h}">` : "")
+    : "";
   const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -76,7 +110,7 @@ for (const p of products) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${pageUrl}">
-${img ? `<meta property="og:image" content="${esc(img)}">\n<meta property="og:image:alt" content="${esc(p.name)}">` : ""}
+${imgTags}
 <meta name="twitter:card" content="summary_large_image">
 <meta http-equiv="refresh" content="0;url=${SITE_URL}/#katalog-menu">
 </head>

@@ -486,8 +486,27 @@ async function applyIdentity() {
   } catch (e) { console.warn("identity skip:", e.message); }
 }
 
+async function compressImage(file, maxDim = 1200, quality = 0.82) {
+  if (!file || !file.type.startsWith("image/")) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size <= 500 * 1024) { bmp.close(); return file; }
+    const cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.round(bmp.width * scale));
+    cv.height = Math.max(1, Math.round(bmp.height * scale));
+    const ctx = cv.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(bmp, 0, 0, cv.width, cv.height);
+    bmp.close();
+    const blob = await new Promise((res) => cv.toBlob(res, "image/jpeg", quality));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.[a-z0-9]+$/i, "") + ".jpg", { type: "image/jpeg" });
+  } catch { return file; }
+}
 async function uploadImage(file) {
   if (!file) return "";
+  file = await compressImage(file);
   const path = `p_${Date.now()}_${file.name.replace(/\W+/g, "_")}`;
   const { error } = await sb().storage.from("product-images").upload(path, file, { upsert: true });
   if (error) { toast(error.message, "error"); return ""; }
