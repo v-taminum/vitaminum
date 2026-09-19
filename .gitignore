@@ -1,2 +1,3 @@
-# Config publik ikut di-commit (anon key aman disebar).
-# Kredensial admin TIDAK ada di file mana pun (login via Supabase Auth email).
+# Config LOKAL (berisi ADMIN_KEY) jangan ikut commit.
+# Versi publik dibuat otomatis oleh workflow deploy dari Secrets.
+assets/config.js
