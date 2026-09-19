@@ -338,6 +338,13 @@
             white-space: pre-line;
         }
 
+        .product-unit {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 0.15rem;
+        }
+
         .product-price-row {
             display: flex;
             align-items: baseline;
@@ -589,12 +596,17 @@
                 const card = document.createElement('div');
                 card.className = 'product-card';
                 const name = escapeHtml(item.name);
-                const desc = escapeHtml(item.description || item.desc || item.unit || '');
+                const unit = escapeHtml(item.unit || '');
+                let desc = escapeHtml(item.description || item.desc || '');
+                if (unit && desc.toLowerCase().startsWith(unit.toLowerCase())) {
+                    desc = desc.slice(unit.length).replace(/^[•·\-–\s]+/, '');
+                }
                 const image = item.image_url || item.image || 'https://placehold.co/300x200/40896c/ffffff?text=Vitaminum';
                 card.innerHTML = `
                     <div>
                         <img src="${image}" alt="${name}" onerror="this.src='https://placehold.co/300x200/40896c/ffffff?text=Vitaminum'">
                         <h4>${name}</h4>
+                        ${unit ? `<div class="product-unit">${unit}</div>` : ""}
                         <p>${desc}</p>
                     </div>
                     <div>
