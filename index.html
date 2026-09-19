@@ -614,7 +614,7 @@
                             <span class="product-price">${formatIDR(item.price)}</span>
                         </div>
                         ${Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : ''}
-                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan via WhatsApp</a>
+                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan via WhatsApp</a>
                     </div>
                 `;
                 gridContainer.appendChild(card);
@@ -679,7 +679,8 @@
           document.querySelectorAll(".product-order").forEach((el) => {
             const name = decodeURIComponent(el.dataset.product || "");
             const pid = el.dataset.id || "";
-            const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/` : "";
+            const imgv = ((el.dataset.img || "").match(/p_(\d+)_/) || [])[1] || pid;
+            const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/?v=${imgv}` : "";
             const lines = [`Halo Vitaminum, saya ingin memesan *${name}*`, rupiah(el.dataset.price)];
             if (el.dataset.stock !== undefined && el.dataset.stock !== "") {
               lines.push(Number(el.dataset.stock) === 0 ? "Stok: Habis" : `Stok: ${el.dataset.stock}`);
