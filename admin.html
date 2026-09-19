@@ -226,25 +226,24 @@ async function askDelete(title, text) {
 let editingProduct = null;
 
 // LOGIN VIA SUPABASE AUTH (email + password) — bisa dari HP mana saja
-async function currentRole() {
-  const { data: { user } } = await sb().auth.getUser();
-  if (!user) return { user: null, role: null };
-  const got = await sb().from("profiles").select("role").eq("id", user.id).single();
-  let prof = got.data;
-  if (!prof) {
-    await sb().from("profiles").insert({ id: user.id, role: "customer", name: user.email });
-    prof = { role: "customer" };
-  }
-  return { user, role: prof.role };
+async function getAdminEmail() {
+  const { data } = await sb().from("app_settings").select("value").eq("key", "admin_email").single();
+  return String(data?.value ?? "").replace(/"/g, "").trim().toLowerCase();
 }
 async function refreshAuth() {
   let on = false;
   try {
-    const { user, role } = await currentRole();
-    if (user && role !== "admin") {
-      await sb().auth.signOut();
-      $("#authMsg").textContent = "Akun " + user.email + " bukan admin.";
-    } else on = !!user;
+    const { data: { user } } = await sb().auth.getUser();
+    if (user) {
+      const ae = await getAdminEmail();
+      if (ae && user.email && user.email.toLowerCase() === ae) on = true;
+      else {
+        await sb().auth.signOut();
+        $("#authMsg").textContent = !ae
+          ? "admin_email belum di-set. Jalankan supabase/auth_admin.sql."
+          : "Akun " + user.email + " bukan admin.";
+      }
+    }
   } catch (e) { console.warn(e.message); }
   const chrome = on ? "" : "none"; // halaman login: fullscreen tanpa header
   $("#siteHeader").style.display = chrome;
