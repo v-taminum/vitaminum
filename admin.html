@@ -79,6 +79,9 @@ tbody tr:hover{background:#eef6f0}
 .set-item textarea{flex:1;min-height:78px;resize:vertical}
 .set-item input{min-height:46px}
 .table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
+.table-wrap td.cell-main{white-space:normal;min-width:200px;max-width:340px}
+.cell-main b{display:block;margin-bottom:2px;line-height:1.35}
+.cell-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:.78rem;color:var(--text-muted);line-height:1.4}
 .table-wrap th:first-child,.table-wrap td:first-child{text-align:center;width:64px}
 .table-wrap th:last-child,.table-wrap td:last-child{text-align:center;width:130px}
 .table-wrap td .row{justify-content:center;flex-wrap:nowrap}
@@ -495,7 +498,7 @@ async function loadProducts() {
   if (error) return toast(error.message, "error");
   $("#pRows").innerHTML = (data || []).map((p) => `<tr>
     <td>${p.image_url ? `<img class="thumb" src="${p.image_url}" loading="lazy">` : "<span class='muted'>—</span>"}</td>
-    <td><b>${p.name}</b><br><span class="muted">${p.description || "-"}</span></td>
+    <td class="cell-main"><b>${p.name}</b><span class="cell-desc">${p.description || "-"}</span></td>
     <td><b>${fmt(p.price)}</b><br><span class="muted ${p.stock < 10 ? "stock-low" : ""}">stok ${p.stock}</span></td>
     <td>${p.is_active ? '<span class="pill-ok">Aktif</span>' : '<span class="pill-off">Nonaktif</span>'}</td>
     <td><div class="row"><button class="btn btn-outline" data-edit="${p.id}">Edit</button><button class="btn btn-danger" data-del="${p.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada produk.</td></tr>';
