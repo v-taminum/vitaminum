@@ -4,10 +4,12 @@
 -- jadi jalan walau role SQL tidak boleh membuat objek baru.
 -- Dijalankan SETELAH setup_full.sql. Idempotent, aman di-run ulang.
 --
--- Cara pakai:
---   1) Dashboard > Authentication > Users > Add user > buat user
---      (uhilokal@gmail.com + password pilihanmu, Auto Confirm ON)
---   2) Ganti email di bawah bila beda, lalu Run SELURUH file ini
+-- Cara pakai (PILIH SALAH SATU):
+--   A) Tanpa SQL: login di admin.html (localhost, config berisi ADMIN_KEY),
+--      lalu klik "Jadikan Saya Admin". Selesai — file ini tidak perlu di-run.
+--   B) Via SQL: buat user dulu (Dashboard > Authentication > Users > Add user,
+--      uhilokal@gmail.com + password, Auto Confirm ON), ganti email di bawah
+--      bila beda, lalu Run SELURUH file ini.
 -- ============================================================
 
 -- 1) Daftarkan email owner sebagai admin
