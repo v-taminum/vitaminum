@@ -7,7 +7,7 @@
 // (SITE_URL wajib URL publik hasil deploy; localhost TIDAK bisa di-unfurl WhatsApp.)
 // Jalankan ulang setiap produk berubah (tambah/ubah foto/harga/nama).
 
-import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { readFileSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,6 +45,9 @@ const [settings, products] = await Promise.all([
 ]);
 const S = Object.fromEntries(settings.map((r) => [r.key, r.value]));
 const brand = S.app_name || "Vitaminum";
+
+// Bersihkan dulu: produk yang dihapus/ganti nama tidak meninggalkan halaman basi.
+rmSync(join(root, "p"), { recursive: true, force: true });
 
 let n = 0;
 for (const p of products) {
