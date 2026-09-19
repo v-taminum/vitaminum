@@ -19,29 +19,29 @@
 -- disentuh file ini. Jangan run setup_full.sql lama apa adanya.
 -- ============================================================
 
--- Syarat email admin: kunci header ATAU email login == admin_email.
--- (auth.jwt() terbaca langsung dari sesi login.)
--- lower() di kedua sisi agar besar-kecil huruf tidak masalah.
+-- Syarat akses admin: kunci header ATAU login dengan email owner di bawah.
+-- Email ditulis literal (bukan subquery) agar policy tidak rekursi.
+-- Ganti email di semua policy bila owner berganti.
 
 -- products
 drop policy if exists "admin write products" on public.products;
 create policy "admin write products" on public.products
   for all
-  using (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email')))
-  with check (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email')));
+  using (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com'))
+  with check (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com'));
 
 -- app_settings
 drop policy if exists "admin write settings" on public.app_settings;
 create policy "admin write settings" on public.app_settings
   for all
-  using (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email')))
-  with check (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email')));
+  using (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com'))
+  with check (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com'));
 
 -- storage: upload via kunci header ATAU admin login
 drop policy if exists "admin write images" on storage.objects;
 create policy "admin write images" on storage.objects for all
-  using (bucket_id = 'product-images' and (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email'))))
-  with check (bucket_id = 'product-images' and (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = (select lower(trim(both '"' from s.value::text)) from public.app_settings s where s.key = 'admin_email'))));
+  using (bucket_id = 'product-images' and (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com')))
+  with check (bucket_id = 'product-images' and (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com')));
 
 -- Verifikasi (opsional): harus 1 baris
 -- select * from public.app_settings where key = 'admin_email';
