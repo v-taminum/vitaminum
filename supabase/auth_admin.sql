@@ -1,24 +1,22 @@
 -- ============================================================
--- VITAMINUM — ADMIN VIA EMAIL LOGIN (tanpa objek baru)
--- Hanya INSERT baris +UPDATE POLICY (tanpa CREATE TABLE/FUNCTION),
--- jadi jalan walau role SQL tidak boleh membuat objek baru.
+-- VITAMINUM — AKSES ADMIN DARI MANA SAJA (email login)
+-- File ini hanya DROP + CREATE POLICY (tanpa objek baru).
 -- Dijalankan SETELAH setup_full.sql. Idempotent, aman di-run ulang.
 --
--- Cara pakai (PILIH SALAH SATU):
---   A) Tanpa SQL: login di admin.html (localhost, config berisi ADMIN_KEY),
---      lalu klik "Jadikan Saya Admin". Selesai — file ini tidak perlu di-run.
---   B) Via SQL: buat user dulu (Dashboard > Authentication > Users > Add user,
---      uhilokal@gmail.com + password, Auto Confirm ON), ganti email di bawah
---      bila beda, lalu Run SELURUH file ini.
+-- Urutan yang benar (cukup sekali):
+--   1) Dashboard > Authentication > Users > Add user >
+--      uhilokal@gmail.com + password (Auto Confirm ON)
+--   2) Login di admin.html (localhost) > klik "Jadikan Saya Admin"
+--      (langkah ini yang mengisi admin_email; TANPA SQL)
+--   3) Run SELURUH file ini di SQL Editor (agar login email
+--      juga bisa tulis dari HP/luar, bukan cuma dari laptop)
+-- Jika langkah 3 error, kirim pesan errornya — admin tetap bisa
+-- dipakai penuh dari laptop (jalur kunci lokal).
 -- ============================================================
 
--- 1) Daftarkan email owner sebagai admin
-insert into public.app_settings (key, value) values ('admin_email', '"uhilokal@gmail.com"')
-on conflict (key) do update set value = excluded.value;
-
--- 2) Semua policy tulis: kunci header ATAU email login == admin_email.
---    (auth.jwt() terbaca langsung dari sesi login, tanpa tabel/function baru.)
---    lower() di kedua sisi agar besar-kecil huruf tidak masalah.
+-- Policy tulis: kunci header ATAU email login == admin_email.
+-- (auth.jwt() terbaca langsung dari sesi login, tanpa tabel/function baru.)
+-- lower() di kedua sisi agar besar-kecil huruf tidak masalah.
 
 -- categories
 drop policy if exists "admin write categories" on public.categories;
