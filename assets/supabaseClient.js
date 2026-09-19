@@ -10,11 +10,22 @@ function normalizeKey(k) {
   return String(k || "").trim().replace(/^['"]|['"];?$/g, "").trim();
 }
 
-const RAW = { ...(window.VITAMINUM_ENV || {}), ...(window.VITAMINUM_LOCAL || {}) };
+const RAW = window.VITAMINUM_ENV || {};
+const getEnv = () => ({ ...RAW, ...(window.VITAMINUM_LOCAL || {}) });
+// Config lokal (cuma ada di laptop) dimuat dinamis: gagal = wajar, tanpa error console.
+export async function loadLocalConfig() {
+  if (window.VITAMINUM_LOCAL) return true;
+  try {
+    await import("./config.local.js?v=20260919");
+    return Boolean(window.VITAMINUM_LOCAL);
+  } catch { return false; }
+}
+export function hasAdminKey() {
+  return Boolean(String(getEnv().ADMIN_KEY || "").trim());
+}
 const SUPABASE_URL = normalizeUrl(RAW.SUPABASE_URL);
 const SUPABASE_ANON_KEY = normalizeKey(RAW.SUPABASE_ANON_KEY);
 export const isConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-export const hasAdminKey = Boolean(String(RAW.ADMIN_KEY || "").trim());
 export const configError = !isConfigured
   ? "assets/config.js belum diisi."
   : (() => {
@@ -39,7 +50,7 @@ export function sb() {
   if (configError) throw new Error(configError);
   if (!client) {
     // Supabase murni DB: admin menyertakan kunci via header, pembeli tidak perlu login.
-    const adminKey = String(RAW.ADMIN_KEY || "").trim();
+    const adminKey = String(getEnv().ADMIN_KEY || "").trim();
     client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
       adminKey ? { global: { headers: { "x-admin-key": adminKey } } } : undefined);
   }
