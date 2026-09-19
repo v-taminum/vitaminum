@@ -41,7 +41,7 @@ const get = async (path) => {
 
 const [settings, products] = await Promise.all([
   get("/rest/v1/app_settings?select=key,value"),
-  get("/rest/v1/products?select=id,name,description,price,image_url&is_active=eq.true&order=id"),
+  get("/rest/v1/products?select=id,name,description,price,unit,stock,image_url&is_active=eq.true&order=id"),
 ]);
 const S = Object.fromEntries(settings.map((r) => [r.key, r.value]));
 const brand = S.app_name || "Vitaminum";
@@ -51,7 +51,14 @@ for (const p of products) {
   const slug = `${p.id}-${slugify(p.name)}`;
   const pageUrl = `${SITE_URL}/p/${slug}/`;
   const title = `${p.name} - ${rupiah(p.price)}`;
-  const desc = `${p.description || ""} | Pesan via WhatsApp di ${brand}.`.trim();
+  let d = String(p.description || "").replace(/\s+/g, " ").trim();
+  if (p.unit && d.toLowerCase().startsWith(String(p.unit).toLowerCase())) {
+    d = d.slice(String(p.unit).length).replace(/^[•·\-–\s]+/, "");
+  }
+  if (d.length > 110) d = d.slice(0, 110).replace(/\s+\S*$/, "") + "…";
+  const stockTxt = p.stock === 0 ? "Stok habis" : (p.stock != null ? `Stok: ${p.stock}` : "");
+  const desc = [d, p.unit, rupiah(p.price), stockTxt, `Pesan via WhatsApp di ${brand}.`]
+    .filter(Boolean).join(" • ");
   const img = p.image_url || "";
   const html = `<!DOCTYPE html>
 <html lang="id">
