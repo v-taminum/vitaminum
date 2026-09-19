@@ -37,6 +37,8 @@ jobs:
           EOF
       - name: Generate halaman share produk (OG untuk bubble WhatsApp)
         run: node tools/gen-share-pages.mjs
+      - name: Singkirkan file admin dari situs publik
+        run: rm -rf admin.html tools supabase start.bat stop.bat
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
