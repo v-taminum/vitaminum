@@ -972,7 +972,7 @@ async function downloadNotaImage(o, s) {
       if (r.wrap) {
         r._ln = wrap(r.t, W - P * 2 - (r.box ? 24 : 0), boxFont(r));
         const lh = r.small ? 28 : 32;
-        y += r._ln.length * lh + (r.box ? 26 : 0);
+        y += r._ln.length * lh + (r.box ? 28 : 0);
         return;
       }
       y += r.big ? 40 : (r.dy || 32);
@@ -1009,12 +1009,12 @@ async function downloadNotaImage(o, s) {
         const lines = r._ln || wrap(r.t, W - P * 2, fnt);
         ctx.font = fnt;
         if (r.box) {
-          const bh = lines.length * lh + 24;
+          const bh = lines.length * lh + 28;
           ctx.fillStyle = r.box;
           ctx.fillRect(P, yy, W - P * 2, bh);
           if (r.border) { ctx.strokeStyle = r.border; ctx.lineWidth = 2; ctx.strokeRect(P, yy, W - P * 2, bh); }
           ctx.fillStyle = "#0e201b";
-          lines.forEach((ln) => { ctx.fillText(ln, P + 12, yy + 12); yy += lh; });
+          lines.forEach((ln) => { ctx.fillText(ln, P + 12, yy + 14); yy += lh; });
           yy += 14;
           return;
         }
