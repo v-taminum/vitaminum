@@ -15,7 +15,7 @@ create table if not exists public.orders (
   price int not null default 0 check (price >= 0),
   qty int not null default 1 check (qty >= 1),
   total int not null default 0 check (total >= 0),
-  status text not null default 'baru' check (status in ('baru','diproses','selesai','batal')),
+  status text not null default 'baru' check (status in ('baru','diproses','selesai','lunas','batal')),
   catatan text not null default '',
   created_at timestamptz default now()
 );
