@@ -342,13 +342,29 @@ $("#tabs").onclick = (e) => {
 
 const SETTING_GROUPS = [
   { id: "identitas", title: "Identitas Aplikasi", desc: "Nama, logo, dan favicon yang tampil di toko." },
+  { id: "fitur", title: "Fitur Beranda", desc: "Tiga keunggulan di bawah hero: ikon, judul, dan deskripsi." },
   { id: "toko", title: "Pengaturan Toko", desc: "Teks dan angka operasional toko." },
+];
+const FITUR_ICONS = [
+  ["ph-plant", "Tanaman"], ["ph-leaf", "Daun"], ["ph-drop", "Tetes Air"],
+  ["ph-clock-counter-clockwise", "Jam Putar"], ["ph-shield-check", "Perisai Centang"],
+  ["ph-truck", "Truk Kirim"], ["ph-package", "Paket"], ["ph-sun", "Matahari"],
+  ["ph-heart", "Hati"], ["ph-star", "Bintang"], ["ph-sparkle", "Kilau"], ["ph-flask-conical", "Lab"],
 ];
 const SETTINGS_META = {
   app_name: { label: "Nama Aplikasi", desc: "Nama toko di header dan judul browser", kind: "text", group: "identitas" },
   app_logo: { label: "Logo", desc: "Gambar logo toko (kotak, maks 2 MB)", kind: "image", group: "identitas" },
   app_favicon: { label: "Favicon", desc: "Ikon kecil di tab browser (persegi)", kind: "image", group: "identitas" },
   hero_banner: { label: "Gambar Banner Hero", desc: "Foto besar di beranda (landscape, maks 2 MB)", kind: "image", group: "identitas" },
+  fitur_1_icon: { label: "Fitur 1 - Ikon", desc: "", kind: "select", options: "FITUR_ICONS", group: "fitur" },
+  fitur_1_judul: { label: "Fitur 1 - Judul", desc: "", kind: "text", group: "fitur" },
+  fitur_1_deskripsi: { label: "Fitur 1 - Deskripsi", desc: "", kind: "textarea", group: "fitur" },
+  fitur_2_icon: { label: "Fitur 2 - Ikon", desc: "", kind: "select", options: "FITUR_ICONS", group: "fitur" },
+  fitur_2_judul: { label: "Fitur 2 - Judul", desc: "", kind: "text", group: "fitur" },
+  fitur_2_deskripsi: { label: "Fitur 2 - Deskripsi", desc: "", kind: "textarea", group: "fitur" },
+  fitur_3_icon: { label: "Fitur 3 - Ikon", desc: "", kind: "select", options: "FITUR_ICONS", group: "fitur" },
+  fitur_3_judul: { label: "Fitur 3 - Judul", desc: "", kind: "text", group: "fitur" },
+  fitur_3_deskripsi: { label: "Fitur 3 - Deskripsi", desc: "", kind: "textarea", group: "fitur" },
   free_ongkir_min: { label: "Minimal Gratis Ongkir (Rp)", desc: "Contoh: 50000", kind: "number", group: "toko" },
   wa_number: { label: "Nomor WhatsApp Toko", desc: "Format 628..., dipakai tombol pemesanan WhatsApp", kind: "text", group: "toko" },
   jam_operasional: { label: "Jam Operasional", desc: "Pisahkan baris dengan Enter agar tampil rapi di footer toko.", kind: "textarea", group: "toko" },
@@ -358,7 +374,7 @@ const SETTINGS_META = {
   hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
   hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
 };
-const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "wa_number"];
+const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_1_icon", "fitur_1_judul", "fitur_1_deskripsi", "fitur_2_icon", "fitur_2_judul", "fitur_2_deskripsi", "fitur_3_icon", "fitur_3_judul", "fitur_3_deskripsi", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "wa_number"];
 const prettyKey = (k) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 async function loadSettings() {
   const { data, error } = await sb().from("app_settings").select("*").order("key");
@@ -397,7 +413,17 @@ async function loadSettings() {
       const strong = document.createElement("strong"); strong.textContent = meta.label || prettyKey(k);
       lab.append(strong);
       if (meta.desc) { const h2 = document.createElement("span"); h2.className = "muted"; h2.textContent = meta.desc; lab.append(h2); }
-      if (kind === "image") {
+      if (kind === "select") {
+        const opts = meta.options === "FITUR_ICONS" ? FITUR_ICONS : (meta.options || []);
+        const sel = document.createElement("select");
+        opts.forEach(([v, l]) => { const o = document.createElement("option"); o.value = v; o.textContent = l; sel.append(o); });
+        if (raw && !opts.some(([v]) => v === raw)) {
+          const o = document.createElement("option"); o.value = raw; o.textContent = raw + " (kustom)"; sel.append(o);
+        }
+        sel.value = raw;
+        lab.append(sel);
+        window._setInputs.push({ key: k, inp: sel });
+      } else if (kind === "image") {
         const prev = document.createElement("img"); prev.className = "set-logo-prev";
         prev.onerror = () => { prev.style.display = "none"; };
         if (raw) prev.src = raw; else prev.style.display = "none";

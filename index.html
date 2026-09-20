@@ -662,6 +662,16 @@
             el.closest(".hero-image").style.display = "flex";
             el.src = s.hero_banner;
           });
+          document.querySelectorAll(".features-bar .feature-item").forEach((el, idx) => {
+            const f = {
+              icon: s[`fitur_${idx + 1}_icon`],
+              judul: s[`fitur_${idx + 1}_judul`],
+              deskripsi: s[`fitur_${idx + 1}_deskripsi`],
+            };
+            if (f.icon) { const ic = el.querySelector("i"); if (ic) ic.className = "ph " + f.icon; }
+            if (f.judul) { const h = el.querySelector("h4"); if (h) h.textContent = f.judul; }
+            if (f.deskripsi) { const p = el.querySelector("p"); if (p) p.textContent = f.deskripsi; }
+          });
           if (s.footer_description) set("#footerDesc", (el) => (el.textContent = s.footer_description));
           if (s.alamat) set("#footerAddress", (el) => (el.textContent = s.alamat));
           if (s.jam_operasional) set("#operatingHours", (el) => (el.innerHTML = String(s.jam_operasional).replace(/\r?\n/g, "<br>")));

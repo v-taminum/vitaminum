@@ -172,6 +172,15 @@ insert into public.app_settings (key, value) values
   ('app_logo', '""'),
   ('app_favicon', '""'),
   ('hero_banner', '""'),
+  ('fitur_1_icon', '"ph-plant"'),
+  ('fitur_1_judul', '"100% Bahan Alami"'),
+  ('fitur_1_deskripsi', '"Terbuat dari buah & sayur segar pilihan petani lokal."'),
+  ('fitur_2_icon', '"ph-clock-counter-clockwise"'),
+  ('fitur_2_judul', '"Freshly Made Daily"'),
+  ('fitur_2_deskripsi', '"Dibuat langsung setiap pagi tanpa bahan pengawet."'),
+  ('fitur_3_icon', '"ph-shield-check"'),
+  ('fitur_3_judul', '"Higienis & Steril"'),
+  ('fitur_3_deskripsi', '"Dikemas dalam botol steril berstandar tinggi."'),
   ('promo_topbar', '"✨ Promo Spesial Hari Ini: Gratis Ongkir Minimal Belanja Rp 50.000 ke Seluruh Area! ✨"'),
   ('free_ongkir_min', '50000'),
   ('wa_number', '"6280000000000"'),
@@ -179,7 +188,7 @@ insert into public.app_settings (key, value) values
   ('alamat', '""'),
   ('hero_title', '"Segarkan Harimu dengan Jus Buah & Sayur Alami 100% Murni!"'),
   ('hero_subtitle', '"Tanpa pengawet, tanpa pemanis buatan. Diproduksi fresh setiap hari."')
-on conflict (key) do update set value = excluded.value;
+on conflict (key) do nothing;
 
 -- contoh produk (samakan dengan index.html statis)
 insert into public.products (category_id, name, description, price, stock, unit, image_url) values
