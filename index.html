@@ -160,6 +160,142 @@
             height: 1em;
         }
 
+        .cart-btn {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--primary-dark);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cart-btn svg {
+            width: 1.3rem;
+            height: 1.3rem;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #b3261e;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-badge[hidden] {
+            display: none;
+        }
+
+        .pimg-wrap {
+            position: relative;
+        }
+
+        .cart-add {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            height: 38px;
+            min-width: 38px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 0;
+            background: var(--primary-dark);
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .cart-add svg {
+            width: 1.05rem;
+            height: 1.05rem;
+        }
+
+        .cart-line {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.6rem 0;
+        }
+
+        .cart-line-info {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.85rem;
+        }
+
+        .cart-line-info b {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cart-line-info span {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .cart-line .qty-step {
+            flex-shrink: 0;
+        }
+
+        .cart-line .qty-step button {
+            width: 36px;
+            min-height: 36px;
+            font-size: 1rem;
+        }
+
+        .cart-line .qty-step input {
+            width: 44px;
+            padding: 0.4rem 0.2rem;
+            text-align: center;
+        }
+
+        .cart-line-total {
+            font-weight: 700;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .cart-rm {
+            border: 0;
+            background: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .cart-empty {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
         /* --- HERO SECTION --- */
         .hero {
             background: linear-gradient(135deg, #f1f8f4 0%, #ddeee4 100%);
@@ -728,6 +864,7 @@
             </div>
 
             <div class="nav-right">
+                <button class="cart-btn" id="cartBtn" aria-label="Keranjang belanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span class="cart-badge" id="cartBadge" hidden>0</span></button>
                 <a class="btn btn-primary" id="orderNow" href="#katalog-menu">
                     <svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Pesan Sekarang
                 </a>
@@ -800,7 +937,7 @@
             <label>Nama<input id="fNama" autocomplete="name" placeholder="Nama lengkap"></label>
             <label>No HP<input id="fHp" inputmode="tel" placeholder="08xxxxxxxxxx"></label>
             <label>Alamat Lengkap<textarea id="fAlamat" rows="2" placeholder="Jalan, nomor rumah, patokan"></textarea></label>
-            <label>Jumlah Pesanan
+            <label id="qtyWrap">Jumlah Pesanan
                 <div class="qty-step">
                     <button type="button" id="qMin" aria-label="Kurangi">−</button>
                     <input id="fQty" type="number" value="1" min="1">
@@ -812,6 +949,17 @@
             <div class="order-warn">Halo Kak, untuk pembayaran saat ini dilakukan secara langsung ya. Mohon agar pembayaran dan pengiriman bukti transfer dilakukan via WA paling lambat 1 jam setelah pemesanan. Jika lewat dari 1 jam belum ada bukti transfer, mohon maaf pesanan akan otomatis dianggap batal. Terima kasih atas pengertiannya!</div>
             <button class="order-submit" id="orderSubmit"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> <span id="orderSubmitLabel">Pesan</span></button>
             <a class="order-skip" id="orderSkip" hidden>Lanjut tanpa simpan &rarr;</a>
+        </div>
+    </div>
+
+    <!-- DRAWER KERANJANG -->
+    <div class="order-overlay" id="cartOverlay" hidden>
+        <div class="order-modal" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+            <button class="order-close" id="cartClose" aria-label="Tutup">×</button>
+            <h3 id="cartTitle">Keranjang</h3>
+            <div id="cartLines"></div>
+            <div class="order-total">Total: <b id="cartTotal">Rp 0</b></div>
+            <button class="order-submit" id="cartCheckout">Checkout</button>
         </div>
     </div>
 
@@ -869,7 +1017,10 @@
                 const image = item.image_url || item.image || 'https://placehold.co/300x200/40896c/ffffff?text=Vitaminum';
                 card.innerHTML = `
                     <div>
+                        <div class="pimg-wrap">
                         <a class="product-link" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(item.name)}"><img src="${image}" alt="${name}" onerror="this.src='https://placehold.co/300x200/40896c/ffffff?text=Vitaminum'"><h4>${name}</h4></a>
+                        <button class="cart-add" type="button" aria-label="Tambah ke keranjang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>+</span></button>
+                        </div>
                         ${unit ? `<div class="product-unit">${unit}</div>` : ""}
                     </div>
                     <div>
@@ -970,24 +1121,83 @@
           const ov = document.getElementById("orderOverlay");
           let orderCtx = null, orderWaUrl = "#katalog-menu";
           const brand = s.app_name || "Vitaminum";
+          // ---- Keranjang (satu untuk situs + halaman detail) ----
+          const CART_KEY = "vit_cart_v1";
+          const loadCart = () => { try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; } catch { return []; } };
+          const saveCart = (c) => localStorage.setItem(CART_KEY, JSON.stringify(c));
+          let cart = loadCart();
+          const cartCount = () => cart.reduce((a, l) => a + l.qty, 0);
+          const cartTotal = () => cart.reduce((a, l) => a + l.qty * l.price, 0);
+          function syncCartBadge() {
+            const n = cartCount(), b = document.getElementById("cartBadge");
+            if (!b) return;
+            b.hidden = !n;
+            b.textContent = n > 99 ? "99+" : n;
+          }
+          function renderCart() {
+            const box = document.getElementById("cartLines");
+            if (!box) return;
+            if (!cart.length) {
+              box.innerHTML = '<p class="cart-empty">Keranjang kosong. Yuk tambah jus favoritmu!</p>';
+            } else {
+              box.innerHTML = cart.map((l, i) => `<div class="cart-line">
+                <div class="cart-line-info"><b>${escapeHtml(l.name)}</b><span>${rupiah(l.price)}${l.unit ? " • " + escapeHtml(l.unit) : ""}</span></div>
+                <div class="qty-step"><button type="button" data-cdec="${i}" aria-label="Kurangi">−</button><input value="${l.qty}" readonly aria-label="Jumlah"><button type="button" data-cinc="${i}" aria-label="Tambah">+</button></div>
+                <div class="cart-line-total">${rupiah(l.price * l.qty)}</div>
+                <button type="button" class="cart-rm" data-crem="${i}" aria-label="Hapus">×</button>
+              </div>`).join("");
+            }
+            document.getElementById("cartTotal").textContent = rupiah(cartTotal());
+            document.getElementById("cartCheckout").disabled = !cart.length;
+          }
+          function cartMax(item) {
+            const st = Number(item.stock);
+            return Number.isFinite(st) && st > 0 ? st : 99;
+          }
+          function addToCart(item) {
+            const line = cart.find((l) => String(l.id) === String(item.id));
+            if (line) line.qty = Math.min(cartMax(item), line.qty + 1);
+            else cart.push({ id: item.id, name: item.name, price: item.price, unit: item.unit || "", stock: item.stock ?? null, qty: 1 });
+            saveCart(cart); syncCartBadge(); renderCart();
+          }
+          function openCartDrawer() {
+            renderCart();
+            document.getElementById("cartOverlay").hidden = false;
+            document.body.style.overflow = "hidden";
+          }
+          function closeCartDrawer() {
+            document.getElementById("cartOverlay").hidden = true;
+            if (ov.hidden) document.body.style.overflow = "";
+          }
           const qtyMax = () => {
             if (!orderCtx) return 99;
             const st = Number(orderCtx.stock);
             return Number.isFinite(st) && st > 0 ? st : 99;
           };
           function updateOrderTotal() {
+            if (orderCtx?.items) {
+              document.getElementById("fTotal").textContent = rupiah(orderCtx.items.reduce((a, l) => a + l.price * l.qty, 0));
+              return;
+            }
             const q = Math.max(1, Math.min(qtyMax(), Number(document.getElementById("fQty").value) || 1));
             document.getElementById("fQty").value = q;
             document.getElementById("fTotal").textContent = rupiah((orderCtx?.price || 0) * q);
           }
           function openOrderModal(ctx) {
             orderCtx = ctx;
-            const stockLine = ctx.stockLabel
-              ? escapeHtml(ctx.stockLabel)
-              : (Number.isFinite(Number(ctx.stock)) ? (Number(ctx.stock) === 0 ? "Habis" : `Stok: ${Number(ctx.stock)}`) : "");
-            document.getElementById("orderSummary").innerHTML =
-              `<b>${escapeHtml(ctx.name)}</b><br><span>${rupiah(ctx.price)}${ctx.unit ? " • " + escapeHtml(ctx.unit) : ""}${stockLine ? " • " + stockLine : ""}</span>`;
-            document.getElementById("fQty").value = 1;
+            const multi = !!ctx.items;
+            document.getElementById("qtyWrap").style.display = multi ? "none" : "";
+            if (multi) {
+              document.getElementById("orderSummary").innerHTML =
+                ctx.items.map((l) => `<b>${escapeHtml(l.name)}</b> x${l.qty} = ${rupiah(l.price * l.qty)}`).join("<br>");
+            } else {
+              const stockLine = ctx.stockLabel
+                ? escapeHtml(ctx.stockLabel)
+                : (Number.isFinite(Number(ctx.stock)) ? (Number(ctx.stock) === 0 ? "Habis" : `Stok: ${Number(ctx.stock)}`) : "");
+              document.getElementById("orderSummary").innerHTML =
+                `<b>${escapeHtml(ctx.name)}</b><br><span>${rupiah(ctx.price)}${ctx.unit ? " • " + escapeHtml(ctx.unit) : ""}${stockLine ? " • " + stockLine : ""}</span>`;
+              document.getElementById("fQty").value = 1;
+            }
             document.getElementById("orderErr").hidden = true;
             document.getElementById("orderSkip").hidden = true;
             document.getElementById("orderSubmit").disabled = false;
@@ -1000,16 +1210,19 @@
             document.body.style.overflow = "";
           }
           function buildOrderWaUrl() {
-            const q = Math.max(1, Number(document.getElementById("fQty").value) || 1);
             const nama = document.getElementById("fNama").value.trim();
             const hp = document.getElementById("fHp").value.trim();
             const alamat = document.getElementById("fAlamat").value.trim();
-            const lines = [
-              `Halo ${brand}, saya mau pesan:`,
-              `*${orderCtx.name}* x${q} = ${rupiah(orderCtx.price * q)}`,
-              `Nama: ${nama}`, `No HP: ${hp}`, `Alamat: ${alamat}`,
-            ];
-            if (orderCtx.page) lines.push(orderCtx.page);
+            const lines = [`Halo ${brand}, saya mau pesan:`];
+            if (orderCtx.items) {
+              orderCtx.items.forEach((l) => lines.push(`*${l.name}* x${l.qty} = ${rupiah(l.price * l.qty)}`));
+              lines.push(`Total ${rupiah(orderCtx.items.reduce((a, l) => a + l.price * l.qty, 0))}`);
+            } else {
+              const q = Math.max(1, Number(document.getElementById("fQty").value) || 1);
+              lines.push(`*${orderCtx.name}* x${q} = ${rupiah(orderCtx.price * q)}`);
+            }
+            lines.push(`Nama: ${nama}`, `No HP: ${hp}`, `Alamat: ${alamat}`);
+            if (!orderCtx.items && orderCtx.page) lines.push(orderCtx.page);
             return makeWaUrl(lines.join("\n"));
           }
           document.addEventListener("click", (e) => {
@@ -1027,6 +1240,45 @@
             });
           });
           document.getElementById("orderClose").onclick = closeOrderModal;
+          document.addEventListener("click", (e) => {
+            const add = e.target.closest(".cart-add");
+            if (add) {
+              const card = add.closest(".product-card");
+              const src = card && card.querySelector(".product-order");
+              if (!src) return;
+              const stockRaw = src.dataset.stock;
+              addToCart({
+                id: src.dataset.id || null,
+                name: decodeURIComponent(src.dataset.product || ""),
+                price: Number(src.dataset.price) || 0,
+                stock: stockRaw === "" || stockRaw === undefined ? null : Number(stockRaw),
+                unit: decodeURIComponent(src.dataset.unit || ""),
+              });
+              return;
+            }
+            const dec = e.target.closest("[data-cdec]");
+            if (dec) {
+              const l = cart[+dec.dataset.cdec];
+              if (l) { l.qty = Math.max(1, l.qty - 1); saveCart(cart); syncCartBadge(); renderCart(); }
+              return;
+            }
+            const inc = e.target.closest("[data-cinc]");
+            if (inc) {
+              const l = cart[+inc.dataset.cinc];
+              if (l) {
+                const st = Number(l.stock);
+                const max = Number.isFinite(st) && st > 0 ? st : 99;
+                l.qty = Math.min(max, l.qty + 1);
+                saveCart(cart); syncCartBadge(); renderCart();
+              }
+              return;
+            }
+            const rem = e.target.closest("[data-crem]");
+            if (rem) {
+              cart.splice(+rem.dataset.crem, 1);
+              saveCart(cart); syncCartBadge(); renderCart();
+            }
+          });
           ov.addEventListener("click", (e) => { if (e.target === ov) closeOrderModal(); });
           document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !ov.hidden) closeOrderModal(); });
           document.getElementById("qMin").onclick = () => { document.getElementById("fQty").value = Math.max(1, (Number(document.getElementById("fQty").value) || 1) - 1); updateOrderTotal(); };
@@ -1048,7 +1300,6 @@
             const hpRaw = document.getElementById("fHp").value.trim();
             const hp = hpRaw.replace(/\D/g, "");
             const alamat = document.getElementById("fAlamat").value.trim();
-            const q = Math.max(1, Math.min(qtyMax(), Number(document.getElementById("fQty").value) || 1));
             if (nama.length < 3) return orderError("Isi nama lengkap (min. 3 huruf).");
             if (hp.length < 9 || hp.length > 16) return orderError("No HP tidak valid (9–16 digit angka).");
             if (alamat.length < 10) return orderError("Alamat kurang lengkap (min. 10 karakter).");
@@ -1056,16 +1307,32 @@
             btn.disabled = true;
             document.getElementById("orderSubmitLabel").textContent = "Mengirim...";
             try {
-              const total = orderCtx.price * q;
-              const { error } = await sb().from("orders").insert({
-                customer_name: nama, customer_wa: hp, customer_address: alamat,
-                product_id: orderCtx.id, product_name: orderCtx.name,
-                price: orderCtx.price, qty: q, total,
-              });
-              if (error) throw error;
-              orderWaUrl = buildOrderWaUrl();
-              window.open(orderWaUrl, "_blank");
-              closeOrderModal();
+              if (orderCtx.items) {
+                if (!orderCtx.items.length) throw new Error("keranjang kosong");
+                const results = await Promise.allSettled(orderCtx.items.map((l) => sb().from("orders").insert({
+                  customer_name: nama, customer_wa: hp, customer_address: alamat,
+                  product_id: l.id, product_name: l.name,
+                  price: l.price, qty: l.qty, total: l.price * l.qty,
+                })));
+                const failed = results.filter((r) => r.status === "rejected").length;
+                if (failed === orderCtx.items.length) throw new Error(results[0].reason?.message || "gagal menyimpan");
+                orderWaUrl = buildOrderWaUrl();
+                window.open(orderWaUrl, "_blank");
+                cart = []; saveCart(cart); syncCartBadge(); renderCart();
+                closeOrderModal();
+              } else {
+                const q = Math.max(1, Math.min(qtyMax(), Number(document.getElementById("fQty").value) || 1));
+                const total = orderCtx.price * q;
+                const { error } = await sb().from("orders").insert({
+                  customer_name: nama, customer_wa: hp, customer_address: alamat,
+                  product_id: orderCtx.id, product_name: orderCtx.name,
+                  price: orderCtx.price, qty: q, total,
+                });
+                if (error) throw error;
+                orderWaUrl = buildOrderWaUrl();
+                window.open(orderWaUrl, "_blank");
+                closeOrderModal();
+              }
             } catch (err) {
               orderWaUrl = buildOrderWaUrl();
               orderError("Gagal menyimpan pesanan: " + (err.message || err) + ". Kamu tetap bisa lanjut via WhatsApp.", orderWaUrl);
@@ -1074,6 +1341,23 @@
               document.getElementById("orderSubmitLabel").textContent = "Pesan";
             }
           };
+          document.getElementById("cartBtn").onclick = openCartDrawer;
+          document.getElementById("cartClose").onclick = closeCartDrawer;
+          document.getElementById("cartOverlay").addEventListener("click", (e) => { if (e.target.id === "cartOverlay") closeCartDrawer(); });
+          document.getElementById("cartCheckout").onclick = () => {
+            if (!cart.length) return;
+            closeCartDrawer();
+            openOrderModal({ items: cart.map((l) => ({ ...l })) });
+          };
+          document.addEventListener("keydown", (e) => {
+            if (e.key !== "Escape") return;
+            if (!document.getElementById("cartOverlay").hidden) closeCartDrawer();
+          });
+          window.addEventListener("storage", (e) => {
+            if (e.key === "vit_cart_v1") { cart = loadCart(); syncCartBadge(); renderCart(); }
+          });
+          syncCartBadge();
+          renderCart();
         } catch (e) { console.warn("Supabase skip:", e.message); }
       }
     </script>
