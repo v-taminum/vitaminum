@@ -429,10 +429,11 @@ const SETTINGS_META = {
   alamat: { label: "Alamat", desc: "Alamat toko di tengah footer, tampil tebal", kind: "textarea", group: "toko" },
   footer_description: { label: "Deskripsi Footer", desc: "Teks di bawah logo pada kartu Deskripsi Footer", kind: "textarea", group: "toko" },
   pesan_pengiriman: { label: "Pesan Pengiriman", desc: "Pesan sorotan di bawah jam operasional pada footer toko.", kind: "textarea", group: "toko" },
+  info_pembayaran: { label: "Info Pembayaran", desc: "Teks peringatan pembayaran di form pemesanan", kind: "textarea", group: "toko" },
   hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
   hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
 };
-const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "wa_number"];
+const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "info_pembayaran", "wa_number"];
 const prettyKey = (k) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const DEFAULT_FITUR = [
   { icon: "ph-plant", judul: "100% Bahan Alami", deskripsi: "Terbuat dari buah & sayur segar pilihan petani lokal." },

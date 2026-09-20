@@ -103,6 +103,7 @@ insert into public.app_settings (key, value) values
   ('jam_operasional', '"Senin-Jumat 08:00-19:00, Sabtu-Minggu 08:00-20:00"'),
   ('alamat', '""'),
   ('pesan_pengiriman', '"Pengiriman Tanpa Ongkir Hanya Sampai Pukul 15:00 Setiap Harinya Untuk Radius 5Km!"'),
+  ('info_pembayaran', '"Halo Kak, untuk pembayaran saat ini dilakukan secara langsung ya. Pembayaran dapat dilakukan melalui DANA ke nomor 0895-6131-26067 atau Bank Mandiri ke nomor rekening 173-002-18291-31 A/N FEBRIANSYAH. Mohon agar pembayaran dan pengiriman bukti transfer dilakukan via WA paling lambat 1 jam setelah pemesanan. Jika lewat dari 1 jam belum ada bukti transfer, mohon maaf pesanan akan otomatis dianggap batal. Terima kasih atas pengertiannya!"'),
   ('hero_title', '"Segarkan Harimu dengan Jus Buah & Sayur Alami 100% Murni!"'),
   ('hero_subtitle', '"Tanpa pengawet, tanpa pemanis buatan. Diproduksi fresh setiap hari."')
 on conflict (key) do nothing;
