@@ -95,7 +95,7 @@ const get = async (path) => {
 
 const [settings, products] = await Promise.all([
   get("/rest/v1/app_settings?select=key,value"),
-  get("/rest/v1/products?select=id,name,description,price,unit,stock,image_url&is_active=eq.true&order=id"),
+  get("/rest/v1/products?select=id,name,description,price,unit,stock,stock_label,image_url&is_active=eq.true&order=id"),
 ]);
 const S = Object.fromEntries(settings.map((r) => [r.key, r.value]));
 const brand = S.app_name || "Vitaminum";
@@ -113,7 +113,7 @@ for (const p of products) {
     d = d.slice(String(p.unit).length).replace(/^[•·\-–\s]+/, "");
   }
   if (d.length > 110) d = d.slice(0, 110).replace(/\s+\S*$/, "") + "…";
-  const stockTxt = p.stock === 0 ? "Stok habis" : (p.stock != null ? `Stok: ${p.stock}` : "");
+  const stockTxt = p.stock_label || (p.stock === 0 ? "Stok habis" : (p.stock != null ? `Stok: ${p.stock}` : ""));
   const desc = [d, p.unit, rupiah(p.price), stockTxt, `Pesan via WhatsApp di ${brand}.`]
     .filter(Boolean).join(" • ");
   const img = p.image_url || "";
@@ -125,7 +125,8 @@ for (const p of products) {
   const waDigits = String(S.wa_number || "").replace(/\D/g, "");
   const imgv = ((img.match(/p_(\d+)_/) || [])[1]) || p.id;
   const msgLines = [`Halo ${brand}, saya ingin memesan *${p.name}*`, rupiah(p.price)];
-  if (p.stock === 0) msgLines.push("Stok: Habis");
+  if (p.stock_label) msgLines.push(p.stock_label);
+  else if (p.stock === 0) msgLines.push("Stok: Habis");
   else if (p.stock != null) msgLines.push(`Stok: ${p.stock}`);
   msgLines.push(`${pageUrl}?v=${imgv}`);
   const waUrl = waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(msgLines.join("\n"))}` : "";
@@ -138,6 +139,7 @@ for (const p of products) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+${S.app_favicon ? `<link rel="icon" href="${esc(S.app_favicon)}">` : ""}
 <title>${esc(title)} | ${esc(brand)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${pageUrl}">
@@ -148,7 +150,7 @@ for (const p of products) {
 <meta property="og:url" content="${pageUrl}">
 ${imgTags}
 <meta name="twitter:card" content="summary_large_image">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Quicksand',system-ui,sans-serif;background:#f1f8f4;color:#0e201b;line-height:1.5}.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}.back{display:inline-flex;align-items:center;gap:.45rem;margin:14px 0;background:#ffffff;border:1px solid #90c5ad;color:#255746;font-weight:700;text-decoration:none;padding:.6rem 1.2rem;border-radius:999px;box-shadow:0 2px 8px rgba(37,87,70,.12);font-size:.9rem}.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(37,87,70,.12)}.card img{width:100%;height:auto;max-height:420px;object-fit:cover;display:block;background:#ddeee4}.body{padding:20px}.body h1{font-size:1.4rem;margin-bottom:4px}.unit{font-weight:700;color:#255746;font-size:.9rem;margin-bottom:2px}.desc{color:#444;font-size:.92rem;margin:8px 0 12px}.desc p{margin:0 0 .4rem;text-align:justify}.desc ul,.desc ol{margin:0 0 .6rem 1.25rem;padding:0}.desc li{margin-bottom:.3rem;text-align:justify}.price{font-size:1.3rem;font-weight:700;color:#255746}.stock{font-size:.85rem;font-weight:700;margin:2px 0 14px}.ok{color:#255746}.out{color:#b3261e}.order{display:block;text-align:center;background:#255746;color:#fff;font-weight:700;padding:.85rem;border-radius:10px;text-decoration:none}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Quicksand',system-ui,sans-serif;background:#f1f8f4;color:#0e201b;line-height:1.5}.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}.back{display:inline-flex;align-items:center;gap:.45rem;margin:14px 0;background:#ffffff;border:1px solid #90c5ad;color:#255746;font-weight:700;text-decoration:none;padding:.6rem 1.2rem;border-radius:999px;box-shadow:0 2px 8px rgba(37,87,70,.12);font-size:.9rem}.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(37,87,70,.12)}.card img{width:100%;height:auto;max-height:420px;object-fit:cover;display:block;background:#ddeee4}.body{padding:20px}.body h1{font-size:1.4rem;margin-bottom:4px}.unit{font-weight:700;color:#255746;font-size:.9rem;margin-bottom:2px}.desc{color:#444;font-size:.92rem;margin:8px 0 12px}.desc p{margin:0 0 .4rem;text-align:justify}.desc ul,.desc ol{margin:0 0 .6rem 1.25rem;padding:0}.desc li{margin-bottom:.3rem;text-align:justify}.price{font-size:1.3rem;font-weight:700;color:#255746}.stock{font-size:.85rem;font-weight:700;margin:2px 0 14px}.ok{color:#255746}.out{color:#b3261e}.order{display:flex;align-items:center;justify-content:center;gap:.5rem;background:#255746;color:#fff;font-weight:700;padding:.85rem;border-radius:10px;text-decoration:none}.order svg{width:1.15em;height:1.15em;fill:#fff;flex-shrink:0}</style>
 </head>
 <body>
 <main class="wrap">
@@ -161,7 +163,7 @@ ${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ""}
 <div class="price">${esc(rupiah(p.price))}</div>
 <div class="stock ${p.stock === 0 ? "out" : "ok"}">${esc(stockTxt)}</div>
 <div class="desc">${/<\/?[a-z][\s\S]*>/i.test(fullDesc) ? fullDesc : renderRich(fullDesc)}</div>
-${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener">Pesan</a>` : ""}
+${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Pesan</a>` : ""}
 </div>
 </article>
 </main>

@@ -28,6 +28,7 @@ create table if not exists public.products (
   description text default '',
   price int not null check (price >= 0),
   stock int not null default 0 check (stock >= 0),
+  stock_label text not null default '',
   unit text not null default '350 ml',
   image_url text default '',
   is_active boolean not null default true,

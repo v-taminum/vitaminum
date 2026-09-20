@@ -651,9 +651,9 @@
                         <div class="product-price-row">
                             <span class="product-price">${formatIDR(item.price)}</span>
                         </div>
-                        ${Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : ''}
+                        ${item.stock_label ? `<p class="product-stock">${escapeHtml(item.stock_label)}</p>` : (Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : '')}
                         <div class="card-actions">
-                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan</a>
+                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-stock-label="${encodeURIComponent(item.stock_label || "")}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan</a>
                         <a class="btn-detail" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(item.name)}">Detil</a>
                         </div>
                     </div>
@@ -734,7 +734,9 @@
             const imgv = ((el.dataset.img || "").match(/p_(\d+)_/) || [])[1] || pid;
             const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/?v=${imgv}` : "";
             const lines = [`Halo Vitaminum, saya ingin memesan *${name}*`, rupiah(el.dataset.price)];
-            if (el.dataset.stock !== undefined && el.dataset.stock !== "") {
+            const stockLabel = decodeURIComponent(el.dataset.stockLabel || "");
+            if (stockLabel) lines.push(stockLabel);
+            else if (el.dataset.stock !== undefined && el.dataset.stock !== "") {
               lines.push(Number(el.dataset.stock) === 0 ? "Stok: Habis" : `Stok: ${el.dataset.stock}`);
             }
             if (page) lines.push(page);
