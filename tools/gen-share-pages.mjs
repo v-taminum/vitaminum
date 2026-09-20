@@ -108,7 +108,7 @@ for (const p of products) {
   const slug = `${p.id}-${slugify(p.name)}`;
   const pageUrl = `${SITE_URL}/p/${slug}/`;
   const title = `${p.name} - ${rupiah(p.price)}`;
-  let d = String(p.description || "").replace(/\s+/g, " ").trim();
+  let d = String(p.description || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   if (p.unit && d.toLowerCase().startsWith(String(p.unit).toLowerCase())) {
     d = d.slice(String(p.unit).length).replace(/^[•·\-–\s]+/, "");
   }
@@ -135,6 +135,9 @@ for (const p of products) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>${esc(title)} | ${esc(brand)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${pageUrl}">
@@ -157,8 +160,8 @@ ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : ""}
 ${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ""}
 <div class="price">${esc(rupiah(p.price))}</div>
 <div class="stock ${p.stock === 0 ? "out" : "ok"}">${esc(stockTxt)}</div>
-<div class="desc">${renderRich(fullDesc)}</div>
-${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener">Pesan via WhatsApp</a>` : ""}
+<div class="desc">${/<\/?[a-z][\s\S]*>/i.test(fullDesc) ? fullDesc : renderRich(fullDesc)}</div>
+${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener">Pesan</a>` : ""}
 </div>
 </article>
 </main>

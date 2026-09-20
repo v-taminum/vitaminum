@@ -147,6 +147,13 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 .rp-wrap .rp-cur{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:700;color:var(--primary-dark);font-size:.85rem}
 .rp-wrap input{padding-left:38px}
 .rp-preview{color:var(--primary-dark);font-weight:700;font-size:.78rem;min-height:1.1em;display:block}
+.editor-toolbar{display:flex;gap:4px;flex-wrap:wrap;background:#f7fbf8;border:1px solid var(--border-color);border-bottom:0;border-radius:8px 8px 0 0;padding:6px}
+.editor-toolbar button{width:34px;height:34px;border-radius:6px;border:1px solid transparent;background:transparent;cursor:pointer;color:var(--text-muted);font-size:.9rem}
+.editor-toolbar button:hover{background:var(--primary-light);color:var(--primary-dark)}
+.editor{border:1px solid var(--border-color);border-radius:0 0 8px 8px;padding:.6rem .8rem;min-height:110px;background:var(--bg-color);font-weight:500}
+.editor:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+.editor:empty:before{content:attr(data-placeholder);color:#999}
+.editor ul,.editor ol{margin-left:1.25rem}
 .pass-wrap input{padding-right:44px}
 .pass-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:none;color:var(--text-muted);font-size:1.15rem;cursor:pointer;border-radius:8px;display:grid;place-items:center}
 .pass-eye:hover{background:#eef4f0}
@@ -218,7 +225,21 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <label>Ukuran<input id="pUnit" value="350 ml"></label>
         <label class="span2">Foto<input id="pFile" type="file" accept="image/*"></label>
       </div>
-      <label style="margin-top:8px">Deskripsi<textarea id="pDesc" rows="2" placeholder="350 ml • Mata & Imunitas"></textarea></label>
+      <div style="margin-top:8px">
+        <span style="font-size:.8rem;font-weight:700;display:block;margin-bottom:4px">Deskripsi</span>
+        <div class="editor-toolbar" role="toolbar" aria-label="Format deskripsi">
+          <button type="button" data-cmd="bold" title="Tebal (Bold)"><i class="fa-solid fa-bold"></i></button>
+          <button type="button" data-cmd="italic" title="Miring (Italic)"><i class="fa-solid fa-italic"></i></button>
+          <button type="button" data-cmd="insertUnorderedList" title="Bullet"><i class="fa-solid fa-list-ul"></i></button>
+          <button type="button" data-cmd="insertOrderedList" title="Numbering"><i class="fa-solid fa-list-ol"></i></button>
+          <button type="button" data-cmd="justifyLeft" title="Rata kiri"><i class="fa-solid fa-align-left"></i></button>
+          <button type="button" data-cmd="justifyCenter" title="Rata tengah"><i class="fa-solid fa-align-center"></i></button>
+          <button type="button" data-cmd="justifyRight" title="Rata kanan"><i class="fa-solid fa-align-right"></i></button>
+          <button type="button" data-cmd="justifyFull" title="Rata kanan-kiri (Justify)"><i class="fa-solid fa-align-justify"></i></button>
+          <button type="button" data-cmd="removeFormat" title="Normalkan (hapus format)"><i class="fa-solid fa-text-slash"></i></button>
+        </div>
+        <div class="editor" id="pDesc" contenteditable="true" data-placeholder="Tulis deskripsi & manfaat produk..."></div>
+      </div>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="pActive" checked> Aktif (Tampil Di Toko)</label>
       <div class="row" style="margin-top:10px"><button class="btn btn-primary" id="pSave">Simpan Produk</button><button class="btn btn-outline" id="pReset">Reset</button></div>
       <div class="table-wrap"><table><thead><tr><th>Foto</th><th>Nama</th><th>Harga / Stok</th><th>Aktif</th><th>Aksi</th></tr></thead><tbody id="pRows"></tbody></table></div>
@@ -633,7 +654,7 @@ async function loadProducts() {
   if (error) return toast(error.message, "error");
   $("#pRows").innerHTML = (data || []).map((p) => `<tr>
     <td>${p.image_url ? `<img class="thumb" src="${p.image_url}" loading="lazy">` : "<span class='muted'>—</span>"}</td>
-    <td class="cell-main"><b>${p.name}</b><span class="cell-desc">${p.description || "-"}</span></td>
+    <td class="cell-main"><b>${p.name}</b><span class="cell-desc">${String(p.description || "-").replace(/<[^>]*>/g, "")}</span></td>
     <td><b>${fmt(p.price)}</b><br><span class="muted ${p.stock < 10 ? "stock-low" : ""}">stok ${p.stock}</span></td>
     <td>${p.is_active ? '<span class="pill-ok">Aktif</span>' : '<span class="pill-off">Nonaktif</span>'}</td>
     <td><div class="row"><button class="btn btn-outline" data-edit="${p.id}">Edit</button><button class="btn btn-danger" data-del="${p.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada produk.</td></tr>';
@@ -644,7 +665,7 @@ $("#pSave").onclick = async () => {
   const payload = {
     name: $("#pName").value.trim(),
     price: parseRp($("#pPrice").value), stock: +$("#pStock").value || 0,
-    unit: $("#pUnit").value, description: $("#pDesc").value, is_active: $("#pActive").checked,
+    unit: $("#pUnit").value, description: $("#pDesc").innerText.trim() ? $("#pDesc").innerHTML.trim() : "", is_active: $("#pActive").checked,
     ...(img ? { image_url: img } : {}),
   };
   if (!payload.name) return toast("Nama wajib diisi", "error");
@@ -654,7 +675,11 @@ $("#pSave").onclick = async () => {
   if (res.error) return toast(res.error.message, "error");
   toast("Produk tersimpan"); $("#pReset").click(); loadProducts();
 };
-$("#pReset").onclick = () => { editingProduct = null; ["pName","pDesc"].forEach((id) => (document.getElementById(id).value = "")); $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); };
+$("#pReset").onclick = () => { editingProduct = null; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); };
+document.querySelectorAll(".editor-toolbar button").forEach((b) => {
+  b.addEventListener("mousedown", (e) => e.preventDefault());
+  b.onclick = () => { $("#pDesc").focus(); document.execCommand(b.dataset.cmd, false, null); };
+});
 $("#pRows").onclick = async (e) => {
   const del = e.target.dataset?.del, ed = e.target.dataset?.edit;
   if (del && (await askDelete("Hapus produk?", "Produk hilang dari toko."))) { const { error } = await sb().from("products").delete().eq("id", del); toast(error ? error.message : "Dihapus", error ? "error" : "success"); loadProducts(); }
@@ -662,7 +687,7 @@ $("#pRows").onclick = async (e) => {
     const { data } = await sb().from("products").select("*").eq("id", ed).single();
     editingProduct = ed; $("#pName").value = data.name;
     $("#pPrice").value = data.price; $("#pPrice").dispatchEvent(new Event("input")); $("#pStock").value = data.stock; $("#pUnit").value = data.unit;
-    $("#pDesc").value = data.description; $("#pActive").checked = data.is_active; scrollTo({ top: 0, behavior: "smooth" });
+    $("#pDesc").innerHTML = data.description || ""; $("#pActive").checked = data.is_active; scrollTo({ top: 0, behavior: "smooth" });
   }
 };
 

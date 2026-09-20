@@ -404,6 +404,40 @@
             color: var(--white);
         }
 
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .card-actions .btn-card,
+        .card-actions .btn-detail {
+            flex: 1;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            min-height: 42px;
+        }
+
+        .btn-detail {
+            padding: 0.5rem;
+            background: var(--primary-dark);
+            color: var(--white);
+            border: 1px solid var(--primary-dark);
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .btn-detail:hover {
+            background: #1a4233;
+        }
+
         .no-result {
             grid-column: 1 / -1;
             text-align: center;
@@ -618,7 +652,10 @@
                             <span class="product-price">${formatIDR(item.price)}</span>
                         </div>
                         ${Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : ''}
-                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan via WhatsApp</a>
+                        <div class="card-actions">
+                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><i class="ph ph-whatsapp-logo" aria-hidden="true"></i> Pesan</a>
+                        <a class="btn-detail" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(item.name)}">Detil</a>
+                        </div>
                     </div>
                 `;
                 gridContainer.appendChild(card);
@@ -706,6 +743,8 @@
             const card = el.closest(".product-card");
             const pl = card && card.querySelector(".product-link");
             if (pl && page) pl.href = page;
+            const dt = card && card.querySelector(".btn-detail");
+            if (dt && page) dt.href = page;
           });
         } catch (e) { console.warn("Supabase skip:", e.message); }
       }
