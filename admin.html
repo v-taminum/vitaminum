@@ -61,6 +61,10 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill-ok{background:var(--primary-light);color:var(--primary-dark)}
 .pill-off{background:#fdecea;color:var(--danger)}
+.pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
+.pg-btn{min-width:34px;height:34px;border-radius:8px;border:1px solid var(--border-color);background:#fff;cursor:pointer;font-weight:700;font-size:.8rem;color:var(--text-muted);padding:0 .5rem}
+.pg-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.pg-btn:disabled{opacity:.4;cursor:default}
 .o-wa{display:block;font-size:.78rem;color:var(--text-muted)}
 .o-addr{display:block;font-size:.8rem;white-space:normal;line-height:1.45;min-width:180px;max-width:300px}
 select.st{border:0;border-radius:8px;padding:.45rem 2rem .45rem .8rem;font-weight:700;font-size:.8rem;cursor:pointer;min-height:0;width:132px}
@@ -257,12 +261,14 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <label class="check" style="margin-top:8px"><input type="checkbox" id="pActive" checked> Aktif (Tampil Di Toko)</label>
       <div class="row" style="margin-top:10px"><button class="btn btn-primary" id="pSave">Simpan Produk</button><button class="btn btn-outline" id="pReset">Reset</button></div>
       <div class="table-wrap"><table><thead><tr><th>Foto</th><th>Nama</th><th>Harga / Stok</th><th>Aktif</th><th>Aksi</th></tr></thead><tbody id="pRows"></tbody></table></div>
+      <div class="pager" id="pPager"></div>
     </section>
 
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
       <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span></div>
       <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th>Status</th><th>Catatan (Admin)</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
+      <div class="pager" id="oPager"></div>
     </section>
     </div>
   </div>
@@ -669,15 +675,42 @@ async function uploadImage(file) {
   if (error) { toast(error.message, "error"); return ""; }
   return sb().storage.from("product-images").getPublicUrl(path).data.publicUrl;
 }
+const pState = { page: 1, size: 10, total: 0 };
+const oState = { page: 1, size: 10, total: 0 };
+function renderPager(el, state, go) {
+  if (!el) return;
+  const pages = Math.max(1, Math.ceil(state.total / state.size));
+  if (state.page > pages) state.page = pages;
+  const start = state.total ? (state.page - 1) * state.size + 1 : 0;
+  const end = Math.min(state.total, state.page * state.size);
+  let nums = "";
+  const p0 = Math.max(1, Math.min(state.page - 2, pages - 4));
+  for (let p = p0; p <= Math.min(pages, p0 + 4); p++) {
+    nums += `<button class="pg-btn${p === state.page ? " on" : ""}" data-pg="${p}">${p}</button>`;
+  }
+  el.innerHTML = `<span class="muted">${start}–${end} dari ${state.total}</span>`
+    + `<button class="pg-btn" data-pg="${state.page - 1}"${state.page <= 1 ? " disabled" : ""} aria-label="Halaman sebelumnya">‹</button>${nums}`
+    + `<button class="pg-btn" data-pg="${state.page + 1}"${state.page >= pages ? " disabled" : ""} aria-label="Halaman berikut">›</button>`;
+  el.querySelectorAll("[data-pg]").forEach((b) => {
+    b.onclick = () => {
+      const p = +b.dataset.pg;
+      if (p >= 1 && p <= pages && p !== state.page) { state.page = p; go(); }
+    };
+  });
+}
 async function loadProducts() {
-  const { data, error } = await sb().from("products").select("*").order("id", { ascending: false }).limit(100);
+  const from = (pState.page - 1) * pState.size;
+  const { data, error, count } = await sb().from("products").select("*", { count: "exact" }).order("id", { ascending: false }).range(from, from + pState.size - 1);
   if (error) return toast(error.message, "error");
+  pState.total = count ?? (data || []).length;
+  if (!(data || []).length && pState.page > 1) { pState.page--; return loadProducts(); }
   $("#pRows").innerHTML = (data || []).map((p) => `<tr>
     <td>${p.image_url ? `<img class="thumb" src="${p.image_url}" loading="lazy">` : "<span class='muted'>—</span>"}</td>
     <td class="cell-main"><b>${p.name}</b><span class="cell-desc">${String(p.description || "-").replace(/<[^>]*>/g, "")}</span></td>
     <td><b>${fmt(p.price)}</b><br><span class="muted ${!p.stock_label && p.stock < 10 ? "stock-low" : ""}">${p.stock_label || ("stok " + p.stock)}</span></td>
     <td>${p.is_active ? '<span class="pill-ok">Aktif</span>' : '<span class="pill-off">Nonaktif</span>'}</td>
     <td><div class="row"><button class="btn btn-outline" data-edit="${p.id}">Edit</button><button class="btn btn-danger" data-del="${p.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada produk.</td></tr>';
+  renderPager($("#pPager"), pState, loadProducts);
 }
 bindRp($("#pPrice"));
 $("#pSave").onclick = async () => {
@@ -693,7 +726,8 @@ $("#pSave").onclick = async () => {
     ? await sb().from("products").update(payload).eq("id", editingProduct)
     : await sb().from("products").insert(payload);
   if (res.error) return toast(res.error.message, "error");
-  toast("Produk tersimpan"); resetProductForm(true); loadProducts();
+  const wasEdit = !!editingProduct;
+  toast("Produk tersimpan"); resetProductForm(true); if (!wasEdit) pState.page = 1; loadProducts();
 };
 function resetProductForm(silent) {
   editingProduct = null; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); $("#pStockLabel").value = "";
@@ -718,12 +752,15 @@ $("#pRows").onclick = async (e) => {
 async function loadOrders() {
   const tb = $("#oRows");
   tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
-  const { data, error } = await sb().from("orders").select("*").order("id", { ascending: false }).limit(200);
+  const from = (oState.page - 1) * oState.size;
+  const { data, error, count } = await sb().from("orders").select("*", { count: "exact" }).order("id", { ascending: false }).range(from, from + oState.size - 1);
   if (error) {
     tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
     toast(error.message, "error");
     return;
   }
+  oState.total = count ?? (data || []).length;
+  if (!(data || []).length && oState.page > 1) { oState.page--; return loadOrders(); }
   const fmtDt = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
   const escO = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const escA = (t) => escO(t).replace(/"/g, "&quot;");
@@ -735,6 +772,7 @@ async function loadOrders() {
     <td><select class="st st-${o.status}" data-st="${o.id}" aria-label="Status pesanan ${o.id}">${["baru", "diproses", "selesai", "batal"].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td>
     <td><input class="o-note" data-note="${o.id}" value="${escA(o.catatan || "")}" placeholder="Catatan..." aria-label="Catatan pesanan ${o.id}"></td>
     <td><div class="row" style="flex-wrap:nowrap;justify-content:center"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-danger" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
+  renderPager($("#oPager"), oState, loadOrders);
   updateBulkUI();
 }
 $("#oReload").onclick = async () => {
