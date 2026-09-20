@@ -72,6 +72,9 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .nota-box{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem}
 .nota-total{display:flex;justify-content:space-between;font-weight:700;font-size:1rem;margin:.6rem 0}
 .nota-status{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700;margin-bottom:.6rem}
+.nota-status span{white-space:nowrap;flex-shrink:0}
+.nota-status select{flex:1;min-width:0}
+.swal2-confirm svg{vertical-align:-3px;margin-left:6px}
 .nota-pay{font-size:.75rem;background:#f7fbf8;border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;white-space:pre-line}
 .nota-cat{background:#fff8e1;border-color:#f0c36d}
 .swal2-html-container{max-height:62vh !important;overflow-y:auto !important;text-align:left !important;margin:0 !important}
@@ -867,7 +870,7 @@ function notaText(o, s) {
     `Status: ${o.status}`,
   ];
   if (o.catatan) L.push("", `Catatan: ${o.catatan}`);
-  if (s.info_pembayaran) L.push("", String(s.info_pembayaran));
+  if (s.info_pembayaran) L.push("", "Info:", String(s.info_pembayaran));
   L.push("", "Terima kasih!");
   return L.join("\n");
 }
@@ -879,9 +882,9 @@ function notaHtml(o, s) {
     <div class="nota-box"><b>${escN(o.customer_name)}</b><br>${escN(o.customer_wa)}<br>${escN(o.customer_address)}</div>
     <div class="nota-box"><b>${escN(o.product_name)}</b> x${o.qty}<br>Harga: ${fmt(o.price)}</div>
     <div class="nota-total"><span>Total</span><span>${fmt(o.total)}</span></div>
-    <div class="nota-status">Status: <select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === o.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
+    <div class="nota-status"><span>Status:</span><select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === o.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
     ${o.catatan ? `<div class="nota-box nota-cat"><b>Catatan:</b><br>${escN(o.catatan)}</div>` : ""}
-    ${s.info_pembayaran ? `<div class="nota-pay">${escN(s.info_pembayaran)}</div>` : ""}
+    ${s.info_pembayaran ? `<div class="nota-pay"><b>Info:</b><br>${escN(s.info_pembayaran)}</div>` : ""}
     <div class="nota-thanks">Terima kasih sudah memesan!</div>
   </div>`;
 }
@@ -891,9 +894,9 @@ async function openNota(id) {
   const s = await notaSettings().catch(() => ({}));
   const r = await Swal.fire({
     html: notaHtml(o, s),
-    showConfirmButton: true, confirmButtonText: "Kirim via WA",
+    showConfirmButton: true, confirmButtonText: 'Kirim <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>',
     showDenyButton: true, denyButtonText: "Download Gambar",
-    showCancelButton: true, cancelButtonText: "Tutup",
+    showCloseButton: true,
     confirmButtonColor: "#255746",
     didOpen: () => {
       const sel = document.getElementById("notaStatus");
@@ -959,7 +962,7 @@ async function downloadNotaImage(o, s) {
     L.push({ f: F(), t: `Harga: ${fmt(o.price)}` });
     L.push({ f: FB(700), t: `Total: ${fmt(o.total)}`, big: true });
     if (o.catatan) L.push({ f: F(), t: "Catatan: " + o.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
-    if (s.info_pembayaran) L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" });
+    if (s.info_pembayaran) { L.push({ f: FB(), t: "Info:" }); L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" }); }
     L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true });
     let y = P + 10;
     if (logo) y += 76;
@@ -1012,7 +1015,7 @@ async function downloadNotaImage(o, s) {
           if (r.border) { ctx.strokeStyle = r.border; ctx.lineWidth = 2; ctx.strokeRect(P, yy, W - P * 2, bh); }
           ctx.fillStyle = "#0e201b";
           lines.forEach((ln) => { ctx.fillText(ln, P + 12, yy + 10); yy += lh; });
-          yy += 10;
+          yy += 12;
           return;
         }
         lines.forEach((ln) => { ctx.fillText(ln, P, yy); yy += lh; });
