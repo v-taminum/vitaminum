@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
 :root{
@@ -83,6 +84,18 @@ tbody tr:hover{background:#eef6f0}
 .fitur-actions{display:flex;gap:4px;align-items:start}
 .icon-btn-sm{width:36px;height:36px;border-radius:8px;border:1px solid var(--border-color);background:#fff;cursor:pointer;font-weight:700;color:var(--text-muted)}
 .icon-btn-sm:hover{background:var(--primary-light);color:var(--primary-dark)}
+.icon-pick{position:relative;min-width:0}
+.icon-cur{width:100%;min-height:46px;display:flex;align-items:center;gap:.6rem;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-color);padding:.4rem .6rem;cursor:pointer;font:inherit;font-weight:600}
+.icon-cur:hover{border-color:var(--primary)}
+.icon-cur .ph{font-size:1.4rem;color:var(--primary-dark);width:28px;text-align:center}
+.icon-cur span{flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-cur .fa-chevron-down{font-size:.7rem;color:var(--text-muted)}
+.icon-grid{position:absolute;top:calc(100% + 6px);left:0;right:0;min-width:230px;background:#fff;border:1px solid var(--border-color);border-radius:12px;box-shadow:var(--shadow);padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;z-index:200}
+.icon-grid[hidden]{display:none}
+.icon-grid button{border:1px solid transparent;background:transparent;border-radius:8px;padding:.55rem .2rem;cursor:pointer;display:grid;justify-items:center;gap:2px;font-size:.62rem;font-weight:600;color:var(--text-muted)}
+.icon-grid button .ph{font-size:1.35rem;color:var(--primary-dark)}
+.icon-grid button:hover{background:var(--primary-light)}
+.icon-grid button.sel{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
 @media(max-width:640px){.fitur-row{grid-template-columns:1fr 1fr}.fitur-desc{grid-column:1 / -1}.fitur-actions{grid-column:1 / -1;justify-content:flex-end}}
 .table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
 .table-wrap td.cell-main{white-space:normal;min-width:200px;max-width:340px}
@@ -379,14 +392,40 @@ const DEFAULT_FITUR = [
   { icon: "ph-clock-counter-clockwise", judul: "Freshly Made Daily", deskripsi: "Dibuat langsung setiap pagi tanpa bahan pengawet." },
   { icon: "ph-shield-check", judul: "Higienis & Steril", deskripsi: "Dikemas dalam botol steril berstandar tinggi." },
 ];
+document.addEventListener("click", () => {
+  document.querySelectorAll(".icon-grid:not([hidden])").forEach((g) => (g.hidden = true));
+});
 function fiturRow(item = {}) {
   const row = document.createElement("div"); row.className = "fitur-row";
-  const sel = document.createElement("select"); sel.className = "fitur-icon";
-  FITUR_ICONS.forEach(([v, l]) => { const o = document.createElement("option"); o.value = v; o.textContent = l; sel.append(o); });
-  sel.value = item.icon || "ph-star";
-  if (!FITUR_ICONS.some(([v]) => v === sel.value)) {
-    const o = document.createElement("option"); o.value = item.icon; o.textContent = item.icon + " (kustom)"; sel.append(o); sel.value = item.icon;
-  }
+  const pick = document.createElement("div"); pick.className = "icon-pick";
+  const cur = document.createElement("button"); cur.type = "button"; cur.className = "icon-cur";
+  const grid = document.createElement("div"); grid.className = "icon-grid"; grid.hidden = true;
+  const known = FITUR_ICONS.some(([v]) => v === item.icon);
+  const setIcon = (v) => {
+    pick.dataset.value = v;
+    const lbl = (FITUR_ICONS.find(([x]) => x === v) || [v, v])[1];
+    cur.innerHTML = "";
+    const ic = document.createElement("i"); ic.className = "ph " + v;
+    const sp = document.createElement("span"); sp.textContent = lbl;
+    const ch = document.createElement("i"); ch.className = "fa-solid fa-chevron-down";
+    cur.append(ic, sp, ch);
+    grid.querySelectorAll("button").forEach((b) => b.classList.toggle("sel", b.dataset.v === v));
+  };
+  FITUR_ICONS.forEach(([v, l]) => {
+    const b = document.createElement("button"); b.type = "button"; b.dataset.v = v; b.title = l;
+    const ic = document.createElement("i"); ic.className = "ph " + v;
+    const sp = document.createElement("span"); sp.textContent = l;
+    b.append(ic, sp);
+    b.onclick = (e) => { e.stopPropagation(); setIcon(v); grid.hidden = true; };
+    grid.append(b);
+  });
+  cur.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll(".icon-grid").forEach((g) => { if (g !== grid) g.hidden = true; });
+    grid.hidden = !grid.hidden;
+  };
+  pick.append(cur, grid);
+  setIcon(known ? item.icon : "ph-star");
   const judul = document.createElement("input"); judul.className = "fitur-judul"; judul.placeholder = "Judul fitur"; judul.value = item.judul || "";
   const desc = document.createElement("textarea"); desc.className = "fitur-desc"; desc.rows = 2; desc.placeholder = "Deskripsi fitur"; desc.value = item.deskripsi || "";
   const acts = document.createElement("div"); acts.className = "fitur-actions";
@@ -396,7 +435,7 @@ function fiturRow(item = {}) {
   down.onclick = () => { const n = row.nextElementSibling; if (n && n.classList.contains("fitur-row")) n.after(row); };
   del.onclick = () => row.remove();
   acts.append(up, down, del);
-  row.append(sel, judul, desc, acts);
+  row.append(pick, judul, desc, acts);
   return row;
 }
 function renderFiturEditor(box, row) {
@@ -417,7 +456,7 @@ function renderFiturEditor(box, row) {
     key: "fitur_list",
     inp: {
       getValue: () => [...wrap.querySelectorAll(".fitur-row")].map((r) => ({
-        icon: r.querySelector(".fitur-icon").value,
+        icon: r.querySelector(".icon-pick").dataset.value || "ph-star",
         judul: r.querySelector(".fitur-judul").value.trim(),
         deskripsi: r.querySelector(".fitur-desc").value.trim(),
       })).filter((f) => f.judul || f.deskripsi),
