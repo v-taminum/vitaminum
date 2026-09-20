@@ -61,6 +61,18 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill-ok{background:var(--primary-light);color:var(--primary-dark)}
 .pill-off{background:#fdecea;color:var(--danger)}
+.btn-xs{padding:.35rem .55rem;font-size:.75rem}
+.o-act{flex-wrap:wrap;justify-content:center;max-width:170px;margin:0 auto}
+.nota{text-align:left;font-size:.85rem}
+.nota-head{display:flex;gap:.7rem;align-items:center;margin-bottom:.6rem}
+.nota-head img{width:48px;height:48px;object-fit:cover;border-radius:10px}
+.nota-head b{font-size:1.05rem;display:block}
+.nota-head span{font-size:.75rem;color:var(--text-muted)}
+.nota-meta{font-size:.78rem;color:var(--text-muted);margin-bottom:.6rem}
+.nota-box{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem}
+.nota-total{display:flex;justify-content:space-between;font-weight:700;font-size:1rem;margin:.6rem 0}
+.nota-pay{font-size:.75rem;background:#f7fbf8;border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;white-space:pre-line}
+.nota-thanks{text-align:center;font-size:.78rem;color:var(--text-muted)}
 .pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
 .pg-btn{min-width:34px;height:34px;border-radius:8px;border:1px solid var(--border-color);background:#fff;cursor:pointer;font-weight:700;font-size:.8rem;color:var(--text-muted);padding:0 .5rem}
 .pg-btn.on{background:var(--primary);border-color:var(--primary);color:#fff}
@@ -775,9 +787,10 @@ async function loadOrders() {
     <td><b>${fmt(o.total)}</b></td>
     <td><select class="st st-${o.status}" data-st="${o.id}" aria-label="Status pesanan ${o.id}">${["baru", "diproses", "selesai", "batal"].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td>
     <td><input class="o-note" data-note="${o.id}" value="${escA(o.catatan || "")}" placeholder="Catatan..." aria-label="Catatan pesanan ${o.id}"></td>
-    <td><div class="row" style="flex-wrap:nowrap;justify-content:center"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-danger" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
+    <td><div class="row o-act"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-outline btn-xs" data-nota="${o.id}">Nota</button><button class="btn btn-danger btn-xs" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
   renderPager($("#oPager"), oState, loadOrders);
   updateBulkUI();
+  window._ordersCache = data || [];
   const tRows = (!tRes.error && tRes.data) || [];
   const tQty = tRows.reduce((a, o) => a + (o.qty || 0), 0);
   const tTotal = tRows.reduce((a, o) => a + (o.total || 0), 0);
@@ -830,6 +843,161 @@ $("#oExport").onclick = async () => {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   toast(`${data.length} pesanan diekspor (CSV, buka dengan Excel)`, "success");
 };
+let _ordersCache = [];
+let _notaSettings = null;
+async function notaSettings() {
+  if (_notaSettings) return _notaSettings;
+  const { data } = await sb().from("app_settings").select("key,value");
+  _notaSettings = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+  return _notaSettings;
+}
+const normWa = (d) => { const x = String(d || "").replace(/\D/g, ""); return x.startsWith("0") ? "62" + x.slice(1) : x; };
+const fmtDtFull = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
+function notaText(o, s) {
+  return [
+    `*NOTA #${o.id} - ${s.app_name || "Vitaminum"}*`,
+    `Tanggal: ${fmtDtFull(o.created_at)}`,
+    `Nama: ${o.customer_name}`,
+    `--------------------------------`,
+    `${o.product_name} x${o.qty} = ${fmt(o.total)}`,
+    `--------------------------------`,
+    `Total: ${fmt(o.total)}`,
+    `Status: ${o.status}`,
+    "Terima kasih!",
+  ].join("\n");
+}
+function notaHtml(o, s) {
+  const escN = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<div class="nota">
+    <div class="nota-head">${s.app_logo ? `<img src="${s.app_logo}" alt="logo">` : ""}<div><b>${escN(s.app_name || "Vitaminum")}</b><span>Nota Pemesanan</span></div></div>
+    <div class="nota-meta">No: #${o.id} • ${fmtDtFull(o.created_at)} • ${escN(o.status)}</div>
+    <div class="nota-box"><b>${escN(o.customer_name)}</b><br>${escN(o.customer_wa)}<br>${escN(o.customer_address)}</div>
+    <div class="nota-box"><b>${escN(o.product_name)}</b> x${o.qty}<br>Harga: ${fmt(o.price)}</div>
+    <div class="nota-total"><span>Total</span><span>${fmt(o.total)}</span></div>
+    ${s.info_pembayaran ? `<div class="nota-pay">${escN(s.info_pembayaran)}</div>` : ""}
+    <div class="nota-thanks">Terima kasih sudah memesan!</div>
+  </div>`;
+}
+async function openNota(id) {
+  const o = (window._ordersCache || []).find((x) => String(x.id) === String(id));
+  if (!o) return toast("Data pesanan tidak ditemukan", "error");
+  const s = await notaSettings().catch(() => ({}));
+  const r = await Swal.fire({
+    html: notaHtml(o, s),
+    showConfirmButton: true, confirmButtonText: "Kirim via WA",
+    showDenyButton: true, denyButtonText: "Download Gambar",
+    showCancelButton: true, cancelButtonText: "Tutup",
+    confirmButtonColor: "#255746",
+  });
+  const wa = normWa(o.customer_wa);
+  if (r.isConfirmed) {
+    if (!wa) return toast("No HP pembeli tidak valid", "error");
+    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(notaText(o, s))}`, "_blank");
+  } else if (r.isDenied) {
+    downloadNotaImage(o, s);
+  }
+}
+async function downloadNotaImage(o, s) {
+  try {
+    await document.fonts.ready;
+    const W = 600, P = 36;
+    const cv = document.createElement("canvas");
+    const ctx = cv.getContext("2d");
+    const brand = s.app_name || "Vitaminum";
+    let logo = null;
+    if (s.app_logo) {
+      try {
+        logo = await new Promise((res, rej) => {
+          const im = new Image();
+          im.crossOrigin = "anonymous";
+          im.onload = () => res(im);
+          im.onerror = rej;
+          im.src = s.app_logo;
+        });
+      } catch { logo = null; }
+    }
+    const wrap = (text, maxW, font) => {
+      ctx.font = font;
+      const words = String(text || "").split(/\s+/).filter(Boolean);
+      const lines = [];
+      let cur = "";
+      words.forEach((w) => {
+        const t = cur ? cur + " " + w : w;
+        if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; }
+        else cur = t;
+      });
+      if (cur) lines.push(cur);
+      return lines.length ? lines : [""];
+    };
+    const F = (w = 400) => `${w} 26px Quicksand, system-ui, sans-serif`;
+    const FB = (w = 700) => `${w} 26px Quicksand, system-ui, sans-serif`;
+    const rows = [];
+    rows.push({ h: 30, draw: (y) => {} });
+    const L = [];
+    L.push({ f: FB(), t: brand, s: 30 });
+    L.push({ f: F(), t: "Nota Pemesanan", c: "#666", dy: 30 });
+    L.push({ f: F(), t: `No: #${o.id}  •  ${fmtDtFull(o.created_at)}  •  ${o.status}`, c: "#666", dy: 26 });
+    L.push({ rule: true });
+    L.push({ f: FB(), t: o.customer_name || "-" });
+    L.push({ f: F(), t: o.customer_wa || "" });
+    L.push({ f: F(), t: o.customer_address || "", wrap: true });
+    L.push({ rule: true });
+    L.push({ f: F(), t: `${o.product_name}  x${o.qty}`, wrap: true });
+    L.push({ f: F(), t: `Harga: ${fmt(o.price)}` });
+    L.push({ f: FB(700), t: `Total: ${fmt(o.total)}`, big: true });
+    if (s.info_pembayaran) L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true });
+    L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true });
+    let y = P + 10;
+    if (logo) y += 76;
+    L.forEach((r) => {
+      if (r.rule) { y += 14; return; }
+      if (r.wrap) { y += wrap(r.t, W - P * 2, F()).length * 32; return; }
+      y += r.big ? 40 : (r.dy || 32);
+    });
+    const H = y + P;
+    cv.width = W; cv.height = H;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+    let yy = P;
+    if (logo) {
+      ctx.drawImage(logo, P, yy, 64, 64);
+      ctx.fillStyle = "#0e201b"; ctx.font = FB(); ctx.textBaseline = "top";
+      ctx.fillText(brand.slice(0, 24), P + 78, yy + 4);
+      ctx.fillStyle = "#666"; ctx.font = F();
+      ctx.fillText("Nota Pemesanan", P + 78, yy + 36);
+      yy += 76;
+    } else {
+      ctx.fillStyle = "#0e201b"; ctx.font = FB(700); ctx.textBaseline = "top";
+      const bs = 30; ctx.font = `700 ${bs}px Quicksand, system-ui, sans-serif`;
+      ctx.fillText(brand.slice(0, 26), P, yy); yy += 38;
+      ctx.fillStyle = "#666"; ctx.font = F();
+      ctx.fillText("Nota Pemesanan", P, yy); yy += 30;
+    }
+    L.forEach((r) => {
+      if (r.rule) { yy += 6; ctx.strokeStyle = "#90c5ad"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(P, yy); ctx.lineTo(W - P, yy); ctx.stroke(); yy += 8; return; }
+      ctx.fillStyle = r.c || "#0e201b";
+      if (r.center) {
+        ctx.font = r.f; ctx.textAlign = "center";
+        ctx.fillText(r.t, W / 2, yy); ctx.textAlign = "left"; yy += 32; return;
+      }
+      if (r.big) { ctx.font = r.f; ctx.fillText(r.t, P, yy); yy += 40; return; }
+      if (r.wrap) {
+        ctx.font = r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f;
+        wrap(r.t, W - P * 2, r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f).forEach((ln) => { ctx.fillText(ln, P, yy); yy += r.small ? 28 : 32; });
+        return;
+      }
+      ctx.font = r.f; ctx.fillText(r.t, P, yy); yy += r.dy || 32;
+    });
+    cv.toBlob((blob) => {
+      if (!blob) return toast("Gagal membuat gambar", "error");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `nota-${o.id}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast("Gambar nota diunduh — lampirkan manual di WA", "success");
+    }, "image/png");
+  } catch (e) { toast("Gagal membuat gambar: " + (e.message || e), "error"); }
+}
 $("#oRows").onchange = async (e) => {
   const id = e.target.dataset?.st; if (!id) return;
   const { error } = await sb().from("orders").update({ status: e.target.value }).eq("id", id);
@@ -837,6 +1005,8 @@ $("#oRows").onchange = async (e) => {
   if (!error) loadOrders();
 };
 $("#oRows").onclick = async (e) => {
+  const nota = e.target.closest?.("[data-nota]");
+  if (nota) { openNota(nota.dataset.nota); return; }
   const del = e.target.dataset?.del; if (!del) return;
   if (await askDelete("Hapus pesanan?", "Data pesanan #" + del + " dihapus permanen.")) {
     const { error } = await sb().from("orders").delete().eq("id", del);
