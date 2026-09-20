@@ -73,6 +73,8 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .nota-total{display:flex;justify-content:space-between;font-weight:700;font-size:1rem;margin:.6rem 0}
 .nota-status{display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700;margin-bottom:.6rem}
 .nota-pay{font-size:.75rem;background:#f7fbf8;border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;white-space:pre-line}
+.nota-cat{background:#fff8e1;border-color:#f0c36d}
+.swal2-html-container{max-height:62vh !important;overflow-y:auto !important;text-align:left !important;margin:0 !important}
 .nota-thanks{text-align:center;font-size:.78rem;color:var(--text-muted)}
 .pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
 .pg-btn{min-width:34px;height:34px;border-radius:8px;border:1px solid var(--border-color);background:#fff;cursor:pointer;font-weight:700;font-size:.8rem;color:var(--text-muted);padding:0 .5rem}
@@ -854,19 +856,20 @@ async function notaSettings() {
 const normWa = (d) => { const x = String(d || "").replace(/\D/g, ""); return x.startsWith("0") ? "62" + x.slice(1) : x; };
 const fmtDtFull = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
 function notaText(o, s) {
-  return [
+  const L = [
     `*NOTA #${o.id} - ${s.app_name || "Vitaminum"}*`,
     `Tanggal: ${fmtDtFull(o.created_at)}`,
     `Nama: ${o.customer_name}`,
-    `--------------------------------`,
+    ``,
     `${o.product_name} x${o.qty} = ${fmt(o.total)}`,
-    `--------------------------------`,
+    ``,
     `Total: ${fmt(o.total)}`,
     `Status: ${o.status}`,
-    ...(o.catatan ? [`Catatan: ${o.catatan}`] : []),
-    ...(s.info_pembayaran ? [String(s.info_pembayaran)] : []),
-    "Terima kasih!",
-  ].join("\n");
+  ];
+  if (o.catatan) L.push("", `Catatan: ${o.catatan}`);
+  if (s.info_pembayaran) L.push("", String(s.info_pembayaran));
+  L.push("", "Terima kasih!");
+  return L.join("\n");
 }
 function notaHtml(o, s) {
   const escN = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -877,7 +880,7 @@ function notaHtml(o, s) {
     <div class="nota-box"><b>${escN(o.product_name)}</b> x${o.qty}<br>Harga: ${fmt(o.price)}</div>
     <div class="nota-total"><span>Total</span><span>${fmt(o.total)}</span></div>
     <div class="nota-status">Status: <select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === o.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
-    ${o.catatan ? `<div class="nota-box"><b>Catatan:</b><br>${escN(o.catatan)}</div>` : ""}
+    ${o.catatan ? `<div class="nota-box nota-cat"><b>Catatan:</b><br>${escN(o.catatan)}</div>` : ""}
     ${s.info_pembayaran ? `<div class="nota-pay">${escN(s.info_pembayaran)}</div>` : ""}
     <div class="nota-thanks">Terima kasih sudah memesan!</div>
   </div>`;
@@ -955,14 +958,20 @@ async function downloadNotaImage(o, s) {
     L.push({ f: F(), t: `${o.product_name}  x${o.qty}`, wrap: true });
     L.push({ f: F(), t: `Harga: ${fmt(o.price)}` });
     L.push({ f: FB(700), t: `Total: ${fmt(o.total)}`, big: true });
-    if (o.catatan) L.push({ f: F(), t: "Catatan: " + o.catatan, wrap: true });
-    if (s.info_pembayaran) L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true });
+    if (o.catatan) L.push({ f: F(), t: "Catatan: " + o.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
+    if (s.info_pembayaran) L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" });
     L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true });
     let y = P + 10;
     if (logo) y += 76;
+    const boxFont = (r) => r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f;
     L.forEach((r) => {
       if (r.rule) { y += 14; return; }
-      if (r.wrap) { y += wrap(r.t, W - P * 2, F()).length * 32; return; }
+      if (r.wrap) {
+        r._ln = wrap(r.t, W - P * 2 - (r.box ? 24 : 0), boxFont(r));
+        const lh = r.small ? 28 : 32;
+        y += r._ln.length * lh + (r.box ? 22 : 0);
+        return;
+      }
       y += r.big ? 40 : (r.dy || 32);
     });
     const H = y + P;
@@ -992,8 +1001,21 @@ async function downloadNotaImage(o, s) {
       }
       if (r.big) { ctx.font = r.f; ctx.fillText(r.t, P, yy); yy += 40; return; }
       if (r.wrap) {
-        ctx.font = r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f;
-        wrap(r.t, W - P * 2, r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f).forEach((ln) => { ctx.fillText(ln, P, yy); yy += r.small ? 28 : 32; });
+        const fnt = r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f;
+        const lh = r.small ? 28 : 32;
+        const lines = r._ln || wrap(r.t, W - P * 2, fnt);
+        ctx.font = fnt;
+        if (r.box) {
+          const bh = lines.length * lh + 20;
+          ctx.fillStyle = r.box;
+          ctx.fillRect(P, yy, W - P * 2, bh);
+          if (r.border) { ctx.strokeStyle = r.border; ctx.lineWidth = 2; ctx.strokeRect(P, yy, W - P * 2, bh); }
+          ctx.fillStyle = "#0e201b";
+          lines.forEach((ln) => { ctx.fillText(ln, P + 12, yy + 10); yy += lh; });
+          yy += 10;
+          return;
+        }
+        lines.forEach((ln) => { ctx.fillText(ln, P, yy); yy += lh; });
         return;
       }
       ctx.font = r.f; ctx.fillText(r.t, P, yy); yy += r.dy || 32;
