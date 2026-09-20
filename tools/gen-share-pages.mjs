@@ -97,6 +97,14 @@ for (const p of products) {
     ? `<meta property="og:image" content="${esc(img)}">\n<meta property="og:image:alt" content="${esc(p.name)}">` +
       (dim ? `\n<meta property="og:image:type" content="${dim.type}">\n<meta property="og:image:width" content="${dim.w}">\n<meta property="og:image:height" content="${dim.h}">` : "")
     : "";
+  const waDigits = String(S.wa_number || "").replace(/\D/g, "");
+  const imgv = ((img.match(/p_(\d+)_/) || [])[1]) || p.id;
+  const msgLines = [`Halo ${brand}, saya ingin memesan *${p.name}*`, rupiah(p.price)];
+  if (p.stock === 0) msgLines.push("Stok: Habis");
+  else if (p.stock != null) msgLines.push(`Stok: ${p.stock}`);
+  msgLines.push(`${pageUrl}?v=${imgv}`);
+  const waUrl = waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(msgLines.join("\n"))}` : "";
+  const fullDesc = String(p.description || "").trim();
   const html = `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -112,11 +120,23 @@ for (const p of products) {
 <meta property="og:url" content="${pageUrl}">
 ${imgTags}
 <meta name="twitter:card" content="summary_large_image">
-<meta http-equiv="refresh" content="0;url=${SITE_URL}/#katalog-menu">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Quicksand',system-ui,sans-serif;background:#f1f8f4;color:#0e201b;line-height:1.5}.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}.back{display:inline-block;margin:12px 0;color:#255746;font-weight:700;text-decoration:none}.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(37,87,70,.12)}.card img{width:100%;height:auto;max-height:420px;object-fit:cover;display:block;background:#ddeee4}.body{padding:20px}.body h1{font-size:1.4rem;margin-bottom:4px}.unit{font-weight:700;color:#255746;font-size:.9rem;margin-bottom:2px}.desc{color:#444;font-size:.92rem;white-space:pre-line;margin:8px 0 12px}.price{font-size:1.3rem;font-weight:700;color:#255746}.stock{font-size:.85rem;font-weight:700;margin:2px 0 14px}.ok{color:#255746}.out{color:#b3261e}.order{display:block;text-align:center;background:#255746;color:#fff;font-weight:700;padding:.85rem;border-radius:10px;text-decoration:none}</style>
 </head>
 <body>
-<p>Mengalihkan ke katalog ${esc(brand)}... <a href="${SITE_URL}/#katalog-menu">${esc(p.name)}</a></p>
-<script>location.replace("${SITE_URL}/#katalog-menu");</script>
+<main class="wrap">
+<a class="back" href="${SITE_URL}/#katalog-menu">← Katalog</a>
+<article class="card">
+${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : ""}
+<div class="body">
+<h1>${esc(p.name)}</h1>
+${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ""}
+<div class="price">${esc(rupiah(p.price))}</div>
+<div class="stock ${p.stock === 0 ? "out" : "ok"}">${esc(stockTxt)}</div>
+<div class="desc">${esc(fullDesc).replace(/\n/g, "<br>")}</div>
+${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener">Pesan via WhatsApp</a>` : ""}
+</div>
+</article>
+</main>
 </body>
 </html>`;
   const dir = join(root, "p", slug);
