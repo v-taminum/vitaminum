@@ -266,7 +266,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
-      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span></div>
+      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
       <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th>Status</th><th>Catatan (Admin)</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
       <div class="pager" id="oPager"></div>
     </section>
@@ -753,7 +753,10 @@ async function loadOrders() {
   const tb = $("#oRows");
   tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
   const from = (oState.page - 1) * oState.size;
-  const { data, error, count } = await sb().from("orders").select("*", { count: "exact" }).order("id", { ascending: false }).range(from, from + oState.size - 1);
+  const [{ data, error, count }, tRes] = await Promise.all([
+    sb().from("orders").select("*", { count: "exact" }).order("id", { ascending: false }).range(from, from + oState.size - 1),
+    sb().from("orders").select("qty,total").limit(1000),
+  ]);
   if (error) {
     tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
     toast(error.message, "error");
@@ -774,6 +777,11 @@ async function loadOrders() {
     <td><div class="row" style="flex-wrap:nowrap;justify-content:center"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-danger" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
   renderPager($("#oPager"), oState, loadOrders);
   updateBulkUI();
+  const tRows = (!tRes.error && tRes.data) || [];
+  const tQty = tRows.reduce((a, o) => a + (o.qty || 0), 0);
+  const tTotal = tRows.reduce((a, o) => a + (o.total || 0), 0);
+  const stEl = document.getElementById("oSubtotal");
+  if (stEl) stEl.innerHTML = `Sub Total — <b>${tQty} Qty</b> • <b>${fmt(tTotal)}</b>`;
 }
 $("#oReload").onclick = async () => {
   const b = $("#oReload"), t = b.innerHTML;
