@@ -59,6 +59,31 @@ async function probeImage(url) {
   } catch { return null; }
 }
 const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+// Mini formatter: bullets (•/-/*), numbering (1.), subjudul (diakhiri ":") -> HTML rapi.
+function renderRich(text) {
+  let html = "", list = null;
+  const close = () => { if (list) { html += `</${list}>`; list = null; } };
+  for (const raw of String(text || "").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) { close(); continue; }
+    let m = line.match(/^[•\-\*]\s+(.*)$/s);
+    if (m) {
+      if (list !== "ul") { close(); html += "<ul>"; list = "ul"; }
+      html += `<li>${esc(m[1])}</li>`;
+      continue;
+    }
+    m = line.match(/^(\d+)[.)]\s+(.*)$/s);
+    if (m) {
+      if (list !== "ol") { close(); html += "<ol>"; list = "ol"; }
+      html += `<li>${esc(m[2])}</li>`;
+      continue;
+    }
+    close();
+    html += /:$/.test(line) ? `<p><strong>${esc(line)}</strong></p>` : `<p>${esc(line)}</p>`;
+  }
+  close();
+  return html || "<p>-</p>";
+}
 const rupiah = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 
 const headers = { apikey: ANON_KEY, Authorization: "Bearer " + ANON_KEY };
@@ -120,7 +145,7 @@ for (const p of products) {
 <meta property="og:url" content="${pageUrl}">
 ${imgTags}
 <meta name="twitter:card" content="summary_large_image">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Quicksand',system-ui,sans-serif;background:#f1f8f4;color:#0e201b;line-height:1.5}.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}.back{display:inline-flex;align-items:center;gap:.45rem;margin:14px 0;background:#ffffff;border:1px solid #90c5ad;color:#255746;font-weight:700;text-decoration:none;padding:.6rem 1.2rem;border-radius:999px;box-shadow:0 2px 8px rgba(37,87,70,.12);font-size:.9rem}.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(37,87,70,.12)}.card img{width:100%;height:auto;max-height:420px;object-fit:cover;display:block;background:#ddeee4}.body{padding:20px}.body h1{font-size:1.4rem;margin-bottom:4px}.unit{font-weight:700;color:#255746;font-size:.9rem;margin-bottom:2px}.desc{color:#444;font-size:.92rem;white-space:pre-line;margin:8px 0 12px}.price{font-size:1.3rem;font-weight:700;color:#255746}.stock{font-size:.85rem;font-weight:700;margin:2px 0 14px}.ok{color:#255746}.out{color:#b3261e}.order{display:block;text-align:center;background:#255746;color:#fff;font-weight:700;padding:.85rem;border-radius:10px;text-decoration:none}</style>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Quicksand',system-ui,sans-serif;background:#f1f8f4;color:#0e201b;line-height:1.5}.wrap{max-width:560px;margin:0 auto;padding:16px 16px 48px}.back{display:inline-flex;align-items:center;gap:.45rem;margin:14px 0;background:#ffffff;border:1px solid #90c5ad;color:#255746;font-weight:700;text-decoration:none;padding:.6rem 1.2rem;border-radius:999px;box-shadow:0 2px 8px rgba(37,87,70,.12);font-size:.9rem}.card{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(37,87,70,.12)}.card img{width:100%;height:auto;max-height:420px;object-fit:cover;display:block;background:#ddeee4}.body{padding:20px}.body h1{font-size:1.4rem;margin-bottom:4px}.unit{font-weight:700;color:#255746;font-size:.9rem;margin-bottom:2px}.desc{color:#444;font-size:.92rem;margin:8px 0 12px}.desc p{margin:0 0 .4rem;text-align:justify}.desc ul,.desc ol{margin:0 0 .6rem 1.25rem;padding:0}.desc li{margin-bottom:.3rem;text-align:justify}.price{font-size:1.3rem;font-weight:700;color:#255746}.stock{font-size:.85rem;font-weight:700;margin:2px 0 14px}.ok{color:#255746}.out{color:#b3261e}.order{display:block;text-align:center;background:#255746;color:#fff;font-weight:700;padding:.85rem;border-radius:10px;text-decoration:none}</style>
 </head>
 <body>
 <main class="wrap">
@@ -132,7 +157,7 @@ ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : ""}
 ${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ""}
 <div class="price">${esc(rupiah(p.price))}</div>
 <div class="stock ${p.stock === 0 ? "out" : "ok"}">${esc(stockTxt)}</div>
-<div class="desc">${esc(fullDesc).replace(/\n/g, "<br>")}</div>
+<div class="desc">${renderRich(fullDesc)}</div>
 ${waUrl ? `<a class="order" href="${esc(waUrl)}" target="_blank" rel="noopener">Pesan via WhatsApp</a>` : ""}
 </div>
 </article>
