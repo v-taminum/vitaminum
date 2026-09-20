@@ -1038,9 +1038,9 @@
         renderProducts([]);
     </script>
     <!-- Konten toko dinamis dari Supabase (fallback ke statis bila koneksi tidak tersedia) -->
-    <script src="./assets/config.js?v=20260920"></script>
+    <script src="./assets/config.js?v=20260921"></script>
     <script type="module">
-      import { api, isConfigured, sb } from "./assets/supabaseClient.js?v=20260920";
+      import { api, isConfigured, sb } from "./assets/supabaseClient.js?v=20260921";
       if (isConfigured) {
         try {
           const s = await api.settings();

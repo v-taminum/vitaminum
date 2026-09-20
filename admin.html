@@ -292,9 +292,9 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
   </div>
 </main>
 
-<script src="./assets/config.js?v=20260920"></script>
+<script src="./assets/config.js?v=20260921"></script>
 <script type="module">
-import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260920";
+import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260921";
 await loadLocalConfig();
 if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
@@ -963,7 +963,7 @@ async function downloadNotaImage(o, s) {
     L.push({ f: FB(700), t: `Total: ${fmt(o.total)}`, big: true });
     if (o.catatan) L.push({ f: F(), t: "Catatan: " + o.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
     if (s.info_pembayaran) { L.push({ f: FB(), t: "Info:", dy: 40 }); L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" }); }
-    L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true });
+    L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true, dy: 44 });
     let y = P + 10;
     if (logo) y += 76; else y += 68;
     const boxFont = (r) => r.small ? "400 22px Quicksand, system-ui, sans-serif" : r.f;
@@ -972,7 +972,7 @@ async function downloadNotaImage(o, s) {
       if (r.wrap) {
         r._ln = wrap(r.t, W - P * 2 - (r.box ? 24 : 0), boxFont(r));
         const lh = r.small ? 28 : 32;
-        y += r._ln.length * lh + (r.box ? 28 : 0);
+        y += r._ln.length * lh + (r.box ? 32 : 0);
         return;
       }
       y += r.big ? 40 : (r.dy || 32);
@@ -1000,7 +1000,7 @@ async function downloadNotaImage(o, s) {
       ctx.fillStyle = r.c || "#0e201b";
       if (r.center) {
         ctx.font = r.f; ctx.textAlign = "center";
-        ctx.fillText(r.t, W / 2, yy); ctx.textAlign = "left"; yy += 32; return;
+        ctx.fillText(r.t, W / 2, yy); ctx.textAlign = "left"; yy += r.dy || 32; return;
       }
       if (r.big) { ctx.font = r.f; ctx.fillText(r.t, P, yy); yy += 40; return; }
       if (r.wrap) {
@@ -1009,13 +1009,13 @@ async function downloadNotaImage(o, s) {
         const lines = r._ln || wrap(r.t, W - P * 2, fnt);
         ctx.font = fnt;
         if (r.box) {
-          const bh = lines.length * lh + 28;
+          const bh = lines.length * lh + 32;
           ctx.fillStyle = r.box;
           ctx.fillRect(P, yy, W - P * 2, bh);
           if (r.border) { ctx.strokeStyle = r.border; ctx.lineWidth = 2; ctx.strokeRect(P, yy, W - P * 2, bh); }
           ctx.fillStyle = "#0e201b";
           lines.forEach((ln) => { ctx.fillText(ln, P + 12, yy + 14); yy += lh; });
-          yy += 14;
+          yy += 18;
           return;
         }
         lines.forEach((ln) => { ctx.fillText(ln, P, yy); yy += lh; });
