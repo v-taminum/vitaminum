@@ -61,6 +61,15 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill-ok{background:var(--primary-light);color:var(--primary-dark)}
 .pill-off{background:#fdecea;color:var(--danger)}
+.o-wa{display:block;font-size:.78rem;color:var(--text-muted)}
+.o-addr{display:block;font-size:.8rem;white-space:normal;line-height:1.45;min-width:180px;max-width:300px}
+select.st{border:0;border-radius:999px;padding:.45rem .8rem;font-weight:700;font-size:.8rem;cursor:pointer;min-height:0}
+select.st-baru{background:#e3ecf9;color:#1d4ed8}
+select.st-diproses{background:#fef0d9;color:#b45309}
+select.st-selesai{background:#dcf2e3;color:#166534}
+select.st-batal{background:#fde4e4;color:#b91c1c}
+input.o-check{width:20px;height:20px;min-height:0;padding:0;accent-color:var(--primary-dark);cursor:pointer;flex-shrink:0}
+input.o-note{min-width:140px;min-height:0;font-size:.82rem;padding:.45rem .6rem}
 .card h2{display:flex;align-items:center;gap:.5rem;font-size:1.1rem;margin-bottom:10px}.muted{color:var(--text-muted);font-size:.82rem}
 code{background:var(--primary-light);color:var(--primary-dark);padding:1px 7px;border-radius:6px;font-size:.75rem}
 tbody tr:nth-child(even){background:#f7fbf8}
@@ -252,8 +261,8 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
-      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><span class="muted">Pesanan terbaru dari form toko.</span></div>
-      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="oRows"></tbody></table></div>
+      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th>Status</th><th>Catatan (Admin)</th><th>Aksi</th></tr></thead><tbody id="oRows"></tbody></table></div>
     </section>
     </div>
   </div>
@@ -684,9 +693,13 @@ $("#pSave").onclick = async () => {
     ? await sb().from("products").update(payload).eq("id", editingProduct)
     : await sb().from("products").insert(payload);
   if (res.error) return toast(res.error.message, "error");
-  toast("Produk tersimpan"); $("#pReset").click(); loadProducts();
+  toast("Produk tersimpan"); resetProductForm(true); loadProducts();
 };
-$("#pReset").onclick = () => { editingProduct = null; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); $("#pStockLabel").value = ""; };
+function resetProductForm(silent) {
+  editingProduct = null; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); $("#pStockLabel").value = "";
+  if (!silent) toast("Form dikosongkan", "success");
+}
+$("#pReset").onclick = () => resetProductForm(false);
 document.querySelectorAll(".editor-toolbar button").forEach((b) => {
   b.addEventListener("mousedown", (e) => e.preventDefault());
   b.onclick = () => { $("#pDesc").focus(); document.execCommand(b.dataset.cmd, false, null); };
@@ -703,20 +716,65 @@ $("#pRows").onclick = async (e) => {
 };
 
 async function loadOrders() {
-  const { data, error } = await sb().from("orders").select("*").order("id", { ascending: false }).limit(100);
-  if (error) return toast(error.message, "error");
+  const tb = $("#oRows");
+  tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
+  const { data, error } = await sb().from("orders").select("*").order("id", { ascending: false }).limit(200);
+  if (error) {
+    tb.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
+    toast(error.message, "error");
+    return;
+  }
   const fmtDt = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
   const escO = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  $("#oRows").innerHTML = (data || []).map((o) => `<tr>
-    <td><b>#${o.id}</b></td>
-    <td style="white-space:nowrap">${fmtDt(o.created_at)}</td>
-    <td class="cell-main"><b>${escO(o.customer_name)}</b><span class="cell-desc">${escO(o.customer_wa)}<br>${escO(o.customer_address)}</span></td>
+  const escA = (t) => escO(t).replace(/"/g, "&quot;");
+  tb.innerHTML = (data || []).map((o) => `<tr>
+    <td style="white-space:nowrap">#${o.id}<br><span class="muted">${fmtDt(o.created_at)}</span></td>
+    <td class="cell-main"><b>${escO(o.customer_name)}</b><span class="o-wa">${escO(o.customer_wa)}</span><span class="o-addr">${escO(o.customer_address) || "-"}</span></td>
     <td class="cell-main"><b>${escO(o.product_name)}</b><span class="cell-desc">x${o.qty} • ${fmt(o.price)}</span></td>
     <td><b>${fmt(o.total)}</b></td>
-    <td><select data-st="${o.id}" aria-label="Status pesanan ${o.id}">${["baru", "diproses", "selesai", "batal"].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td>
-    <td><button class="btn btn-danger" data-del="${o.id}">Hapus</button></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
+    <td><select class="st st-${o.status}" data-st="${o.id}" aria-label="Status pesanan ${o.id}">${["baru", "diproses", "selesai", "batal"].map((s) => `<option value="${s}"${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td>
+    <td><input class="o-note" data-note="${o.id}" value="${escA(o.catatan || "")}" placeholder="Catatan..." aria-label="Catatan pesanan ${o.id}"></td>
+    <td><div class="row" style="flex-wrap:nowrap;justify-content:center"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-danger" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="7" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
+  updateBulkUI();
 }
-$("#oReload").onclick = loadOrders;
+$("#oReload").onclick = async () => {
+  const b = $("#oReload"), t = b.innerHTML;
+  b.disabled = true; b.innerHTML = "Memuat...";
+  try {
+    await loadOrders();
+    toast("Pesanan dimuat ulang", "success");
+  } finally { b.disabled = false; b.innerHTML = t; }
+};
+function selectedOrderIds() { return [...document.querySelectorAll(".o-check:checked")].map((c) => c.value); }
+function updateBulkUI() {
+  const n = selectedOrderIds().length, b = $("#oBulkDel");
+  if (!b) return;
+  b.disabled = !n;
+  b.textContent = n ? `Hapus Terpilih (${n})` : "Hapus Terpilih";
+}
+$("#oBulkDel").onclick = async () => {
+  const ids = selectedOrderIds();
+  if (!ids.length) return;
+  if (!(await askDelete(`Hapus ${ids.length} pesanan?`, "Data terpilih dihapus permanen. Cocok untuk bersih-bersih tiap bulan."))) return;
+  const { error } = await sb().from("orders").delete().in("id", ids);
+  toast(error ? error.message : `${ids.length} pesanan dihapus`, error ? "error" : "success");
+  loadOrders();
+};
+$("#oExport").onclick = async () => {
+  const { data, error } = await sb().from("orders").select("*").order("id", { ascending: false }).limit(1000);
+  if (error) return toast(error.message, "error");
+  if (!data?.length) return toast("Belum ada pesanan untuk diekspor", "error");
+  const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = [["ID", "Waktu", "Nama", "No HP", "Alamat", "Produk", "Harga", "Qty", "Total", "Status", "Catatan"]];
+  data.forEach((o) => rows.push([o.id, new Date(o.created_at).toLocaleString("id-ID"), o.customer_name, o.customer_wa, o.customer_address, o.product_name, o.price, o.qty, o.total, o.status, o.catatan || ""].map(q).join(";")));
+  const blob = new Blob(["﻿" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `pesanan-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast(`${data.length} pesanan diekspor (CSV, buka dengan Excel)`, "success");
+};
 $("#oRows").onchange = async (e) => {
   const id = e.target.dataset?.st; if (!id) return;
   const { error } = await sb().from("orders").update({ status: e.target.value }).eq("id", id);
@@ -730,6 +788,15 @@ $("#oRows").onclick = async (e) => {
     toast(error ? error.message : "Dihapus", error ? "error" : "success"); loadOrders();
   }
 };
+$("#oRows").addEventListener("change", (e) => {
+  if (e.target.classList?.contains("o-check")) updateBulkUI();
+});
+$("#oRows").addEventListener("change", async (e) => {
+  const inp = e.target.closest?.("input.o-note");
+  if (!inp) return;
+  const { error } = await sb().from("orders").update({ catatan: inp.value }).eq("id", inp.dataset.note);
+  toast(error ? error.message : "Catatan tersimpan", error ? "error" : "success");
+});
 
 if (isConfigured && !configError) {
   applyIdentity();

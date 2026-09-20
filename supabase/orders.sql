@@ -16,6 +16,7 @@ create table if not exists public.orders (
   qty int not null default 1 check (qty >= 1),
   total int not null default 0 check (total >= 0),
   status text not null default 'baru' check (status in ('baru','diproses','selesai','batal')),
+  catatan text not null default '',
   created_at timestamptz default now()
 );
 create index if not exists orders_created_idx on public.orders(created_at desc);
