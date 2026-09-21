@@ -469,7 +469,7 @@ const SETTINGS_META = {
   alamat: { label: "Alamat", desc: "Alamat toko di tengah footer, tampil tebal", kind: "textarea", group: "toko" },
   footer_description: { label: "Deskripsi Footer", desc: "Teks di bawah logo pada kartu Deskripsi Footer", kind: "textarea", group: "toko" },
   pesan_pengiriman: { label: "Pesan Pengiriman", desc: "Pesan sorotan di bawah jam operasional pada footer toko.", kind: "textarea", group: "toko" },
-  info_pembayaran: { label: "Info Pembayaran", desc: "Teks peringatan pembayaran di form pemesanan", kind: "textarea", group: "toko" },
+  info_pembayaran: { label: "Info Pembayaran", desc: "Teks peringatan pembayaran di form pemesanan (bisa bold, bullet, numbering)", kind: "rich", group: "toko" },
   hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
   hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
 };
@@ -599,6 +599,13 @@ async function loadSettings() {
         sel.value = raw;
         lab.append(sel);
         window._setInputs.push({ key: k, inp: sel });
+      } else       if (kind === "rich") {
+        const bar = document.createElement("div"); bar.className = "editor-toolbar"; bar.setAttribute("role", "toolbar");
+        bar.innerHTML = `<button type="button" data-cmd="bold" title="Tebal"><i class="fa-solid fa-bold"></i></button><button type="button" data-cmd="italic" title="Miring"><i class="fa-solid fa-italic"></i></button><button type="button" data-cmd="insertUnorderedList" title="Bullet"><i class="fa-solid fa-list-ul"></i></button><button type="button" data-cmd="insertOrderedList" title="Numbering"><i class="fa-solid fa-list-ol"></i></button><button type="button" data-cmd="removeFormat" title="Normalkan"><i class="fa-solid fa-text-slash"></i></button>`;
+        const ed = document.createElement("div"); ed.className = "editor"; ed.contentEditable = "true";
+        ed.innerHTML = /<\/?[a-z][\s\S]*>/i.test(raw) ? raw : raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
+        lab.append(bar, ed);
+        window._setInputs.push({ key: k, inp: { getValue: () => ed.innerText.trim() ? ed.innerHTML.trim() : "" } });
       } else if (kind === "image") {
         const prev = document.createElement("img"); prev.className = "set-logo-prev";
         prev.onerror = () => { prev.style.display = "none"; };
@@ -775,9 +782,15 @@ function resetProductForm(silent) {
   if (!silent) toast("Form dikosongkan", "success");
 }
 $("#pReset").onclick = () => resetProductForm(false);
-document.querySelectorAll(".editor-toolbar button").forEach((b) => {
-  b.addEventListener("mousedown", (e) => e.preventDefault());
-  b.onclick = () => { $("#pDesc").focus(); document.execCommand(b.dataset.cmd, false, null); };
+document.addEventListener("mousedown", (e) => {
+  if (e.target.closest?.(".editor-toolbar button")) e.preventDefault();
+});
+document.addEventListener("click", (e) => {
+  const b = e.target.closest?.(".editor-toolbar button");
+  if (!b) return;
+  const bar = b.closest(".editor-toolbar");
+  const ed = bar && bar.nextElementSibling?.isContentEditable ? bar.nextElementSibling : document.getElementById("pDesc");
+  if (ed) { ed.focus(); document.execCommand(b.dataset.cmd, false, null); }
 });
 $("#pRows").onclick = async (e) => {
   const del = e.target.dataset?.del, ed = e.target.dataset?.edit;
@@ -937,7 +950,7 @@ function notaHtml(g, s) {
     <div class="nota-total"><span>Total (${g.qty} item)</span><span>${fmt(g.total)}</span></div>
     <div class="nota-status"><span>Status:</span><select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === g.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
     ${notes.length ? `<div class="nota-box nota-cat"><b>Catatan:</b><br>${escN(notes.join(" | "))}</div>` : ""}
-    ${s.info_pembayaran ? `<div class="nota-pay"><b>Info:</b><br>${escN(s.info_pembayaran)}</div>` : ""}
+    ${s.info_pembayaran ? `<div class="nota-pay"><b>Info:</b><br>${/<\/?[a-z][\s\S]*>/i.test(String(s.info_pembayaran)) ? String(s.info_pembayaran).replace(/<script[\s\S]*?<\/script>/gi, "") : escN(s.info_pembayaran)}</div>` : ""}
     <div class="nota-thanks">Terima kasih sudah memesan!</div>
   </div>`;
 }
