@@ -29,6 +29,23 @@ if (!SITE_URL || /localhost|127\.0\.0\.1/.test(SITE_URL)) {
 }
 
 const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
+// Versi konten deterministik: setiap perubahan data produk = URL share baru,
+// sehingga cache preview WhatsApp selalu segar. WAJIB identik dengan loader index.html.
+const cyrb53 = (str, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+};
+const contentVer = (p) => cyrb53(JSON.stringify([
+  p.name || "", Number(p.price) || 0, p.description || "",
+  p.image_url || "", p.stock == null ? "" : p.stock, p.unit || "",
+]));
 // Dimensi gambar untuk og:image:width/height (WA HP butuh ini agar preview konsisten).
 // Murni stdlib: baca header PNG/JPEG saja.
 function probeDims(buf) {
@@ -123,12 +140,12 @@ for (const p of products) {
       (dim ? `\n<meta property="og:image:type" content="${dim.type}">\n<meta property="og:image:width" content="${dim.w}">\n<meta property="og:image:height" content="${dim.h}">` : "")
     : "";
   const waDigits = String(S.wa_number || "").replace(/\D/g, "");
-  const imgv = ((img.match(/p_(\d+)_/) || [])[1]) || p.id;
+  const ver = contentVer(p);
   const msgLines = [`Halo ${brand}, saya ingin memesan *${p.name}*`, rupiah(p.price)];
   if (p.stock_label) msgLines.push(p.stock_label);
   else if (p.stock === 0) msgLines.push("Stok: Habis");
   else if (p.stock != null) msgLines.push(`Stok: ${p.stock}`);
-  msgLines.push(`${pageUrl}?v=${imgv}`);
+  msgLines.push(`${pageUrl}?v=${ver}`);
   const waUrl = waDigits ? `https://wa.me/${waDigits}?text=${encodeURIComponent(msgLines.join("\n"))}` : "";
   const fullDesc = String(p.description || "").trim();
   const html = `<!DOCTYPE html>
@@ -193,7 +210,7 @@ ${waUrl ? `<div class="btn-row"><button class="order alt" id="cartAddBtn" type="
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ENV = window.VITAMINUM_ENV || {};
-const P = ${JSON.stringify({ id: p.id, name: p.name, price: p.price, stock: p.stock, stockLabel: p.stock_label || "", unit: p.unit || "", page: `${pageUrl}?v=${imgv}` }).replace(/</g, "\\u003c")};
+const P = ${JSON.stringify({ id: p.id, name: p.name, price: p.price, stock: p.stock, stockLabel: p.stock_label || "", unit: p.unit || "", page: `${pageUrl}?v=${ver}` }).replace(/</g, "\\u003c")};
 const BRAND = ${JSON.stringify(brand).replace(/</g, "\\u003c")};
 const WANUM = ${JSON.stringify(waDigits).replace(/</g, "\\u003c")};
 const rupiah = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);

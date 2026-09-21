@@ -1102,11 +1102,29 @@
           const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
           const siteUrl = (window.VITAMINUM_ENV.SITE_URL || location.origin).replace(/\/+$/, "");
           const rupiah = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+          // cyrb53 + contentVer WAJIB identik dengan tools/gen-share-pages.mjs
+          const cyrb53 = (str, seed = 0) => {
+            let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+            for (let i = 0, ch; i < str.length; i++) {
+              ch = str.charCodeAt(i);
+              h1 = Math.imul(h1 ^ ch, 2654435761);
+              h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+          };
+          const contentVer = (p) => cyrb53(JSON.stringify([
+            p.name || "", Number(p.price) || 0, p.description || "",
+            p.image_url || "", p.stock == null ? "" : p.stock, p.unit || "",
+          ]));
+          const byId = new Map((dbProducts || []).map((p) => [String(p.id), p]));
           document.querySelectorAll(".product-order").forEach((el) => {
             const name = decodeURIComponent(el.dataset.product || "");
             const pid = el.dataset.id || "";
-            const imgv = ((el.dataset.img || "").match(/p_(\d+)_/) || [])[1] || pid;
-            const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/?v=${imgv}` : "";
+            const full = byId.get(String(pid));
+            const ver = full ? contentVer(full) : pid;
+            const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/?v=${ver}` : "";
             el.dataset.page = page;
             const card = el.closest(".product-card");
             const pl = card && card.querySelector(".product-link");
