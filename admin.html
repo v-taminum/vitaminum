@@ -916,14 +916,13 @@ function notaText(g, s) {
     `Tanggal: ${fmtDtFull(g.created)}`,
     `Nama: ${g.name}`,
     ``,
-    ...g.items.map((r) => `${r.product_name}\n${r.qty} x ${fmt(r.price)} = ${fmt(r.total)}`),
+    ...g.items.flatMap((r) => [`${r.product_name}`, `${r.qty} x ${fmt(r.price)} = ${fmt(r.total)}`, `---------------------------`]),
     ``,
     `Total: ${fmt(g.total)}`,
     `Status: ${g.status}`,
   ];
   const notes = g.items.map((r) => r.catatan).filter(Boolean);
   if (notes.length) L.push("", `Catatan: ${notes.join(" | ")}`);
-  if (s.info_pembayaran) L.push("", "Info:", String(s.info_pembayaran));
   L.push("", "Terima kasih!");
   return L.join("\n");
 }
@@ -1027,12 +1026,12 @@ async function downloadNotaImage(g, s) {
     g.items.forEach((r) => {
       L.push({ f: FB(), t: r.product_name, wrap: true });
       L.push({ f: F(), t: `${r.qty} x ${fmt(r.price)} = ${fmt(r.total)}` });
+      L.push({ rule: true });
     });
     L.push({ f: FB(700), t: `Total (${g.qty} item): ${fmt(g.total)}`, big: true });
     g.items.filter((r) => r.catatan).forEach((r) => {
       L.push({ f: F(), t: "Catatan: " + r.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
     });
-    if (s.info_pembayaran) { L.push({ f: FB(), t: "Info:", dy: 40 }); L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" }); }
     L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true, dy: 44 });
     let y = P + 10;
     if (logo) y += 76; else y += 68;
