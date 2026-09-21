@@ -130,38 +130,8 @@ create policy "admin write images" on storage.objects for all
   using (bucket_id = 'product-images' and public.is_admin())
   with check (bucket_id = 'product-images' and public.is_admin());
 
--- ============ RPC CHECKOUT (aman: cek stok + insert atomik) ============
-create or replace function public.checkout(p_items jsonb, p_name text default '', p_wa text default '', p_payment text default 'COD')
-returns bigint language plpgsql security definer set search_path = public as $$
-declare
-  v_total int := 0;
-  v_item jsonb;
-  v_pid bigint; v_qty int; v_price int; v_stock int;
-  v_order_id bigint;
-begin
-  if jsonb_array_length(coalesce(p_items,'[]'::jsonb)) = 0 then
-    raise exception 'Keranjang kosong';
-  end if;
-  for v_item in select * from jsonb_array_elements(p_items) loop
-    v_pid := (v_item->>'product_id')::bigint;
-    v_qty := coalesce((v_item->>'qty')::int, 0);
-    if v_qty <= 0 then raise exception 'Qty tidak valid'; end if;
-    select price, stock into v_price, v_stock from public.products where id = v_pid and is_active = true;
-    if not found then raise exception 'Produk % tidak tersedia', v_pid; end if;
-    if v_stock < v_qty then raise exception 'Stok kurang untuk produk %', v_pid; end if;
-    v_total := v_total + v_price * v_qty;
-  end loop;
-  -- kurangi stok
-  for v_item in select * from jsonb_array_elements(p_items) loop
-    v_pid := (v_item->>'product_id')::bigint;
-    v_qty := (v_item->>'qty')::int;
-    update public.products set stock = stock - v_qty where id = v_pid;
-  end loop;
-  insert into public.orders (user_id, customer_name, customer_wa, items, total, payment_method)
-  values (auth.uid(), p_name, p_wa, p_items, v_total, p_payment)
-  returning id into v_order_id;
-  return v_order_id;
-end $$;
+-- ============ RPC CHECKOUT DIHAPUS (tidak dipakai aplikasi) ============
+-- drop function if exists public.checkout(jsonb, text, text, text);
 
 -- ============ SEED ============
 insert into public.categories (name, slug) values
