@@ -1304,13 +1304,14 @@
             const btn = document.getElementById("orderSubmit");
             btn.disabled = true;
             document.getElementById("orderSubmitLabel").textContent = "Mengirim...";
+            const gid = "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
             try {
               if (orderCtx.items) {
                 if (!orderCtx.items.length) throw new Error("keranjang kosong");
                 const results = await Promise.allSettled(orderCtx.items.map((l) => sb().from("orders").insert({
                   customer_name: nama, customer_wa: hp, customer_address: alamat,
                   product_id: l.id, product_name: l.name,
-                  price: l.price, qty: l.qty, total: l.price * l.qty,
+                  price: l.price, qty: l.qty, total: l.price * l.qty, order_group: gid,
                 })));
                 const failed = results.filter((r) => r.status === "rejected").length;
                 if (failed === orderCtx.items.length) throw new Error(results[0].reason?.message || "gagal menyimpan");
@@ -1324,7 +1325,7 @@
                 const { error } = await sb().from("orders").insert({
                   customer_name: nama, customer_wa: hp, customer_address: alamat,
                   product_id: orderCtx.id, product_name: orderCtx.name,
-                  price: orderCtx.price, qty: q, total,
+                  price: orderCtx.price, qty: q, total, order_group: gid,
                 });
                 if (error) throw error;
                 orderWaUrl = buildOrderWaUrl();

@@ -300,18 +300,19 @@ $("ogo").onclick = async () => {
   if (hp.length < 9 || hp.length > 16) return fail("No HP tidak valid (9–16 digit angka).");
   if (alamat.length < 10) return fail("Alamat kurang lengkap (min. 10 karakter).");
   const go = $("ogo"); go.disabled = true; $("ogoLabel").textContent = "Mengirim...";
+  const gid = "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   try {
     if (!db) throw new Error("koneksi database tidak tersedia");
     if (orderItems) {
       if (!orderItems.length) throw new Error("keranjang kosong");
-      const results = await Promise.allSettled(orderItems.map((l) => db.from("orders").insert({ customer_name: nama, customer_wa: hp, customer_address: alamat, product_id: l.id, product_name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty })));
+      const results = await Promise.allSettled(orderItems.map((l) => db.from("orders").insert({ customer_name: nama, customer_wa: hp, customer_address: alamat, product_id: l.id, product_name: l.name, price: l.price, qty: l.qty, total: l.price * l.qty, order_group: gid })));
       const failed = results.filter((r) => r.status === "rejected").length;
       if (failed === orderItems.length) throw new Error(results[0].reason?.message || "gagal menyimpan");
       window.open(buildWa(), "_blank");
       cart = []; saveCart(cart); syncBadge(); renderCart();
       close();
     } else {
-    const { error } = await db.from("orders").insert({ customer_name: nama, customer_wa: hp, customer_address: alamat, product_id: P.id, product_name: P.name, price: P.price, qty: q, total: P.price * q });
+    const { error } = await db.from("orders").insert({ customer_name: nama, customer_wa: hp, customer_address: alamat, product_id: P.id, product_name: P.name, price: P.price, qty: q, total: P.price * q, order_group: gid });
     if (error) throw error;
     window.open(buildWa(), "_blank");
     close();

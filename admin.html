@@ -92,6 +92,9 @@ select.st-selesai{background:#dcf2e3;color:#166534}
 select.st-batal{background:#fde4e4;color:#b91c1c}
 input.o-check{width:20px;height:20px;min-height:0;padding:0;accent-color:var(--primary-dark);cursor:pointer;flex-shrink:0}
 input.o-note{min-width:140px;min-height:0;font-size:.82rem;padding:.45rem .6rem}
+.o-item{margin-bottom:.45rem}
+.o-item:last-child{margin-bottom:0}
+.o-item .o-note{margin-top:.25rem}
 .card h2{display:flex;align-items:center;gap:.5rem;font-size:1.1rem;margin-bottom:10px}.muted{color:var(--text-muted);font-size:.82rem}
 code{background:var(--primary-light);color:var(--primary-dark);padding:1px 7px;border-radius:6px;font-size:.75rem}
 tbody tr:nth-child(even){background:#f7fbf8}
@@ -292,7 +295,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
       <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
-      <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th>Catatan (Admin)</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
       <div class="pager" id="oPager"></div>
     </section>
     </div>
@@ -787,34 +790,62 @@ $("#pRows").onclick = async (e) => {
   }
 };
 
+function groupOrders(rows) {
+  const map = new Map();
+  (rows || []).forEach((o) => {
+    const gid = o.order_group || ("g-" + o.id);
+    if (!map.has(gid)) map.set(gid, []);
+    map.get(gid).push(o);
+  });
+  return [...map.entries()].map(([gid, items]) => {
+    items.sort((a, b) => a.id - b.id);
+    const stSet = [...new Set(items.map((r) => r.status))];
+    return {
+      gid, items,
+      maxId: Math.max(...items.map((r) => r.id)),
+      total: items.reduce((a, r) => a + (r.total || 0), 0),
+      qty: items.reduce((a, r) => a + (r.qty || 0), 0),
+      created: items.map((r) => r.created_at).sort().pop(),
+      name: items[0].customer_name, wa: items[0].customer_wa, address: items[0].customer_address,
+      status: stSet.length === 1 ? stSet[0] : items[0].status,
+      mixed: stSet.length > 1,
+    };
+  }).sort((a, b) => b.maxId - a.maxId);
+}
+function groupRowIds(gid) {
+  const g = (window._orderGroups || []).find((x) => x.gid === gid);
+  return g ? g.items.map((r) => r.id) : [];
+}
 async function loadOrders() {
   const tb = $("#oRows");
-  tb.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
-  const from = (oState.page - 1) * oState.size;
-  const [{ data, error, count }, tRes] = await Promise.all([
-    sb().from("orders").select("*", { count: "exact" }).order("id", { ascending: false }).range(from, from + oState.size - 1),
+  tb.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
+  const [{ data, error }, tRes] = await Promise.all([
+    sb().from("orders").select("*").order("id", { ascending: false }).limit(500),
     sb().from("orders").select("qty,total").limit(1000),
   ]);
   if (error) {
-    tb.innerHTML = '<tr><td colspan="6" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
     toast(error.message, "error");
     return;
   }
-  oState.total = count ?? (data || []).length;
-  if (!(data || []).length && oState.page > 1) { oState.page--; return loadOrders(); }
+  const groups = groupOrders(data);
+  window._orderGroups = groups;
+  window._ordersCache = data || [];
+  oState.total = groups.length;
+  const pages = Math.max(1, Math.ceil(groups.length / oState.size));
+  if (oState.page > pages) oState.page = pages;
+  const slice = groups.slice((oState.page - 1) * oState.size, oState.page * oState.size);
   const fmtDt = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
   const escO = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const escA = (t) => escO(t).replace(/"/g, "&quot;");
-  tb.innerHTML = (data || []).map((o) => `<tr>
-    <td style="white-space:nowrap">${fmtDt(o.created_at)}</td>
-    <td class="cell-main"><b>${escO(o.customer_name)}</b><span class="o-wa">${escO(o.customer_wa)}</span><span class="o-addr">${escO(o.customer_address) || "-"}</span></td>
-    <td class="cell-main"><b>${escO(o.product_name)}</b><span class="cell-desc">x${o.qty} • ${fmt(o.price)}</span></td>
-    <td><b>${fmt(o.total)}</b></td>
-    <td><input class="o-note" data-note="${o.id}" value="${escA(o.catatan || "")}" placeholder="Catatan..." aria-label="Catatan pesanan ${o.id}"></td>
-    <td><div class="row o-act"><input type="checkbox" class="o-check" value="${o.id}" aria-label="Pilih pesanan ${o.id}"><button class="btn btn-outline btn-xs" data-nota="${o.id}">Nota</button><button class="btn btn-danger btn-xs" data-del="${o.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="6" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
+  tb.innerHTML = slice.map((g) => `<tr>
+    <td style="white-space:nowrap">${fmtDt(g.created)}</td>
+    <td class="cell-main"><b>${escO(g.name)}</b><span class="o-wa">${escO(g.wa)}</span><span class="o-addr">${escO(g.address) || "-"}</span></td>
+    <td class="cell-main">${g.items.map((r) => `<div class="o-item"><b>${escO(r.product_name)}</b> <span class="muted">x${r.qty} • ${fmt(r.price)} = ${fmt(r.total)}</span><input class="o-note" data-note="${r.id}" value="${escA(r.catatan || "")}" placeholder="Catatan item..."></div>`).join("")}</td>
+    <td><b>${fmt(g.total)}</b><br><span class="muted">${g.qty} item</span></td>
+    <td><div class="row o-act"><input type="checkbox" class="o-check" value="${escA(g.gid)}" aria-label="Pilih transaksi"><button class="btn btn-outline btn-xs" data-nota="${escA(g.gid)}">Nota</button><button class="btn btn-danger btn-xs" data-gdel="${escA(g.gid)}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
   renderPager($("#oPager"), oState, loadOrders);
   updateBulkUI();
-  window._ordersCache = data || [];
   const tRows = (!tRes.error && tRes.data) || [];
   const tQty = tRows.reduce((a, o) => a + (o.qty || 0), 0);
   const tTotal = tRows.reduce((a, o) => a + (o.total || 0), 0);
@@ -829,9 +860,9 @@ $("#oReload").onclick = async () => {
     toast("Pesanan dimuat ulang", "success");
   } finally { b.disabled = false; b.innerHTML = t; }
 };
-function selectedOrderIds() { return [...document.querySelectorAll(".o-check:not(#oCheckAll):checked")].map((c) => c.value); }
+function selectedGroupIds() { return [...document.querySelectorAll(".o-check:not(#oCheckAll):checked")].map((c) => c.value); }
 function updateBulkUI() {
-  const n = selectedOrderIds().length, b = $("#oBulkDel");
+  const n = selectedGroupIds().length, b = $("#oBulkDel");
   if (b) {
     b.disabled = !n;
     b.textContent = n ? `Hapus Terpilih (${n})` : "Hapus Terpilih";
@@ -845,11 +876,13 @@ document.getElementById("oCheckAll").addEventListener("change", (e) => {
   updateBulkUI();
 });
 $("#oBulkDel").onclick = async () => {
-  const ids = selectedOrderIds();
+  const gids = selectedGroupIds();
+  if (!gids.length) return;
+  const ids = gids.flatMap(groupRowIds);
   if (!ids.length) return;
-  if (!(await askDelete(`Hapus ${ids.length} pesanan?`, "Data terpilih dihapus permanen. Cocok untuk bersih-bersih tiap bulan."))) return;
+  if (!(await askDelete(`Hapus ${gids.length} transaksi (${ids.length} baris)?`, "Data terpilih dihapus permanen. Cocok untuk bersih-bersih tiap bulan."))) return;
   const { error } = await sb().from("orders").delete().in("id", ids);
-  toast(error ? error.message : `${ids.length} pesanan dihapus`, error ? "error" : "success");
+  toast(error ? error.message : `${gids.length} transaksi dihapus`, error ? "error" : "success");
   loadOrders();
 };
 $("#oExport").onclick = async () => {
@@ -857,8 +890,8 @@ $("#oExport").onclick = async () => {
   if (error) return toast(error.message, "error");
   if (!data?.length) return toast("Belum ada pesanan untuk diekspor", "error");
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = [["ID", "Waktu", "Nama", "No HP", "Alamat", "Produk", "Harga", "Qty", "Total", "Status", "Catatan"]];
-  data.forEach((o) => rows.push([o.id, new Date(o.created_at).toLocaleString("id-ID"), o.customer_name, o.customer_wa, o.customer_address, o.product_name, o.price, o.qty, o.total, o.status, o.catatan || ""].map(q).join(";")));
+  const rows = [["Grup", "ID", "Waktu", "Nama", "No HP", "Alamat", "Produk", "Harga", "Qty", "Total", "Status", "Catatan"]];
+  data.forEach((o) => rows.push([o.order_group || ("g-" + o.id), o.id, new Date(o.created_at).toLocaleString("id-ID"), o.customer_name, o.customer_wa, o.customer_address, o.product_name, o.price, o.qty, o.total, o.status, o.catatan || ""].map(q).join(";")));
   const blob = new Blob(["﻿" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -877,47 +910,50 @@ async function notaSettings() {
 }
 const normWa = (d) => { const x = String(d || "").replace(/\D/g, ""); return x.startsWith("0") ? "62" + x.slice(1) : x; };
 const fmtDtFull = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
-function notaText(o, s) {
+function notaText(g, s) {
   const L = [
-    `*NOTA #${o.id} - ${s.app_name || "Vitaminum"}*`,
-    `Tanggal: ${fmtDtFull(o.created_at)}`,
-    `Nama: ${o.customer_name}`,
+    `*NOTA #${g.maxId} - ${s.app_name || "Vitaminum"}*`,
+    `Tanggal: ${fmtDtFull(g.created)}`,
+    `Nama: ${g.name}`,
     ``,
-    `${o.product_name} x${o.qty} = ${fmt(o.total)}`,
+    ...g.items.map((r) => `${r.product_name} x${r.qty} = ${fmt(r.total)}`),
     ``,
-    `Total: ${fmt(o.total)}`,
-    `Status: ${o.status}`,
+    `Total: ${fmt(g.total)}`,
+    `Status: ${g.status}`,
   ];
-  if (o.catatan) L.push("", `Catatan: ${o.catatan}`);
+  const notes = g.items.map((r) => r.catatan).filter(Boolean);
+  if (notes.length) L.push("", `Catatan: ${notes.join(" | ")}`);
   if (s.info_pembayaran) L.push("", "Info:", String(s.info_pembayaran));
   L.push("", "Terima kasih!");
   return L.join("\n");
 }
-function notaHtml(o, s) {
+function notaHtml(g, s) {
   const escN = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const notes = g.items.map((r) => r.catatan).filter(Boolean);
   return `<div class="nota">
     <div class="nota-head">${s.app_logo ? `<img src="${s.app_logo}" alt="logo">` : ""}<div><b>${escN(s.app_name || "Vitaminum")}</b><span>Nota Pemesanan</span></div></div>
-    <div class="nota-meta">No: #${o.id} • ${fmtDtFull(o.created_at)} • ${escN(o.status)}</div>
-    <div class="nota-box"><b>${escN(o.customer_name)}</b><br>${escN(o.customer_wa)}<br>${escN(o.customer_address)}</div>
-    <div class="nota-box"><b>${escN(o.product_name)}</b> x${o.qty}<br>Harga: ${fmt(o.price)}</div>
-    <div class="nota-total"><span>Total</span><span>${fmt(o.total)}</span></div>
-    <div class="nota-status"><span>Status:</span><select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === o.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
-    ${o.catatan ? `<div class="nota-box nota-cat"><b>Catatan:</b><br>${escN(o.catatan)}</div>` : ""}
+    <div class="nota-meta">No: #${g.maxId} • ${fmtDtFull(g.created)} • ${escN(g.status)}${g.mixed ? " (campuran)" : ""}</div>
+    <div class="nota-box"><b>${escN(g.name)}</b><br>${escN(g.wa)}<br>${escN(g.address)}</div>
+    ${g.items.map((r) => `<div class="nota-box"><b>${escN(r.product_name)}</b> x${r.qty}<br>Harga: ${fmt(r.price)}${r.catatan ? `<br><span class="muted">Catatan: ${escN(r.catatan)}</span>` : ""}</div>`).join("")}
+    <div class="nota-total"><span>Total (${g.qty} item)</span><span>${fmt(g.total)}</span></div>
+    <div class="nota-status"><span>Status:</span><select id="notaStatus">${["baru", "diproses", "selesai", "lunas", "batal"].map((st) => `<option value="${st}"${st === g.status ? " selected" : ""}>${st}</option>`).join("")}</select></div>
+    ${notes.length ? `<div class="nota-box nota-cat"><b>Catatan:</b><br>${escN(notes.join(" | "))}</div>` : ""}
     ${s.info_pembayaran ? `<div class="nota-pay"><b>Info:</b><br>${escN(s.info_pembayaran)}</div>` : ""}
     <div class="nota-thanks">Terima kasih sudah memesan!</div>
   </div>`;
 }
 let notaOrder = null, notaShop = {};
-async function openNota(id) {
-  const o = (window._ordersCache || []).find((x) => String(x.id) === String(id));
-  if (!o) return toast("Data pesanan tidak ditemukan", "error");
+async function openNota(gid) {
+  const g = (window._orderGroups || []).find((x) => x.gid === gid);
+  if (!g) return toast("Data pesanan tidak ditemukan", "error");
   const s = await notaSettings().catch(() => ({}));
-  notaOrder = { o, s };
-  document.getElementById("notaBody").innerHTML = notaHtml(o, s);
+  notaOrder = { g, s };
+  document.getElementById("notaBody").innerHTML = notaHtml(g, s);
   const sel = document.getElementById("notaStatus");
   if (sel) sel.onchange = async () => {
-    const { error } = await sb().from("orders").update({ status: sel.value }).eq("id", o.id);
-    if (!error) { o.status = sel.value; loadOrders(); }
+    const ids = g.items.map((r) => r.id);
+    const { error } = await sb().from("orders").update({ status: sel.value }).in("id", ids);
+    if (!error) { g.items.forEach((r) => (r.status = sel.value)); g.status = sel.value; g.mixed = false; loadOrders(); }
     toast(error ? error.message : "Status: " + sel.value, error ? "error" : "success");
   };
   document.getElementById("notaOverlay").hidden = false;
@@ -936,16 +972,16 @@ document.addEventListener("keydown", (e) => {
 });
 document.getElementById("notaSend").onclick = () => {
   if (!notaOrder) return;
-  const { o, s } = notaOrder;
-  const wa = normWa(o.customer_wa);
+  const { g, s } = notaOrder;
+  const wa = normWa(g.wa);
   if (!wa) return toast("No HP pembeli tidak valid", "error");
-  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(notaText(o, s))}`, "_blank");
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(notaText(g, s))}`, "_blank");
 };
 document.getElementById("notaDownload").onclick = () => {
   if (!notaOrder) return;
-  downloadNotaImage(notaOrder.o, notaOrder.s);
+  downloadNotaImage(notaOrder.g, notaOrder.s);
 };
-async function downloadNotaImage(o, s) {
+async function downloadNotaImage(g, s) {
   try {
     await document.fonts.ready;
     const W = 600, P = 36;
@@ -982,16 +1018,20 @@ async function downloadNotaImage(o, s) {
     const L = [];
     L.push({ f: FB(), t: brand, s: 30 });
     L.push({ f: F(), t: "Nota Pemesanan", c: "#666", dy: 30 });
-    L.push({ f: F(), t: `No: #${o.id}  •  ${fmtDtFull(o.created_at)}  •  ${o.status}`, c: "#666", dy: 26 });
+    L.push({ f: F(), t: `No: #${g.maxId}  •  ${fmtDtFull(g.created)}  •  ${g.status}${g.mixed ? " (campuran)" : ""}`, c: "#666", dy: 26 });
     L.push({ rule: true });
-    L.push({ f: FB(), t: o.customer_name || "-" });
-    L.push({ f: F(), t: o.customer_wa || "" });
-    L.push({ f: F(), t: o.customer_address || "", wrap: true });
+    L.push({ f: FB(), t: g.name || "-" });
+    L.push({ f: F(), t: g.wa || "" });
+    L.push({ f: F(), t: g.address || "", wrap: true });
     L.push({ rule: true });
-    L.push({ f: F(), t: `${o.product_name}  x${o.qty}`, wrap: true });
-    L.push({ f: F(), t: `Harga: ${fmt(o.price)}` });
-    L.push({ f: FB(700), t: `Total: ${fmt(o.total)}`, big: true });
-    if (o.catatan) L.push({ f: F(), t: "Catatan: " + o.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
+    g.items.forEach((r) => {
+      L.push({ f: F(), t: `${r.product_name}  x${r.qty}`, wrap: true });
+      L.push({ f: F(), t: `Harga: ${fmt(r.price)}` });
+    });
+    L.push({ f: FB(700), t: `Total (${g.qty} item): ${fmt(g.total)}`, big: true });
+    g.items.filter((r) => r.catatan).forEach((r) => {
+      L.push({ f: F(), t: "Catatan: " + r.catatan, wrap: true, box: "#fff8e1", border: "#f0c36d" });
+    });
     if (s.info_pembayaran) { L.push({ f: FB(), t: "Info:", dy: 40 }); L.push({ f: F(), t: String(s.info_pembayaran), wrap: true, small: true, box: "#ffffff", border: "#90c5ad" }); }
     L.push({ f: F(), t: "Terima kasih sudah memesan!", c: "#666", center: true, dy: 44 });
     let y = P + 10;
@@ -1058,7 +1098,7 @@ async function downloadNotaImage(o, s) {
       if (!blob) return toast("Gagal membuat gambar", "error");
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `nota-${o.id}.png`;
+      a.download = `nota-${g.maxId}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       toast("Gambar nota diunduh — lampirkan manual di WA", "success");
@@ -1068,9 +1108,12 @@ async function downloadNotaImage(o, s) {
 $("#oRows").onclick = async (e) => {
   const nota = e.target.closest?.("[data-nota]");
   if (nota) { openNota(nota.dataset.nota); return; }
-  const del = e.target.dataset?.del; if (!del) return;
-  if (await askDelete("Hapus pesanan?", "Data pesanan #" + del + " dihapus permanen.")) {
-    const { error } = await sb().from("orders").delete().eq("id", del);
+  const gdel = e.target.closest?.("[data-gdel]");
+  if (!gdel) return;
+  const ids = groupRowIds(gdel.dataset.gdel);
+  if (!ids.length) return;
+  if (await askDelete(`Hapus transaksi (${ids.length} baris)?`, "Seluruh item dalam transaksi ini dihapus permanen.")) {
+    const { error } = await sb().from("orders").delete().in("id", ids);
     toast(error ? error.message : "Dihapus", error ? "error" : "success"); loadOrders();
   }
 };
@@ -1083,7 +1126,6 @@ $("#oRows").addEventListener("change", async (e) => {
   const { error } = await sb().from("orders").update({ catatan: inp.value }).eq("id", inp.dataset.note);
   toast(error ? error.message : "Catatan tersimpan", error ? "error" : "success");
 });
-
 if (isConfigured && !configError) {
   applyIdentity();
   refreshAuth();
