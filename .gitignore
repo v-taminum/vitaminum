@@ -1,3 +1,5 @@
 # Config LOKAL (berisi ADMIN_KEY) hanya di laptop, jangan ikut commit.
 # assets/config.js adalah versi PUBLIK dan ikut di-commit.
 assets/config.local.js
+# Halaman share produk dibuat ulang otomatis tiap deploy. Jangan commit.
+p/
