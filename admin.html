@@ -163,8 +163,8 @@ tbody tr:hover{background:#eef6f0}
   /* Toolbar pesanan: tombol berpasangan 2 kolom, subtotal full-width */
   [data-pane="orders"] > .row .btn{flex:1 1 40%;justify-content:center}
   #oSubtotal{flex-basis:100%;text-align:right;margin-left:0}
-  /* Semua tabel jadi kartu berlabel */
-  .table-wrap{overflow:visible;border:0;background:transparent}
+  /* Semua tabel jadi kartu berlabel (selector section agar menang vs aturan desktop) */
+  section .table-wrap{overflow:visible;border:0;background:transparent}
   .table-wrap table{min-width:0;border-collapse:separate;border-spacing:0}
   .table-wrap thead{display:none}
   .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.5rem .9rem;background:#fff}
@@ -175,7 +175,7 @@ tbody tr:hover{background:#eef6f0}
   .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem}
   .table-wrap tbody td[colspan]{display:block;text-align:center}
   .table-wrap tbody td[colspan]::before{content:none}
-  .table-wrap td .row{justify-content:flex-start;flex-wrap:nowrap}
+  .table-wrap td .row{justify-content:flex-start;flex-wrap:nowrap;flex:1;min-width:0}
   .table-wrap td .o-act{max-width:none;margin:0}
   .table-wrap td .row .btn{flex:1;white-space:nowrap;padding-left:.4rem;padding-right:.4rem;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .table-wrap img.thumb{width:64px;height:64px}
