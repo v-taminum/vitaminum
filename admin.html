@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#255746">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
 <title>Admin Vitaminum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -325,7 +327,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
-      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oSound" title="Bunyi notifikasi aktif"><i class="fa-solid fa-bell"></i></button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span class="muted" id="oPollInfo" style="font-size:.75rem"></span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
+      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oSound" title="Bunyi notifikasi aktif"><i class="fa-solid fa-bell"></i></button><button class="btn btn-outline" id="oPush" title="Aktifkan notif HP (bunyi walau browser tertutup)"><i class="fa-solid fa-mobile-screen-button"></i> Notif HP</button><button class="btn btn-outline" id="oPushTest" title="Kirim push percobaan ke HP terdaftar"><i class="fa-solid fa-paper-plane"></i> Tes</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span class="muted" id="oPollInfo" style="font-size:.75rem"></span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
       <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
       <div class="pager" id="oPager"></div>
     </section>
@@ -468,6 +470,8 @@ $("#btnTest").onclick = async () => {
   } catch (e) { showAuthError("Test koneksi gagal", e); Swal.fire({ icon: "error", title: "Koneksi gagal", text: e.message || e }); }
 };
 $("#btnOut").onclick = async () => { await sb().auth.signOut(); location.reload(); };
+// PWA: service worker untuk push saat browser tertutup + fallback offline ringan.
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("./sw.js").catch((e) => console.warn("SW:", e.message)); }
 
 $("#tabs").onclick = (e) => {
   const b = e.target.closest(".tab"); if (!b) return;
@@ -968,6 +972,7 @@ async function checkNewOrders() {
 function startOrderPoll() {
   if (oPollTimer) return;
   checkNewOrders();
+  refreshPushBtn();
   oPollTimer = setInterval(checkNewOrders, 15000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkNewOrders(); });
   window.addEventListener("focus", () => checkNewOrders());
@@ -978,6 +983,54 @@ $("#oSound").onclick = () => {
   $("#oSound").title = oSound ? "Bunyi notifikasi aktif" : "Bunyi notifikasi mati";
   toast(oSound ? "Bunyi notifikasi aktif" : "Bunyi notifikasi mati", "info");
   if (oSound) oBeep();
+};
+// ---- Push HP: bergetar + bunyi walau browser tertutup / HP terkunci ----
+const VAPID_PUBLIC_KEY = "BEXMtqmcdoZ_SHjlpSYY2P_xwG2QMduY_yrpeD-t1dGbkmZU6BbpRaU5vjcYi71PSCUSxdG2p43Zb6kEfWX3tJk";
+const urlB64ToU8 = (s) => {
+  const b = atob(s.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(s.length / 4) * 4, "="));
+  return Uint8Array.from(b, (c) => c.charCodeAt(0));
+};
+async function refreshPushBtn() {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const b = $("#oPush");
+      b.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i> Notif HP Aktif';
+      b.classList.remove("btn-outline"); b.classList.add("btn-primary");
+    }
+  } catch {}
+}
+$("#oPush").onclick = async () => {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return toast("Browser ini tidak mendukung push", "error");
+    if (Notification.permission === "denied") return toast("Izin notif diblokir. Buka ikon gembok di address bar → izinkan.", "error");
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") return toast("Izin notifikasi tidak diberikan", "error");
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToU8(VAPID_PUBLIC_KEY) });
+    }
+    const j = sub.toJSON();
+    const { error } = await sb().from("push_subscriptions").upsert({ endpoint: sub.endpoint, keys: j.keys }, { onConflict: "endpoint" });
+    if (error) throw error;
+    toast("Notif HP aktif. Browser tertutup pun tetap bunyi.", "success");
+    refreshPushBtn();
+  } catch (e) { toast("Gagal: " + (e.message || e), "error"); }
+};
+$("#oPushTest").onclick = async () => {
+  try {
+    const env = window.VITAMINUM_ENV || {};
+    const r = await fetch(`${String(env.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1/push-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: env.SUPABASE_ANON_KEY || "", Authorization: "Bearer " + (env.SUPABASE_ANON_KEY || "") },
+      body: JSON.stringify({ test: true }),
+    });
+    const j = await r.json().catch(() => ({}));
+    toast(r.ok ? `Tes terkirim ke ${j.sent ?? 0} perangkat` : "Gagal: " + (j.error || r.status), r.ok ? "success" : "error");
+  } catch (e) { toast("Gagal: " + (e.message || e), "error"); }
 };
 function selectedGroupIds() { return [...document.querySelectorAll(".o-check:not(#oCheckAll):checked")].map((c) => c.value); }
 function updateBulkUI() {
