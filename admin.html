@@ -175,6 +175,10 @@ tbody tr:hover{background:#eef6f0}
   .table-wrap tbody td[colspan]::before{content:none}
   .table-wrap td .row{justify-content:flex-start;flex-wrap:wrap}
   .table-wrap img.thumb{width:64px;height:64px}
+  .table-wrap tbody td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
+  .table-wrap tbody td .cell-body > *{min-width:0}
+  .table-wrap tbody td .o-addr{min-width:0;max-width:none}
+  .table-wrap tbody td input.o-note{min-width:0;width:100%}
   .pager{justify-content:center}
 }
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--bg-color);color:var(--text-color);font-weight:500}
@@ -815,7 +819,7 @@ async function loadProducts() {
   $("#pRows").innerHTML = (data || []).map((p) => `<tr>
     <td data-l="Foto">${p.image_url ? `<img class="thumb" src="${p.image_url}" loading="lazy">` : "<span class='muted'>—</span>"}</td>
     <td data-l="Label">${p.label ? `<span class="pill-ok">${escP(p.label)}</span>` : "<span class='muted'>—</span>"}</td>
-    <td data-l="Nama" class="cell-main"><b>${escP(p.name)}</b><span class="cell-desc">${String(p.description || "-").replace(/<[^>]*>/g, "")}</span></td>
+    <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${escP(p.name)}</b><span class="cell-desc">${String(p.description || "-").replace(/<[^>]*>/g, "")}</span></div></td>
     <td data-l="Harga"><b>${fmt(p.price)}</b><br><span class="muted ${!p.stock_label && p.stock < 10 ? "stock-low" : ""}">${p.stock_label || ("stok " + p.stock)}</span></td>
     <td data-l="Status">${p.is_active ? '<span class="pill-ok">Aktif</span>' : '<span class="pill-off">Nonaktif</span>'}</td>
     <td data-l="Aksi"><div class="row"><button class="btn btn-outline" data-edit="${p.id}">Edit</button><button class="btn btn-danger" data-del="${p.id}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="6" class="muted" style="text-align:center">Belum ada produk.</td></tr>';
@@ -918,8 +922,8 @@ async function loadOrders() {
   const escA = (t) => escO(t).replace(/"/g, "&quot;");
   tb.innerHTML = slice.map((g) => `<tr>
     <td data-l="Waktu" style="white-space:nowrap">${fmtDt(g.created)}</td>
-    <td data-l="Pemesan" class="cell-main"><b>${escO(g.name)}</b><span class="o-wa">${escO(g.wa)}</span><span class="o-addr">${escO(g.address) || "-"}</span></td>
-    <td data-l="Produk" class="cell-main">${g.items.map((r) => `<div class="o-item"><b>${escO(r.product_name)}</b><br><span class="muted">${r.qty} x ${fmt(r.price)} = ${fmt(r.total)}</span><input class="o-note" data-note="${r.id}" value="${escA(r.catatan || "")}" placeholder="Catatan item..."></div>`).join("")}</td>
+    <td data-l="Pemesan" class="cell-main"><div class="cell-body"><b>${escO(g.name)}</b><span class="o-wa">${escO(g.wa)}</span><span class="o-addr">${escO(g.address) || "-"}</span></div></td>
+    <td data-l="Produk" class="cell-main"><div class="cell-body">${g.items.map((r) => `<div class="o-item"><b>${escO(r.product_name)}</b><br><span class="muted">${r.qty} x ${fmt(r.price)} = ${fmt(r.total)}</span><input class="o-note" data-note="${r.id}" value="${escA(r.catatan || "")}" placeholder="Catatan item..."></div>`).join("")}</div></td>
     <td data-l="Total"><b>${fmt(g.total)}</b><br><span class="muted">${g.qty} item</span></td>
     <td data-l="Aksi"><div class="row o-act"><input type="checkbox" class="o-check" value="${escA(g.gid)}" aria-label="Pilih transaksi"><button class="btn btn-outline btn-xs" data-nota="${escA(g.gid)}">Nota</button><button class="btn btn-danger btn-xs" data-gdel="${escA(g.gid)}">Hapus</button></div></td></tr>`).join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Belum ada pesanan.</td></tr>';
   renderPager($("#oPager"), oState, loadOrders);
