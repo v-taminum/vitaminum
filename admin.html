@@ -165,7 +165,7 @@ tbody tr:hover{background:#eef6f0}
   #oSubtotal{flex-basis:100%;text-align:right;margin-left:0}
   /* Semua tabel jadi kartu berlabel */
   .table-wrap{overflow:visible;border:0;background:transparent}
-  .table-wrap table{min-width:0}
+  .table-wrap table{min-width:0;border-collapse:separate;border-spacing:0}
   .table-wrap thead{display:none}
   .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.4rem .8rem;background:#fff}
   .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;border-bottom:1px dashed #e6f0ea;padding:.45rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
@@ -175,13 +175,12 @@ tbody tr:hover{background:#eef6f0}
   .table-wrap tbody td[colspan]::before{content:none}
   .table-wrap td .row{justify-content:flex-start;flex-wrap:nowrap}
   .table-wrap td .o-act{max-width:none;margin:0}
-  .table-wrap td .row .btn{flex:1;white-space:nowrap;padding-left:.4rem;padding-right:.4rem}
+  .table-wrap td .row .btn{flex:1;white-space:nowrap;padding-left:.4rem;padding-right:.4rem;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .table-wrap img.thumb{width:64px;height:64px}
-  .table-wrap tbody td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
-  .table-wrap tbody td .cell-body > *{min-width:0}
-  .table-wrap tbody td .o-addr{min-width:0;max-width:none}
-  .table-wrap tbody td input.o-note{min-width:0;width:100%}
   .pager{justify-content:center}
+  /* Fitur Beranda: ikon kecil + judul lega, tombol sentuh 44px */
+  .fitur-row{grid-template-columns:56px 1fr}
+  .icon-btn-sm{width:44px;height:44px}
 }
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--bg-color);color:var(--text-color);font-weight:500}
 input[type="file"]{padding:.5rem .8rem;min-height:46px;cursor:pointer}
