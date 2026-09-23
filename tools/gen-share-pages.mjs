@@ -296,6 +296,7 @@ function buildWa() {
   if (orderItems) {
     orderItems.forEach((l) => lines.push("*" + l.name + "* x" + l.qty + " = " + rupiah(l.price * l.qty)));
     lines.push("Total " + rupiah(orderItems.reduce((a, l) => a + l.price * l.qty, 0)));
+    if (orderItems.length === 1 && String(orderItems[0].id) === String(P.id)) lines.push(P.page);
   } else {
     const q = qty();
     lines.push("*" + P.name + "* x" + q + " = " + rupiah(P.price * q));

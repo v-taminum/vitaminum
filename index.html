@@ -1340,6 +1340,10 @@
             if (orderCtx.items) {
               orderCtx.items.forEach((l) => lines.push(`*${l.name}* x${l.qty} = ${rupiah(l.price * l.qty)}`));
               lines.push(`Total ${rupiah(orderCtx.items.reduce((a, l) => a + l.price * l.qty, 0))}`);
+              if (orderCtx.items.length === 1) {
+                const only = byId.get(String(orderCtx.items[0].id));
+                if (only) lines.push(`${siteUrl}/p/${only.id}-${slugify(fullName(only))}/?v=${contentVer(only)}`);
+              }
             } else {
               const q = Math.max(1, Number(document.getElementById("fQty").value) || 1);
               lines.push(`*${orderCtx.name}* x${q} = ${rupiah(orderCtx.price * q)}`);
