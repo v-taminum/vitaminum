@@ -24,6 +24,7 @@ drop index if exists public.products_name_trgm;
 create table if not exists public.products (
   id bigint generated always as identity primary key,
   name text not null,
+  label text not null default '',
   description text default '',
   price int not null check (price >= 0),
   stock int not null default 0 check (stock >= 0),
@@ -34,6 +35,9 @@ create table if not exists public.products (
   created_at timestamptz default now()
 );
 create index if not exists products_active_idx on public.products(is_active);
+-- Kolom label (mis. "Jus") untuk pencarian & sortir; nama produk cukup nama pendek (mis. "Wortel").
+alter table public.products add column if not exists label text not null default '';
+create index if not exists products_label_idx on public.products(label);
 
 create table if not exists public.app_settings (
   key text primary key,

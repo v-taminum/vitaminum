@@ -1010,6 +1010,11 @@
             return el.innerHTML;
         }
 
+        // Nama tampil = "Label Nama" (mis. "Jus Wortel"); label kosong -> nama saja.
+        function vitFullName(p) {
+            return [p && p.label, p && p.name].map((s) => String(s || "").trim()).filter(Boolean).join(" ");
+        }
+
         function renderProducts(items) {
             const gridContainer = document.getElementById('productGrid');
             gridContainer.innerHTML = '';
@@ -1022,13 +1027,13 @@
             items.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'product-card';
-                const name = escapeHtml(item.name);
+                const name = escapeHtml(vitFullName(item));
                 const unit = escapeHtml(item.unit || '');
                 const image = item.image_url || item.image || 'https://placehold.co/300x200/40896c/ffffff?text=Vitaminum';
                 card.innerHTML = `
                     <div>
                         <div class="pimg-wrap">
-                        <a class="product-link" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(item.name)}"><img src="${image}" alt="${name}" onerror="this.src='https://placehold.co/300x200/40896c/ffffff?text=Vitaminum'"><h4>${name}</h4></a>
+                        <a class="product-link" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(vitFullName(item))}"><img src="${image}" alt="${name}" onerror="this.src='https://placehold.co/300x200/40896c/ffffff?text=Vitaminum'"><h4>${name}</h4></a>
                         <button class="cart-add" type="button" aria-label="Tambah ke keranjang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>+</span></button>
                         </div>
                         ${unit ? `<div class="product-unit">${unit}</div>` : ""}
@@ -1039,8 +1044,8 @@
                         </div>
                         ${item.stock_label ? `<p class="product-stock">${escapeHtml(item.stock_label)}</p>` : (Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : '')}
                         <div class="card-actions">
-                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-stock-label="${encodeURIComponent(item.stock_label || "")}" data-unit="${encodeURIComponent(item.unit || "")}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(item.name)}"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Pesan</a>
-                        <a class="btn-detail" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(item.name)}">Detil</a>
+                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-stock-label="${encodeURIComponent(item.stock_label || "")}" data-unit="${encodeURIComponent(item.unit || "")}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(vitFullName(item))}"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Pesan</a>
+                        <a class="btn-detail" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(vitFullName(item))}">Detil</a>
                         </div>
                     </div>
                 `;
@@ -1118,6 +1123,8 @@
           const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
           const siteUrl = (window.VITAMINUM_ENV.SITE_URL || location.origin).replace(/\/+$/, "");
           const rupiah = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+          // Nama tampil = "Label Nama" (mis. "Jus Wortel"); label kosong -> nama saja.
+          const fullName = (p) => [p?.label, p?.name].map((s) => String(s ?? "").trim()).filter(Boolean).join(" ");
           // cyrb53 + contentVer WAJIB identik dengan tools/gen-share-pages.mjs
           const cyrb53 = (str, seed = 0) => {
             let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
@@ -1131,7 +1138,7 @@
             return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
           };
           const contentVer = (p) => cyrb53(JSON.stringify([
-            p.name || "", Number(p.price) || 0, p.description || "",
+            fullName(p), Number(p.price) || 0, p.description || "",
             p.image_url || "", p.stock == null ? "" : p.stock, p.unit || "",
           ]));
           const byId = new Map((dbProducts || []).map((p) => [String(p.id), p]));
@@ -1189,7 +1196,7 @@
           function addToCart(item) {
             const line = cart.find((l) => String(l.id) === String(item.id));
             if (line) line.qty = Math.min(cartMax(item), line.qty + 1);
-            else cart.push({ id: item.id, name: item.name, price: item.price, unit: item.unit || "", stock: item.stock ?? null, qty: 1 });
+            else cart.push({ id: item.id, name: fullName(item), price: item.price, unit: item.unit || "", stock: item.stock ?? null, qty: 1 });
             saveCart(cart); syncCartBadge(); renderCart();
           }
           function openCartDrawer() {

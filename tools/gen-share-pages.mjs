@@ -42,8 +42,10 @@ const cyrb53 = (str, seed = 0) => {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 };
+// Nama tampil = "Label Nama" (mis. "Jus Wortel"); label kosong -> nama saja.
+const fullName = (p) => [p?.label, p?.name].map((s) => String(s ?? "").trim()).filter(Boolean).join(" ");
 const contentVer = (p) => cyrb53(JSON.stringify([
-  p.name || "", Number(p.price) || 0, p.description || "",
+  fullName(p), Number(p.price) || 0, p.description || "",
   p.image_url || "", p.stock == null ? "" : p.stock, p.unit || "",
 ]));
 // Dimensi gambar untuk og:image:width/height (WA HP butuh ini agar preview konsisten).
@@ -124,9 +126,9 @@ rmSync(join(root, "p"), { recursive: true, force: true });
 
 let n = 0;
 for (const p of products) {
-  const slug = `${p.id}-${slugify(p.name)}`;
+  const slug = `${p.id}-${slugify(fullName(p))}`;
   const pageUrl = `${SITE_URL}/p/${slug}/`;
-  const title = `${p.name} - ${rupiah(p.price)}`;
+  const title = `${fullName(p)} - ${rupiah(p.price)}`;
   let d = String(p.description || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   if (p.unit && d.toLowerCase().startsWith(String(p.unit).toLowerCase())) {
     d = d.slice(String(p.unit).length).replace(/^[•·\-–\s]+/, "");
@@ -138,12 +140,12 @@ for (const p of products) {
   const img = p.image_url || "";
   const dim = img ? await probeImage(img) : null;
   const imgTags = img
-    ? `<meta property="og:image" content="${esc(img)}">\n<meta property="og:image:alt" content="${esc(p.name)}">` +
+    ? `<meta property="og:image" content="${esc(img)}">\n<meta property="og:image:alt" content="${esc(fullName(p))}">` +
       (dim ? `\n<meta property="og:image:type" content="${dim.type}">\n<meta property="og:image:width" content="${dim.w}">\n<meta property="og:image:height" content="${dim.h}">` : "")
     : "";
   const waDigits = String(S.wa_number || "").replace(/\D/g, "");
   const ver = contentVer(p);
-  const msgLines = [`Halo ${brand}, saya ingin memesan *${p.name}*`, rupiah(p.price)];
+  const msgLines = [`Halo ${brand}, saya ingin memesan *${fullName(p)}*`, rupiah(p.price)];
   if (p.stock_label) msgLines.push(p.stock_label);
   else if (p.stock === 0) msgLines.push("Stok: Habis");
   else if (p.stock != null) msgLines.push(`Stok: ${p.stock}`);
@@ -180,9 +182,9 @@ ${imgTags}
 <button class="cart-fab" id="cartFab" aria-label="Keranjang belanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span class="cart-n" id="cartN" hidden>0</span></button>
 </div>
 <article class="card">
-${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : ""}
+${img ? `<img src="${esc(img)}" alt="${esc(fullName(p))}">` : ""}
 <div class="body">
-<h1>${esc(p.name)}</h1>
+<h1>${esc(fullName(p))}</h1>
 ${p.unit ? `<div class="unit">${esc(p.unit)}</div>` : ""}
 <div class="price">${esc(rupiah(p.price))}</div>
 <div class="stock ${p.stock === 0 ? "out" : "ok"}">${esc(stockTxt)}</div>
@@ -214,7 +216,7 @@ ${waUrl ? `<div class="btn-row"><button class="order alt" id="cartAddBtn" type="
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ENV = window.VITAMINUM_ENV || {};
-const P = ${JSON.stringify({ id: p.id, name: p.name, price: p.price, stock: p.stock, stockLabel: p.stock_label || "", unit: p.unit || "", page: `${pageUrl}?v=${ver}` }).replace(/</g, "\\u003c")};
+const P = ${JSON.stringify({ id: p.id, name: fullName(p), price: p.price, stock: p.stock, stockLabel: p.stock_label || "", unit: p.unit || "", page: `${pageUrl}?v=${ver}` }).replace(/</g, "\\u003c")};
 const BRAND = ${JSON.stringify(brand).replace(/</g, "\\u003c")};
 const WANUM = ${JSON.stringify(waDigits).replace(/</g, "\\u003c")};
 const rupiah = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
