@@ -524,7 +524,6 @@ const SETTINGS_META = {
   app_favicon: { label: "Favicon", desc: "Ikon kecil di tab browser (persegi)", kind: "image", group: "identitas" },
   hero_banner: { label: "Gambar Banner Hero", desc: "Foto besar di beranda (landscape, maks 2 MB)", kind: "image", group: "identitas" },
   fitur_list: { label: "Daftar Fitur", desc: "", kind: "custom", group: "fitur" },
-  free_ongkir_min: { label: "Minimal Gratis Ongkir (Rp)", desc: "Contoh: 50000", kind: "number", group: "toko" },
   wa_number: { label: "Nomor WhatsApp Toko", desc: "Format 628..., dipakai tombol pemesanan WhatsApp", kind: "text", group: "toko" },
   jam_operasional: { label: "Jam Operasional", desc: "Pisahkan baris dengan Enter agar tampil rapi di footer toko.", kind: "textarea", group: "toko" },
   alamat: { label: "Alamat", desc: "Alamat toko di tengah footer, tampil tebal", kind: "textarea", group: "toko" },
@@ -534,7 +533,7 @@ const SETTINGS_META = {
   hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
   hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
 };
-const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "free_ongkir_min", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "info_pembayaran", "wa_number"];
+const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "info_pembayaran", "wa_number"];
 const prettyKey = (k) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const DEFAULT_FITUR = [
   { icon: "ph-plant", judul: "100% Bahan Alami", deskripsi: "Terbuat dari buah & sayur segar pilihan petani lokal." },
