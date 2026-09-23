@@ -160,75 +160,8 @@
             height: 1em;
         }
 
-        .cart-btn {
-            position: relative;
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: var(--white);
-            color: var(--primary-dark);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .cart-btn svg {
-            width: 1.3rem;
-            height: 1.3rem;
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: -7px;
-            right: -7px;
-            min-width: 20px;
-            height: 20px;
-            padding: 0 5px;
-            border-radius: 999px;
-            background: #b3261e;
-            color: #fff;
-            font-size: 0.68rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .cart-badge[hidden] {
-            display: none;
-        }
-
         .pimg-wrap {
             position: relative;
-        }
-
-        .cart-add {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            height: 38px;
-            min-width: 38px;
-            padding: 0 8px;
-            border-radius: 999px;
-            border: 0;
-            background: var(--primary-dark);
-            color: #fff;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-            font-weight: 700;
-            font-size: 1rem;
-        }
-
-        .cart-add svg {
-            width: 1.05rem;
-            height: 1.05rem;
         }
 
         .cart-line {
@@ -616,6 +549,17 @@
             min-height: 42px;
         }
 
+        button.btn-card {
+            font: inherit;
+            font-size: 0.85rem;
+        }
+
+        .btn-card svg {
+            width: 1.1em;
+            height: 1.1em;
+            flex-shrink: 0;
+        }
+
         .btn-detail {
             padding: 0.5rem;
             background: var(--primary-dark);
@@ -815,6 +759,34 @@
             opacity: 0.6;
         }
 
+        .cart-foot {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+        }
+
+        .cart-foot .order-submit {
+            margin-top: 0;
+            flex: 1.2;
+        }
+
+        .cart-continue {
+            flex: 1;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .cart-continue:hover {
+            background: var(--primary-light);
+        }
+
         .order-skip {
             display: block;
             text-align: center;
@@ -920,10 +892,6 @@
             <div class="nav-left">
                 <a href="#" class="logo"><span class="logo-img"></span><span class="logo-text"></span></a>
             </div>
-
-            <div class="nav-right">
-                <button class="cart-btn" id="cartBtn" aria-label="Keranjang belanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span class="cart-badge" id="cartBadge" hidden>0</span></button>
-            </div>
         </div>
     </header>
 
@@ -1023,7 +991,7 @@
             <h3 id="cartTitle">Keranjang</h3>
             <div id="cartLines"></div>
             <div class="order-total">Total: <b id="cartTotal">Rp 0</b></div>
-            <button class="order-submit" id="cartCheckout">Checkout</button>
+            <div class="cart-foot"><button class="cart-continue" id="cartContinue" type="button">Tambah Produk</button><button class="order-submit" id="cartCheckout">Checkout</button></div>
         </div>
     </div>
 
@@ -1088,7 +1056,6 @@
                     <div>
                         <div class="pimg-wrap">
                         <a class="product-link" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(vitFullName(item))}"><img src="${image}" alt="${name}" onerror="this.src='https://placehold.co/300x200/40896c/ffffff?text=Vitaminum'"><h4>${name}</h4></a>
-                        <button class="cart-add" type="button" aria-label="Tambah ke keranjang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>+</span></button>
                         </div>
                         ${unit ? `<div class="product-unit">${unit}</div>` : ""}
                     </div>
@@ -1098,7 +1065,7 @@
                         </div>
                         ${item.stock_label ? `<p class="product-stock">${escapeHtml(item.stock_label)}</p>` : (Number.isFinite(Number(item.stock)) ? `<p class="product-stock${Number(item.stock) === 0 ? ' out-of-stock' : ''}">${Number(item.stock) === 0 ? 'Habis' : `Stok: ${Number(item.stock)}`}</p>` : '')}
                         <div class="card-actions">
-                        <a class="btn-card product-order" href="#" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-stock-label="${encodeURIComponent(item.stock_label || "")}" data-unit="${encodeURIComponent(item.unit || "")}" data-img="${item.image_url || item.image || ""}" data-product="${encodeURIComponent(vitFullName(item))}"><svg class="wa-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Pesan</a>
+                        <button class="btn-card product-add" type="button" data-id="${item.id || ""}" data-price="${item.price || 0}" data-stock="${item.stock ?? ""}" data-unit="${encodeURIComponent(item.unit || "")}" data-product="${encodeURIComponent(vitFullName(item))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Tambah</button>
                         <a class="btn-detail" href="#" data-id="${item.id || ""}" data-product="${encodeURIComponent(vitFullName(item))}">Detil</a>
                         </div>
                     </div>
@@ -1214,17 +1181,17 @@
             p.image_url || "", p.stock == null ? "" : p.stock, p.unit || "",
           ]));
           const byId = new Map((dbProducts || []).map((p) => [String(p.id), p]));
-          document.querySelectorAll(".product-order").forEach((el) => {
-            const name = decodeURIComponent(el.dataset.product || "");
-            const pid = el.dataset.id || "";
+          document.querySelectorAll(".product-card").forEach((card) => {
+            const src = card.querySelector(".product-add");
+            if (!src) return;
+            const name = decodeURIComponent(src.dataset.product || "");
+            const pid = src.dataset.id || "";
             const full = byId.get(String(pid));
             const ver = full ? contentVer(full) : pid;
             const page = pid ? `${siteUrl}/p/${pid}-${slugify(name)}/?v=${ver}` : "";
-            el.dataset.page = page;
-            const card = el.closest(".product-card");
-            const pl = card && card.querySelector(".product-link");
+            const pl = card.querySelector(".product-link");
             if (pl && page) pl.href = page;
-            const dt = card && card.querySelector(".btn-detail");
+            const dt = card.querySelector(".btn-detail");
             if (dt && page) dt.href = page;
           });
 
@@ -1337,36 +1304,21 @@
             return makeWaUrl(lines.join("\n"));
           }
           document.addEventListener("click", (e) => {
-            const b = e.target.closest(".product-order");
+            const b = e.target.closest(".product-add");
             if (!b) return;
             e.preventDefault();
-            openOrderModal({
+            const stockRaw = b.dataset.stock;
+            addToCart({
               id: b.dataset.id || null,
               name: decodeURIComponent(b.dataset.product || ""),
               price: Number(b.dataset.price) || 0,
-              stock: b.dataset.stock === "" ? null : Number(b.dataset.stock),
-              stockLabel: decodeURIComponent(b.dataset.stockLabel || ""),
+              stock: stockRaw === "" || stockRaw === undefined ? null : Number(stockRaw),
               unit: decodeURIComponent(b.dataset.unit || ""),
-              page: b.dataset.page || "",
             });
+            openCartDrawer();
           });
           document.getElementById("orderClose").onclick = closeOrderModal;
           document.addEventListener("click", (e) => {
-            const add = e.target.closest(".cart-add");
-            if (add) {
-              const card = add.closest(".product-card");
-              const src = card && card.querySelector(".product-order");
-              if (!src) return;
-              const stockRaw = src.dataset.stock;
-              addToCart({
-                id: src.dataset.id || null,
-                name: decodeURIComponent(src.dataset.product || ""),
-                price: Number(src.dataset.price) || 0,
-                stock: stockRaw === "" || stockRaw === undefined ? null : Number(stockRaw),
-                unit: decodeURIComponent(src.dataset.unit || ""),
-              });
-              return;
-            }
             const dec = e.target.closest("[data-cdec]");
             if (dec) {
               const l = cart[+dec.dataset.cdec];
@@ -1453,8 +1405,8 @@
               document.getElementById("orderSubmitLabel").textContent = "Pesan";
             }
           };
-          document.getElementById("cartBtn").onclick = openCartDrawer;
           document.getElementById("cartClose").onclick = closeCartDrawer;
+          document.getElementById("cartContinue").onclick = closeCartDrawer;
           document.getElementById("cartOverlay").addEventListener("click", (e) => { if (e.target.id === "cartOverlay") closeCartDrawer(); });
           document.getElementById("cartCheckout").onclick = () => {
             if (!cart.length) return;
