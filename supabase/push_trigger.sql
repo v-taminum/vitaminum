@@ -21,4 +21,4 @@ end $$;
 
 drop trigger if exists trg_notify_new_order on public.orders;
 create trigger trg_notify_new_order after insert on public.orders
-  for each row execute function public.notify_new_order;
+  for each row execute function public.notify_new_order();
