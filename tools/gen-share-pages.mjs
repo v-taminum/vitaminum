@@ -255,7 +255,7 @@ function openCart() { renderCart(); $("cartOv").hidden = false; document.body.st
 function closeCart() { $("cartOv").hidden = true; if ($("ovl").hidden) document.body.style.overflow = ""; }
 $("cartFab").onclick = openCart;
 $("cartX").onclick = closeCart;
-$("cartBack").onclick = closeCart;
+$("cartBack").onclick = () => { location.href = "${SITE_URL}/#katalog-menu"; };
 $("cartOv").addEventListener("click", (e) => { if (e.target === $("cartOv")) closeCart(); });
 const cab = $("cartAddBtn");
 if (cab) cab.onclick = () => {
