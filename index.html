@@ -164,6 +164,47 @@
             position: relative;
         }
 
+        .cart-btn {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--white);
+            color: var(--primary-dark);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cart-btn svg {
+            width: 1.3rem;
+            height: 1.3rem;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #b3261e;
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-badge[hidden] {
+            display: none;
+        }
+
         .cart-line {
             display: flex;
             gap: 0.6rem;
@@ -892,6 +933,10 @@
             <div class="nav-left">
                 <a href="#" class="logo"><span class="logo-img"></span><span class="logo-text"></span></a>
             </div>
+
+            <div class="nav-right">
+                <button class="cart-btn" id="cartBtn" aria-label="Keranjang belanja"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span class="cart-badge" id="cartBadge" hidden>0</span></button>
+            </div>
         </div>
     </header>
 
@@ -1405,6 +1450,7 @@
               document.getElementById("orderSubmitLabel").textContent = "Pesan";
             }
           };
+          document.getElementById("cartBtn").onclick = openCartDrawer;
           document.getElementById("cartClose").onclick = closeCartDrawer;
           document.getElementById("cartContinue").onclick = closeCartDrawer;
           document.getElementById("cartOverlay").addEventListener("click", (e) => { if (e.target.id === "cartOverlay") closeCartDrawer(); });
