@@ -58,6 +58,9 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .tab{flex-shrink:0;border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;display:inline-flex;align-items:center;gap:.6rem;white-space:nowrap}
 .tab:hover{background:var(--primary-light)}
 .tab.on{background:var(--primary);color:#fff}
+.tab{position:relative}
+.tab-badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:#d93025;color:#fff;font-size:.68rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tab-badge[hidden]{display:none}
 .pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill-ok{background:var(--primary-light);color:var(--primary-dark)}
 .pill-off{background:#fdecea;color:var(--danger)}
@@ -233,7 +236,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
     <nav class="headnav" id="tabs">
        <button class="tab on" data-t="settings"><i class="fa-solid fa-gear"></i> Info Aplikasi</button>
       <button class="tab" data-t="prods"><i class="fa-solid fa-box"></i> Produk</button>
-      <button class="tab" data-t="orders"><i class="fa-solid fa-receipt"></i> Pesanan</button>
+      <button class="tab" data-t="orders"><i class="fa-solid fa-receipt"></i> Pesanan<span class="tab-badge" id="oBadge" hidden></span></button>
     </nav>
     <div class="nav-right">
       <a href="./index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
@@ -323,7 +326,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
     <section class="card" data-pane="orders" style="display:none">
       <h2><i class="fa-solid fa-receipt"></i> Pesanan</h2>
-      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
+      <div class="row"><button class="btn btn-outline" id="oReload">Muat Ulang</button><button class="btn btn-outline" id="oSound" title="Bunyi notifikasi aktif"><i class="fa-solid fa-bell"></i></button><button class="btn btn-outline" id="oExport"><i class="fa-solid fa-file-excel"></i> Export Excel</button><button class="btn btn-danger" id="oBulkDel" disabled>Hapus Terpilih</button><span class="muted">Pesanan terbaru dari form toko.</span><span id="oSubtotal" style="margin-left:auto;font-size:.85rem">Sub Total — <b>0 Qty</b> • <b>Rp 0</b></span></div>
       <div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Pemesan</th><th>Produk</th><th>Total</th><th><input type="checkbox" class="o-check" id="oCheckAll" aria-label="Pilih semua"></th></tr></thead><tbody id="oRows"></tbody></table></div>
       <div class="pager" id="oPager"></div>
     </section>
@@ -471,6 +474,7 @@ $("#tabs").onclick = (e) => {
   const b = e.target.closest(".tab"); if (!b) return;
   $$("#tabs .tab").forEach((t) => t.classList.toggle("on", t === b));
   $$("#app [data-pane]").forEach((p) => (p.style.display = p.dataset.pane === b.dataset.t ? "" : "none"));
+  if (b.dataset.t === "orders") { setOBadge(0); loadOrders(); }
   b.scrollIntoView({ inline: "nearest", block: "nearest" });
   window.scrollTo(0, 0);
 };
@@ -690,7 +694,7 @@ $("#setSaveAll").onclick = async () => {
   btn.disabled = false;
 };
 
-async function loadAll() { await Promise.all([loadSettings(), loadProducts(), loadOrders(), applyIdentity()]); }
+async function loadAll() { await Promise.all([loadSettings(), loadProducts(), loadOrders(), applyIdentity()]); startOrderPoll(); }
 async function applyIdentity() {
   try {
     const { data, error } = await sb().from("app_settings").select("key,value");
@@ -885,6 +889,7 @@ async function loadOrders() {
   const groups = groupOrders(data);
   window._orderGroups = groups;
   window._ordersCache = data || [];
+  if ((data || []).length) oLastMaxId = Math.max(oLastMaxId || 0, data[0].id);
   oState.total = groups.length;
   const pages = Math.max(1, Math.ceil(groups.length / oState.size));
   if (oState.page > pages) oState.page = pages;
@@ -913,6 +918,61 @@ $("#oReload").onclick = async () => {
     await loadOrders();
     toast("Pesanan dimuat ulang", "success");
   } finally { b.disabled = false; b.innerHTML = t; }
+};
+// ---- Notifikasi pesanan baru: polling ringan tiap 30 detik + bunyi + badge ----
+let oLastMaxId = 0, oSound = true, oPollTimer = null;
+const oBaseTitle = document.title;
+function ordersPaneVisible() { const p = document.querySelector('#app [data-pane="orders"]'); return !!p && p.style.display !== "none"; }
+function oBeep() {
+  if (!oSound) return;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    [523.25, 783.99].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      const t = ctx.currentTime + i * 0.18;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 0.2);
+    });
+    setTimeout(() => { try { ctx.close(); } catch {} }, 700);
+  } catch {}
+}
+function setOBadge(n) {
+  const b = $("#oBadge");
+  if (b) { b.hidden = !n; b.textContent = n > 99 ? "99+" : n; }
+  document.title = n ? `(${n}) Pesanan Baru — Vitaminum` : oBaseTitle;
+}
+async function checkNewOrders() {
+  try {
+    const { data, error } = await sb().from("orders").select("id").order("id", { ascending: false }).limit(1);
+    if (error || !data) return;
+    const maxId = data.length ? data[0].id : 0;
+    if (!oLastMaxId) { oLastMaxId = maxId; return; }
+    if (maxId < oLastMaxId) { oLastMaxId = maxId; return; }
+    if (maxId > oLastMaxId) {
+      const n = maxId - oLastMaxId;
+      oLastMaxId = maxId;
+      oBeep();
+      toast(`${n} pesanan baru masuk`, "info");
+      if (ordersPaneVisible()) { setOBadge(0); await loadOrders(); }
+      else setOBadge(n);
+    }
+  } catch {}
+}
+function startOrderPoll() {
+  if (oPollTimer) return;
+  oPollTimer = setInterval(checkNewOrders, 30000);
+}
+$("#oSound").onclick = () => {
+  oSound = !oSound;
+  $("#oSound").innerHTML = `<i class="fa-solid ${oSound ? "fa-bell" : "fa-bell-slash"}"></i>`;
+  $("#oSound").title = oSound ? "Bunyi notifikasi aktif" : "Bunyi notifikasi mati";
+  toast(oSound ? "Bunyi notifikasi aktif" : "Bunyi notifikasi mati", "info");
 };
 function selectedGroupIds() { return [...document.querySelectorAll(".o-check:not(#oCheckAll):checked")].map((c) => c.value); }
 function updateBulkUI() {
