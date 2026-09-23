@@ -116,7 +116,7 @@ const get = async (path) => {
 
 const [settings, products] = await Promise.all([
   get("/rest/v1/app_settings?select=key,value"),
-  get("/rest/v1/products?select=id,name,description,price,unit,stock,stock_label,image_url&is_active=eq.true&order=id"),
+  get("/rest/v1/products?select=id,label,name,description,price,unit,stock,stock_label,image_url&is_active=eq.true&order=id"),
 ]);
 const S = Object.fromEntries(settings.map((r) => [r.key, r.value]));
 const brand = S.app_name || "Vitaminum";
