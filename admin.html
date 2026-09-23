@@ -149,6 +149,14 @@ tbody tr:hover{background:#eef6f0}
 .prods-tools{flex:1;justify-content:flex-end;min-width:260px}
 .prods-tools input{width:auto;flex:1;min-width:160px;max-width:320px}
 .prods-tools select{width:auto}
+@media(max-width:640px){
+  .prods-bar{flex-direction:column;align-items:stretch}
+  .prods-bar .row{flex-wrap:wrap}
+  .prods-bar .row .btn{flex:1;justify-content:center}
+  .prods-tools{min-width:0;width:100%}
+  .prods-tools input{max-width:none}
+  .prods-tools select{flex:1}
+}
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--bg-color);color:var(--text-color);font-weight:500}
 input[type="file"]{padding:.5rem .8rem;min-height:46px;cursor:pointer}
 input[type="file"]::file-selector-button{background:var(--primary);color:#fff;border:0;border-radius:6px;padding:.5rem .9rem;font-weight:700;font-family:inherit;font-size:.82rem;margin-right:.7rem;cursor:pointer}
