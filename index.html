@@ -1128,6 +1128,17 @@
       if (isConfigured) {
         try {
           const s = await api.settings();
+          try {
+            let t = s.app_theme;
+            if (typeof t === "string") t = JSON.parse(t);
+            const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+            const rt = document.documentElement.style;
+            if (t && typeof t === "object") {
+              if (ok(t.primary)) rt.setProperty("--primary", t.primary);
+              if (ok(t.dark)) rt.setProperty("--primary-dark", t.dark);
+              if (ok(t.light)) rt.setProperty("--primary-light", t.light);
+            }
+          } catch {}
           const set = (sel, fn) => { const el = document.querySelector(sel); if (el) fn(el); };
           if (s.app_name) {
             document.title = s.app_name + " - Hidup Sehat Dengan Minum " + s.app_name;

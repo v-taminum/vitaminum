@@ -103,6 +103,7 @@ insert into public.app_settings (key, value) values
   ('fitur_list', '[{"icon":"ph-plant","judul":"100% Bahan Alami","deskripsi":"Terbuat dari buah & sayur segar pilihan petani lokal."},{"icon":"ph-clock-counter-clockwise","judul":"Freshly Made Daily","deskripsi":"Dibuat langsung setiap pagi tanpa bahan pengawet."},{"icon":"ph-shield-check","judul":"Higienis & Steril","deskripsi":"Dikemas dalam botol steril berstandar tinggi."}]'),
   ('footer_description', '"Penyedia jus buah dan minuman kesehatan botolan terpercaya dengan kualitas kesegaran terjaga setiap harinya. Jelajahi media sosial kami."'),
   ('wa_number', '"6280000000000"'),
+  ('app_theme', '{"primary":"#40896c","dark":"#255746","light":"#bdddcc"}'),
   ('jam_operasional', '"Senin-Jumat 08:00-19:00, Sabtu-Minggu 08:00-20:00"'),
   ('alamat', '""'),
   ('pesan_pengiriman', '"Pengiriman Tanpa Ongkir Hanya Sampai Pukul 15:00 Setiap Harinya Untuk Radius 5Km!"'),

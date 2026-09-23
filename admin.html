@@ -136,6 +136,12 @@ tbody tr:hover{background:#eef6f0}
 .icon-grid button .ph{font-size:1.35rem;color:var(--primary-dark)}
 .icon-grid button:hover{background:var(--primary-light)}
 .icon-grid button.sel{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark)}
+.theme-swatches{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.6rem}
+.theme-swatches button{width:46px;height:46px;border-radius:12px;border:2px solid var(--border-color);cursor:pointer;padding:0}
+.theme-swatches button.sel{border-color:var(--primary-dark);box-shadow:0 0 0 2px var(--primary-light)}
+.theme-custom{display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end}
+.theme-custom label{font-size:.75rem;font-weight:700;display:flex;align-items:center;gap:.4rem}
+.theme-custom input[type="color"]{width:44px;height:44px;min-height:0;padding:2px;border:1px solid var(--border-color);border-radius:8px;background:#fff;cursor:pointer}
 @media(max-width:640px){.fitur-row{grid-template-columns:1fr 1fr}.fitur-desc{grid-column:1 / -1}.fitur-actions{grid-column:1 / -1;justify-content:flex-end}}
 .table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
 .table-wrap td.cell-main{white-space:normal;min-width:200px;max-width:340px}
@@ -511,6 +517,7 @@ const SETTING_GROUPS = [
   { id: "identitas", title: "Identitas Aplikasi", desc: "Nama, logo, dan favicon yang tampil di toko." },
   { id: "fitur", title: "Fitur Beranda", desc: "Tiga keunggulan di bawah hero: ikon, judul, dan deskripsi." },
   { id: "toko", title: "Pengaturan Toko", desc: "Teks dan angka operasional toko." },
+  { id: "lainnya", title: "Lainnya", desc: "Pengaturan tambahan." },
 ];
 const FITUR_ICONS = [
   ["ph-plant", "Tanaman"], ["ph-leaf", "Daun"], ["ph-drop", "Tetes Air"],
@@ -530,10 +537,11 @@ const SETTINGS_META = {
   footer_description: { label: "Deskripsi Footer", desc: "Teks di bawah logo pada kartu Deskripsi Footer", kind: "textarea", group: "toko" },
   pesan_pengiriman: { label: "Pesan Pengiriman", desc: "Pesan sorotan di bawah jam operasional pada footer toko.", kind: "textarea", group: "toko" },
   info_pembayaran: { label: "Info Pembayaran", desc: "Teks peringatan pembayaran di form pemesanan (bisa bold, bullet, numbering)", kind: "rich", group: "toko" },
+  app_theme: { label: "Tema Warna", desc: "Warna utama aplikasi (default hijau Vitaminum)", kind: "theme", group: "lainnya" },
   hero_title: { label: "Judul Utama Beranda", desc: "Teks besar di bagian atas toko", kind: "textarea", group: "toko" },
   hero_subtitle: { label: "Subjudul Beranda", desc: "Teks pendukung yang tampil tepat di bawah judul utama pada hero beranda.", kind: "textarea", group: "toko" },
 };
-const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "info_pembayaran", "wa_number"];
+const META_ORDER = ["app_name", "app_logo", "app_favicon", "hero_banner", "fitur_list", "hero_title", "hero_subtitle", "jam_operasional", "alamat", "footer_description", "pesan_pengiriman", "info_pembayaran", "wa_number", "app_theme"];
 const prettyKey = (k) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 const DEFAULT_FITUR = [
   { icon: "ph-plant", judul: "100% Bahan Alami", deskripsi: "Terbuat dari buah & sayur segar pilihan petani lokal." },
@@ -629,7 +637,7 @@ async function loadSettings() {
   const groups = [...SETTING_GROUPS];
   const retiredSettings = new Set(["promo_topbar"]);
   const extra = (data || []).filter((r) => !retiredSettings.has(r.key) && !(SETTINGS_META[r.key] || {}).group && !META_ORDER.includes(r.key));
-  if (extra.length) groups.push({ id: "lainnya", title: "Lainnya", desc: "" });
+  if (extra.length && !groups.some((g) => g.id === "lainnya")) groups.push({ id: "lainnya", title: "Lainnya", desc: "" });
   groups.forEach((g) => {
     const keys = [
       ...META_ORDER.filter((k) => ((SETTINGS_META[k] || {}).group || "toko") === g.id),
@@ -666,6 +674,48 @@ async function loadSettings() {
         ed.innerHTML = /<\/?[a-z][\s\S]*>/i.test(raw) ? raw : raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
         lab.append(bar, ed);
         window._setInputs.push({ key: k, inp: { getValue: () => ed.innerText.trim() ? ed.innerHTML.trim() : "" } });
+      } else if (kind === "theme") {
+        const DEF = { primary: "#40896c", dark: "#255746", light: "#bdddcc" };
+        let cur = { ...DEF };
+        try {
+          const p = (r.value && typeof r.value === "object") ? r.value : JSON.parse(raw || "{}");
+          cur = { ...DEF, ...p };
+        } catch {}
+        const PRESETS = [
+          ["Vitaminum", DEF],
+          ["Biru", { primary: "#2f7fae", dark: "#1e5a7c", light: "#c6e3f2" }],
+          ["Oranye", { primary: "#c96a1f", dark: "#7c3f0e", light: "#f3d9b8" }],
+          ["Ungu", { primary: "#7c4dab", dark: "#4e2c6e", light: "#ddcdf0" }],
+          ["Merah", { primary: "#c04545", dark: "#7c2424", light: "#f2c9c9" }],
+          ["Kuning", { primary: "#b98a1d", dark: "#6e5210", light: "#f0e0b8" }],
+        ];
+        let selIdx = Math.max(0, PRESETS.findIndex(([, p]) => p.primary === cur.primary && p.dark === cur.dark && p.light === cur.light));
+        const wrap = document.createElement("div"); wrap.className = "theme-pick";
+        const sw = document.createElement("div"); sw.className = "theme-swatches";
+        const paint = () => {
+          sw.querySelectorAll("button").forEach((b) => b.classList.toggle("sel", b.dataset.i === String(selIdx)));
+          [...wrap.querySelectorAll('input[type="color"]')].forEach((c) => { c.value = cur[c.dataset.t] || DEF[c.dataset.t]; });
+          applyTheme({ app_theme: cur });
+        };
+        PRESETS.forEach(([nm, p], i) => {
+          const b = document.createElement("button"); b.type = "button"; b.title = nm; b.dataset.i = i;
+          b.style.background = `linear-gradient(135deg, ${p.dark} 0 33%, ${p.primary} 33% 66%, ${p.light} 66% 100%)`;
+          b.onclick = () => { cur = { ...p }; selIdx = i; paint(); };
+          sw.append(b);
+        });
+        const cust = document.createElement("div"); cust.className = "theme-custom";
+        [["primary", "Utama"], ["dark", "Tua"], ["light", "Muda"]].forEach(([t, l]) => {
+          const lb = document.createElement("label"); lb.textContent = l + " ";
+          const c = document.createElement("input"); c.type = "color"; c.dataset.t = t; c.value = cur[t];
+          c.oninput = () => { cur[t] = c.value; selIdx = -1; paint(); };
+          lb.append(c); cust.append(lb);
+        });
+        const rs = document.createElement("button"); rs.type = "button"; rs.className = "btn btn-outline btn-xs"; rs.textContent = "Default";
+        rs.onclick = () => { cur = { ...DEF }; selIdx = 0; paint(); };
+        cust.append(rs);
+        wrap.append(sw, cust); lab.append(wrap);
+        paint();
+        window._setInputs.push({ key: k, inp: { getValue: () => ({ ...cur }) } });
       } else if (kind === "image") {
         const prev = document.createElement("img"); prev.className = "set-logo-prev";
         prev.onerror = () => { prev.style.display = "none"; };
@@ -722,11 +772,25 @@ $("#setSaveAll").onclick = async () => {
 };
 
 async function loadAll() { await Promise.allSettled([loadSettings(), loadProducts(), loadOrders(), applyIdentity()]); startOrderPoll(); }
+// Tema warna: override 3 variabel CSS dari setting app_theme (hex divalidasi dulu).
+function applyTheme(s) {
+  try {
+    let t = s && s.app_theme;
+    if (typeof t === "string") t = JSON.parse(t);
+    if (!t || typeof t !== "object") return;
+    const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+    const r = document.documentElement.style;
+    if (ok(t.primary)) r.setProperty("--primary", t.primary);
+    if (ok(t.dark)) r.setProperty("--primary-dark", t.dark);
+    if (ok(t.light)) r.setProperty("--primary-light", t.light);
+  } catch {}
+}
 async function applyIdentity() {
   try {
     const { data, error } = await sb().from("app_settings").select("key,value");
     if (error) throw error;
     const s = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    applyTheme(s);
     const brand = document.getElementById("brandLogo");
     if (brand) {
       const slot = brand.querySelector(".logo-img"), txt = brand.querySelector(".logo-text");
