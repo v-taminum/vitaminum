@@ -167,9 +167,11 @@ tbody tr:hover{background:#eef6f0}
   .table-wrap{overflow:visible;border:0;background:transparent}
   .table-wrap table{min-width:0;border-collapse:separate;border-spacing:0}
   .table-wrap thead{display:none}
-  .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.4rem .8rem;background:#fff}
-  .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;border-bottom:1px dashed #e6f0ea;padding:.45rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
+  .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.5rem .9rem;background:#fff}
+  .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;padding:.4rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
   .table-wrap tbody td:last-child{border-bottom:0}
+  .table-wrap td .o-act{gap:.5rem;align-items:center}
+  .table-wrap td .o-act input[type="checkbox"]{width:22px;height:22px;flex-shrink:0;accent-color:var(--primary)}
   .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem}
   .table-wrap tbody td[colspan]{display:block;text-align:center}
   .table-wrap tbody td[colspan]::before{content:none}
