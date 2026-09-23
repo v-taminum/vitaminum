@@ -58,8 +58,7 @@ header{background:var(--white);box-shadow:0 2px 4px rgba(0,0,0,.05);position:sti
 .tab{flex-shrink:0;border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;display:inline-flex;align-items:center;gap:.6rem;white-space:nowrap}
 .tab:hover{background:var(--primary-light)}
 .tab.on{background:var(--primary);color:#fff}
-.tab{position:relative}
-.tab-badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:#d93025;color:#fff;font-size:.68rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tab-badge{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#d93025;color:#fff;font-size:.68rem;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 .tab-badge[hidden]{display:none}
 .pill-ok,.pill-off{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .pill-ok{background:var(--primary-light);color:var(--primary-dark)}
@@ -929,17 +928,17 @@ function oBeep() {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     const ctx = new Ctx();
-    [523.25, 783.99].forEach((f, i) => {
+    [880, 880, 1174.66].forEach((f, i) => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.value = f;
-      const t = ctx.currentTime + i * 0.18;
+      o.type = "triangle"; o.frequency.value = f;
+      const t = ctx.currentTime + i * 0.28;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.4, t + 0.03);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      g.gain.exponentialRampToValueAtTime(1.0, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
       o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + 0.2);
+      o.start(t); o.stop(t + 0.3);
     });
-    setTimeout(() => { try { ctx.close(); } catch {} }, 700);
+    setTimeout(() => { try { ctx.close(); } catch {} }, 1300);
   } catch {}
 }
 function setOBadge(n) {
