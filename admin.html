@@ -347,9 +347,9 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
   </div>
 </div>
 
-<script src="./assets/config.js?v=20260921"></script>
+    <script src="./assets/config.js?v=20260924"></script>
 <script type="module">
-import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260921";
+import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260924";
 await loadLocalConfig();
 if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
