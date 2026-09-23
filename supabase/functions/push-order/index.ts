@@ -10,6 +10,9 @@
 //      VAPID_PRIVATE_KEY = 0UmAL-P71s7dZCy12sWOOO5xc0iBnMz51FAQByYT0zQ
 //      PUSH_SUBJECT      = mailto:uhilokal@gmail.com
 //      SITE_URL          = https://v-taminum.github.io/vitaminum
+//      PUSH_SECRET       = 542b640fb99ae333fa38bfb27c004d153edb102d33e6d46e
+// 4. Edge Functions → push-order → Settings → "Verify JWT" = OFF (wajib,
+//    kalau ON browser diblokir CORS). Lalu Redeploy agar secrets terbaca.
 // 4. Database → Webhooks → Create webhook: tabel orders, event INSERT,
 //    URL: https://mpruodaexnyjliosqvwj.supabase.co/functions/v1/push-order,
 //    header: Authorization = Bearer <anon key dari assets/config.js>.
@@ -18,7 +21,7 @@ import webpush from "npm:web-push@3.6.7";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-push-secret",
 };
 const rupiah = (v: unknown) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 })
@@ -27,7 +30,13 @@ const rupiah = (v: unknown) =>
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
+    // PENTING: di dashboard, function push-order → Settings → "Verify JWT" = OFF.
+    // (Gateway Supabase memblokir preflight CORS browser bila JWT ON.)
+    // Pengaman diganti secret khusus di bawah (bukan JWT).
     const env = Deno.env.toObject();
+    if (!env.PUSH_SECRET || req.headers.get("x-push-secret") !== env.PUSH_SECRET) {
+      return Response.json({ error: "unauthorized" }, { status: 401, headers: cors });
+    }
     const { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, PUSH_SUBJECT, SITE_URL } = env;
     if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) throw new Error("VAPID belum diset di Function Secrets.");
     webpush.setVapidDetails(PUSH_SUBJECT || "mailto:admin@vitaminum.id", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);

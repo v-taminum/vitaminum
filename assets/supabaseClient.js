@@ -15,6 +15,9 @@ const getEnv = () => ({ ...RAW, ...(window.VITAMINUM_LOCAL || {}) });
 // Config lokal (cuma ada di laptop) dimuat dinamis: gagal = wajar, tanpa error console.
 export async function loadLocalConfig() {
   if (window.VITAMINUM_LOCAL) return true;
+  // config.local.js hanya ada di laptop (di-gitignore) -> jangan fetch di hosting (404).
+  const host = location.hostname;
+  if (host !== "localhost" && host !== "127.0.0.1" && host !== "") return false;
   try {
     await import("./config.local.js?v=20260919");
     return Boolean(window.VITAMINUM_LOCAL);

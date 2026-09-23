@@ -1025,7 +1025,7 @@ $("#oPushTest").onclick = async () => {
     const env = window.VITAMINUM_ENV || {};
     const r = await fetch(`${String(env.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1/push-order`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", apikey: env.SUPABASE_ANON_KEY || "", Authorization: "Bearer " + (env.SUPABASE_ANON_KEY || "") },
+      headers: { "Content-Type": "application/json", apikey: env.SUPABASE_ANON_KEY || "", Authorization: "Bearer " + (env.SUPABASE_ANON_KEY || ""), "x-push-secret": "542b640fb99ae333fa38bfb27c004d153edb102d33e6d46e" },
       body: JSON.stringify({ test: true }),
     });
     const j = await r.json().catch(() => ({}));
