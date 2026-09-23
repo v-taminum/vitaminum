@@ -272,7 +272,7 @@
 
         /* --- HERO SECTION --- */
         .hero {
-            background: linear-gradient(135deg, #f1f8f4 0%, #ddeee4 100%);
+            background: linear-gradient(135deg, var(--hero-bg1, #f1f8f4) 0%, var(--hero-bg2, #ddeee4) 100%);
             border-radius: 12px;
             margin: 2rem 0;
             padding: 2.5rem 2rem;
@@ -393,7 +393,7 @@
 
         /* --- KATALOG MENU & FILTER SECTION --- */
         .catalog-section {
-            background: linear-gradient(135deg, #2e6d55 0%, #255746 100%);
+            background: linear-gradient(135deg, var(--primary-mid, #2e6d55) 0%, var(--primary-dark) 100%);
             border-radius: 16px;
             padding: 2rem;
             color: var(--white);
@@ -465,7 +465,7 @@
         }
 
         .product-card {
-            background: var(--white);
+            background: var(--card-bg, var(--white));
             color: var(--text-color);
             border-radius: 12px;
             padding: 1rem;
@@ -615,7 +615,7 @@
         }
 
         .btn-detail:hover {
-            background: #1a4233;
+            filter: brightness(0.82);
         }
 
         /* --- MODAL FORM PEMESANAN --- */
@@ -1129,14 +1129,26 @@
         try {
           const s = await api.settings();
           try {
+            const THEME_DEF = { primary: "#40896c", dark: "#255746", light: "#bdddcc" };
             let t = s.app_theme;
             if (typeof t === "string") t = JSON.parse(t);
             const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+            const eff = {
+              primary: ok(t?.primary) ? t.primary : THEME_DEF.primary,
+              dark: ok(t?.dark) ? t.dark : THEME_DEF.dark,
+              light: ok(t?.light) ? t.light : THEME_DEF.light,
+            };
             const rt = document.documentElement.style;
-            if (t && typeof t === "object") {
-              if (ok(t.primary)) rt.setProperty("--primary", t.primary);
-              if (ok(t.dark)) rt.setProperty("--primary-dark", t.dark);
-              if (ok(t.light)) rt.setProperty("--primary-light", t.light);
+            rt.setProperty("--primary", eff.primary);
+            rt.setProperty("--primary-dark", eff.dark);
+            rt.setProperty("--primary-light", eff.light);
+            if (eff.primary !== THEME_DEF.primary || eff.dark !== THEME_DEF.dark || eff.light !== THEME_DEF.light) {
+              rt.setProperty("--primary-mid", eff.primary);
+              rt.setProperty("--card-bg", eff.light);
+              rt.setProperty("--hero-bg1", "#ffffff");
+              rt.setProperty("--hero-bg2", eff.light);
+            } else {
+              ["--primary-mid", "--card-bg", "--hero-bg1", "--hero-bg2"].forEach((v) => rt.removeProperty(v));
             }
           } catch {}
           const set = (sel, fn) => { const el = document.querySelector(sel); if (el) fn(el); };

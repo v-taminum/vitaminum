@@ -685,9 +685,9 @@ async function loadSettings() {
           ["Vitaminum", DEF],
           ["Biru", { primary: "#2f7fae", dark: "#1e5a7c", light: "#c6e3f2" }],
           ["Oranye", { primary: "#c96a1f", dark: "#7c3f0e", light: "#f3d9b8" }],
+          ["Kuning Emas", { primary: "#d97706", dark: "#92400e", light: "#fde68a" }],
           ["Ungu", { primary: "#7c4dab", dark: "#4e2c6e", light: "#ddcdf0" }],
           ["Merah", { primary: "#c04545", dark: "#7c2424", light: "#f2c9c9" }],
-          ["Kuning", { primary: "#b98a1d", dark: "#6e5210", light: "#f0e0b8" }],
         ];
         let selIdx = Math.max(0, PRESETS.findIndex(([, p]) => p.primary === cur.primary && p.dark === cur.dark && p.light === cur.light));
         const wrap = document.createElement("div"); wrap.className = "theme-pick";
