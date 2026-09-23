@@ -173,7 +173,9 @@ tbody tr:hover{background:#eef6f0}
   .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem}
   .table-wrap tbody td[colspan]{display:block;text-align:center}
   .table-wrap tbody td[colspan]::before{content:none}
-  .table-wrap td .row{justify-content:flex-start;flex-wrap:wrap}
+  .table-wrap td .row{justify-content:flex-start;flex-wrap:nowrap}
+  .table-wrap td .o-act{max-width:none;margin:0}
+  .table-wrap td .row .btn{flex:1;white-space:nowrap;padding-left:.4rem;padding-right:.4rem}
   .table-wrap img.thumb{width:64px;height:64px}
   .table-wrap tbody td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
   .table-wrap tbody td .cell-body > *{min-width:0}
