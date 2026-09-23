@@ -442,6 +442,37 @@
             font-weight: 700;
         }
 
+        .catalog-tools {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .catalog-tools input,
+        .catalog-tools select {
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font: inherit;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .catalog-tools input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .catalog-tools input {
+            min-width: 200px;
+        }
+
+        .catalog-tools select option {
+            color: #0e201b;
+        }
+
         /* Product Grid */
         .product-grid {
             display: grid;
@@ -928,6 +959,15 @@
         <section class="catalog-section" id="katalog-menu">
             <div class="catalog-header">
                 <h2>Katalog Menu</h2>
+                <div class="catalog-tools">
+                    <input id="shopSearch" type="search" placeholder="Cari jus favoritmu..." aria-label="Cari produk">
+                    <select id="shopSort" aria-label="Urutkan produk">
+                        <option value="name_asc">Nama A–Z</option>
+                        <option value="name_desc">Nama Z–A</option>
+                        <option value="price_asc">Harga termurah</option>
+                        <option value="price_desc">Harga termahal</option>
+                    </select>
+                </div>
             </div>
 
             <!-- PRODUCT GRID CONTAINER -->
@@ -1015,12 +1055,12 @@
             return [p && p.label, p && p.name].map((s) => String(s || "").trim()).filter(Boolean).join(" ");
         }
 
-        function renderProducts(items) {
+        function renderProducts(items, emptyMsg) {
             const gridContainer = document.getElementById('productGrid');
             gridContainer.innerHTML = '';
 
             if (!items.length) {
-                gridContainer.innerHTML = '<div class="no-result">Belum ada menu tersedia.</div>';
+                gridContainer.innerHTML = '<div class="no-result">' + (emptyMsg || 'Belum ada menu tersedia.') + '</div>';
                 return;
             }
 
@@ -1118,13 +1158,31 @@
             el.href = makeWaUrl("Halo Vitaminum, saya ingin memesan.");
             if (waNumber) { el.target = "_blank"; el.rel = "noopener"; }
           });
+          // Nama tampil = "Label Nama" (mis. "Jus Wortel"); label kosong -> nama saja.
+          const fullName = (p) => [p?.label, p?.name].map((s) => String(s ?? "").trim()).filter(Boolean).join(" ");
           const dbProducts = await api.products({ limit: 100 });
-          renderProducts(dbProducts);
+          const shopState = { q: "", sort: "name_asc" };
+          function applyShopFilter() {
+            const q = shopState.q.trim().toLowerCase();
+            let list = (dbProducts || []).filter((p) => {
+              if (!q) return true;
+              return [p.label, p.name].map((s) => String(s || "").toLowerCase()).join(" ").includes(q);
+            });
+            const byName = (a, b) => fullName(a).localeCompare(fullName(b), "id");
+            list = [...list].sort(
+              shopState.sort === "name_desc" ? (a, b) => byName(b, a)
+              : shopState.sort === "price_asc" ? (a, b) => (Number(a.price) || 0) - (Number(b.price) || 0)
+              : shopState.sort === "price_desc" ? (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0)
+              : byName
+            );
+            renderProducts(list, q && !list.length ? "Tidak ada produk yang cocok dengan pencarian." : "");
+          }
+          document.getElementById("shopSearch").oninput = (e) => { shopState.q = e.target.value; applyShopFilter(); };
+          document.getElementById("shopSort").onchange = (e) => { shopState.sort = e.target.value; applyShopFilter(); };
+          applyShopFilter();
           const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
           const siteUrl = (window.VITAMINUM_ENV.SITE_URL || location.origin).replace(/\/+$/, "");
           const rupiah = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
-          // Nama tampil = "Label Nama" (mis. "Jus Wortel"); label kosong -> nama saja.
-          const fullName = (p) => [p?.label, p?.name].map((s) => String(s ?? "").trim()).filter(Boolean).join(" ");
           // cyrb53 + contentVer WAJIB identik dengan tools/gen-share-pages.mjs
           const cyrb53 = (str, seed = 0) => {
             let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
