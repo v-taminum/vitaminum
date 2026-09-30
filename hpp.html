@@ -275,7 +275,7 @@ const liveHarga = (id) => { const it = items.find((x) => String(x.id) === String
 function renderItemTables() {
   const mk = (list, tb) => {
     document.getElementById(tb).innerHTML = list.map((b) => `<tr>
-      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(b.nama)}</b><span class="muted">${esc(b.satuan)}</span></div></td>
+      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(b.nama)}</b></div></td>
       <td data-l="Qty Beli">${fmt2(b.qty_beli)} ${esc(b.satuan)}</td>
       <td data-l="Harga Beli">${fmtRp(b.harga_beli)}</td>
       <td data-l="Harga Satuan">${fmtRp(b.harga_satuan)} / ${esc(b.satuan)}</td>
