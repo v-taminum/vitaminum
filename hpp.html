@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#255746">
+<link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+<title>HPP Vitaminum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
+  --bg-color:#f1f8f4;--text-color:#0e201b;--text-muted:#575757;--white:#ffffff;
+  --border-color:#90c5ad;--danger:#b3261e;
+  --shadow:0 10px 15px -3px rgba(46,109,85,.10),0 4px 6px -4px rgba(46,109,85,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Quicksand',system-ui,sans-serif}
+html,body{width:100%;overflow-x:clip}
+body{background:var(--bg-color);color:var(--text-color);line-height:1.5;min-height:100vh}
+a{color:inherit;text-decoration:none}
+.container{max-width:1366px;margin:0 auto;padding:0 32px}
+header{background:var(--white);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:100}
+.navbar{display:flex;align-items:center;gap:1rem;padding-top:.8rem;padding-bottom:.8rem}
+.nav-left{display:flex;align-items:center}
+.logo{display:inline-flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.2rem;color:var(--primary-dark)}
+.logo-img{width:34px;height:34px;border-radius:9px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;flex-shrink:0}
+.logo-img img{width:100%;height:100%;object-fit:cover}
+.nav-right{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.btn{padding:.55rem 1rem;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid transparent;font-size:.85rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:42px;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border-color:var(--primary);color:var(--primary-dark)}.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}.btn-danger:hover{filter:brightness(.9)}
+.btn-xs{padding:.35rem .6rem;font-size:.75rem;min-height:38px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+main.container{padding-top:1.25rem;padding-bottom:2rem}
+.card{background:var(--white);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.02)}
+.card h2{font-size:1.15rem;color:var(--primary-dark);margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+.muted{color:var(--text-muted);font-size:.82rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:.9rem 0 0}
+.tab{border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;font-family:inherit}
+.tab:hover{background:var(--primary-light)}
+.tab.on{background:var(--primary);color:#fff}
+.tabpane{display:none;margin-top:1rem}
+.tabpane.on{display:block}
+.grid3{display:grid;gap:10px}
+.grid3>*{min-width:0}
+@media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}
+label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
+input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
+input[type="text"],input[type="number"],select{min-height:46px}
+select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23255746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+.recipe-builder{border:2px dashed var(--border-color);padding:1rem;border-radius:10px;background:#f7faf8;margin-bottom:1rem}
+.recipe-builder h3{font-size:.95rem;color:var(--primary-dark);margin-bottom:.6rem}
+.table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+th,td{padding:.6rem;text-align:left;vertical-align:top;border-bottom:1px solid #e6f0ea}
+th{background:var(--primary-light);color:var(--primary-dark);font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
+.table-wrap td.cell-main{white-space:normal;min-width:200px}
+img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eef4f0}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;background:var(--primary-light);color:var(--primary-dark);white-space:nowrap}
+.summary-box{background:var(--primary-light);color:var(--primary-dark);padding:.8rem 1rem;border-radius:8px;margin-top:.8rem;font-weight:700;border:1px solid var(--border-color)}
+.detail-list{margin:.2rem 0 .2rem 1.1rem;font-size:.82rem}
+.detail-list li{margin-bottom:2px}
+.formula{background:#f7faf8;border:1px dashed var(--border-color);border-radius:8px;padding:.55rem .8rem;font-size:.78rem;color:var(--text-muted);margin-top:.6rem}
+.pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
+@media(max-width:768px){.container,.navbar{padding-left:16px;padding-right:16px}.navbar{flex-wrap:wrap;gap:.75rem}}
+@media(max-width:640px){
+  section .table-wrap{overflow:visible;border:0;background:transparent}
+  .table-wrap table{display:block;width:100%;min-width:0;border:0}
+  .table-wrap tbody{display:block;width:100%}
+  .table-wrap thead{display:none}
+  .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.5rem .9rem;background:#fff}
+  .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;padding:.4rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
+  .table-wrap tbody td:first-child,.table-wrap tbody td:last-child{width:auto;text-align:left}
+  .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.72rem;font-weight:800;text-align:left;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem;padding-right:.6rem;border-right:1px solid var(--border-color)}
+  .table-wrap tbody td[colspan]{display:block;text-align:center}
+  .table-wrap tbody td[colspan]::before{content:none}
+  .table-wrap td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
+  .table-wrap td .cell-body>*{min-width:0}
+  .table-wrap td .row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;flex:1;min-width:0}
+  .table-wrap td .row .btn{min-width:0;white-space:nowrap;min-height:44px}
+  .pager{justify-content:center}
+}
+</style>
+</head>
+<body>
+<header id="siteHeader" style="display:none">
+  <div class="container navbar">
+    <div class="nav-left">
+      <a href="./admin.html" class="logo" id="brandLogo"><span class="logo-img"><i class="fa-solid fa-calculator"></i></span><span class="logo-text">HPP</span></a>
+    </div>
+    <div class="nav-right">
+      <a href="./admin.html" class="btn btn-outline"><i class="fa-solid fa-gear"></i> Admin</a>
+      <a href="./index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card" id="authGate" style="display:none">
+    <h2><i class="fa-solid fa-lock"></i> Khusus Admin</h2>
+    <p class="muted">Silakan login dulu untuk membuka kalkulator HPP.</p>
+    <div class="row" style="margin-top:.8rem"><a href="./admin.html" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Ke Halaman Login</a></div>
+  </div>
+
+  <div id="hppApp" style="display:none">
+    <section class="card">
+      <h2><i class="fa-solid fa-calculator"></i> Kalkulator HPP &amp; Manajemen Menu</h2>
+      <p class="muted">Harga satuan = harga beli &divide; qty beli &nbsp;•&nbsp; HPP = &Sigma;(qty pakai &times; harga satuan) &nbsp;•&nbsp; Jual = HPP &times; (1 + margin%)</p>
+      <div class="tabs" id="hppTabs">
+        <button class="tab on" data-t="bahan">1. Bahan Baku &amp; Operasional</button>
+        <button class="tab" data-t="menu">2. Buat Menu &amp; Resep</button>
+        <button class="tab" data-t="daftar">3. Daftar Menu &amp; HPP</button>
+      </div>
+
+      <div class="tabpane on" data-pane="bahan">
+        <form id="formBahan">
+          <div class="grid3">
+            <label>Kategori<select id="tipeBahan"><option value="operasional">Operasional &amp; Kemasan</option><option value="bahan">Bahan Baku Minuman</option></select></label>
+            <label>Nama Item<input id="namaBahan" placeholder="Botol PE 350ml / Mangga" required></label>
+            <label>Satuan<select id="satuanBahan"><option value="pcs">Pcs / Buah</option><option value="gram">Gram (g)</option><option value="ml">MiliLiter (ml)</option></select></label>
+            <label>Jumlah Beli (Qty Utuh)<input id="qtyBeli" type="number" step="any" min="0" placeholder="1000" required></label>
+            <label>Total Harga Beli (Rp)<input id="hargaBeli" type="number" min="0" placeholder="25000" required></label>
+            <label>&nbsp;<button type="submit" class="btn btn-primary">Simpan Item</button></label>
+          </div>
+        </form>
+        <div class="row" id="importRow" style="display:none;margin-top:.8rem">
+          <button class="btn btn-outline" id="btnImport"><i class="fa-solid fa-file-import"></i> Impor Data Lama dari Browser Ini</button>
+          <span class="muted">Ditemukan data HPP lama tersimpan di browser ini.</span>
+        </div>
+        <h3 style="margin-top:1rem;color:var(--primary-dark)">Tabel Operasional &amp; Kemasan</h3>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Qty Beli</th><th>Harga Beli</th><th>Harga Satuan</th><th>Aksi</th></tr></thead><tbody id="tabelOperasional"></tbody></table></div>
+        <h3 style="margin-top:1rem;color:var(--primary-dark)">Tabel Bahan Baku Minuman</h3>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Qty Beli</th><th>Harga Beli</th><th>Harga Satuan</th><th>Aksi</th></tr></thead><tbody id="tabelBahan"></tbody></table></div>
+      </div>
+
+      <div class="tabpane" data-pane="menu">
+        <div class="grid3">
+          <label>Nama Menu<input id="namaMenu" placeholder="Jus Mangga Mix Nanas"></label>
+          <label>Kategori<select id="kategoriMenu"><option>Jus Buah &amp; Sayur</option><option>Smoothie</option><option>Wellness Shot</option><option>Infused Water</option><option>Botanical Tea</option><option>Minuman Rempah Kekinian</option></select></label>
+          <label>Target Margin Profit (%)<input id="marginMenu" type="number" value="100" min="0"></label>
+        </div>
+        <div class="recipe-builder" style="margin-top:.8rem">
+          <h3>1. Rincian Operasional &amp; Kemasan</h3>
+          <div class="grid3">
+            <label>Pilih Item<select id="pilihOperasionalResep"></select></label>
+            <label>Jumlah Pemakaian<input id="qtyOperasionalResep" type="number" step="any" min="0" placeholder="1"></label>
+            <label>&nbsp;<button type="button" class="btn btn-primary" id="btnAddOps">+ Tambah</button></label>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Pemakaian</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelResepOps"></tbody></table></div>
+        </div>
+        <div class="recipe-builder">
+          <h3>2. Rincian Bahan Baku Minuman</h3>
+          <div class="grid3">
+            <label>Pilih Item<select id="pilihBahanResep"></select></label>
+            <label>Jumlah Pemakaian<input id="qtyBahanResep" type="number" step="any" min="0" placeholder="250"></label>
+            <label>&nbsp;<button type="button" class="btn btn-primary" id="btnAddBahan">+ Tambah</button></label>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Pemakaian</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelResepBahan"></tbody></table></div>
+        </div>
+        <div class="summary-box">Total Estimasi HPP: <span id="hppSementara">Rp 0</span></div>
+        <button type="button" class="btn btn-primary" id="btnSaveMenu" style="width:100%;margin-top:.8rem">Simpan Menu Lengkap</button>
+      </div>
+
+      <div class="tabpane" data-pane="daftar">
+        <p class="muted">HPP dihitung ulang dari harga satuan <b>terkini</b> setiap dibuka. Menghapus item bahan tidak merusak resep (memakai harga snapshot).</p>
+        <div class="table-wrap"><table><thead><tr><th>Kategori</th><th>Nama Menu</th><th>Rincian</th><th>Total HPP</th><th>Margin</th><th>Harga Jual</th><th>Aksi</th></tr></thead><tbody id="tabelDaftarMenu"></tbody></table></div>
+        <div class="formula">Rumus: harga_satuan = harga_beli &divide; qty_beli &nbsp;•&nbsp; subtotal = qty_pakai &times; harga_satuan &nbsp;•&nbsp; total_hpp = &Sigma; subtotal &nbsp;•&nbsp; harga_jual = total_hpp &times; (1 + margin&divide;100). Sama persis dengan view SQL <code>hpp_menu_kalkulasi</code>.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="./assets/config.js?v=20260924"></script>
+<script type="module">
+import { sb, isConfigured, loadLocalConfig } from "./assets/supabaseClient.js?v=20260924";
+await loadLocalConfig();
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+const fmt2 = (v) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
+function toast(msg, icon = "success") { Toast.fire({ icon, title: msg }); }
+async function askDelete(title, text) {
+  const r = await Swal.fire({ title, text, icon: "warning", showCancelButton: true, confirmButtonText: "Ya, hapus", cancelButtonText: "Batal", confirmButtonColor: "#b3261e" });
+  return r.isConfirmed;
+}
+// Tema warna + identitas dari setting toko (sama seperti admin).
+function applyTheme(s) {
+  try {
+    let t = s && s.app_theme;
+    if (typeof t === "string") t = JSON.parse(t);
+    if (!t || typeof t !== "object") return;
+    const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+    const r = document.documentElement.style;
+    if (ok(t.primary)) r.setProperty("--primary", t.primary);
+    if (ok(t.dark)) r.setProperty("--primary-dark", t.dark);
+    if (ok(t.light)) r.setProperty("--primary-light", t.light);
+  } catch {}
+}
+async function applyIdentity() {
+  try {
+    const { data, error } = await sb().from("app_settings").select("key,value");
+    if (error) throw error;
+    const s = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    applyTheme(s);
+    const txt = document.querySelector(".logo-text");
+    if (txt) txt.textContent = "HPP " + (s.app_name || "Vitaminum");
+    if (s.app_name) document.title = "HPP " + s.app_name;
+    if (s.app_favicon) {
+      let l = document.querySelector('link[rel="icon"]');
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.append(l); }
+      l.href = s.app_favicon;
+    }
+    if (s.app_logo) {
+      const slot = document.querySelector(".logo-img");
+      if (slot) { slot.innerHTML = ""; const img = document.createElement("img"); img.src = s.app_logo; img.alt = "logo"; img.onerror = () => { slot.innerHTML = '<i class="fa-solid fa-calculator"></i>'; }; slot.append(img); }
+    }
+  } catch (e) { console.warn(e.message); }
+}
+
+// ---- Auth gate: khusus admin login ----
+let items = [];
+let resepDraft = [];
+try {
+  if (!isConfigured) throw new Error("assets/config.js belum diisi.");
+  const { data: { session } } = await sb().auth.getSession();
+  if (!session?.user) {
+    $("#authGate").style.display = "";
+  } else {
+    $("#siteHeader").style.display = "";
+    $("#hppApp").style.display = "";
+    applyIdentity();
+    await loadItems();
+    renderDraft();
+    checkLegacy();
+  }
+} catch (e) {
+  $("#authGate").style.display = "";
+  $("#authGate").querySelector(".muted").textContent = "Gagal koneksi: " + (e.message || e);
+}
+
+// ---- Tabs ----
+$("#hppTabs").onclick = (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  $$("#hppTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
+  $$("#hppApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
+  if (b.dataset.t === "daftar") renderMenus();
+};
+
+// ---- Items (bahan & operasional) ----
+async function loadItems() {
+  const { data, error } = await sb().from("hpp_items").select("*").order("tipe").order("nama");
+  if (error) return toast(error.message, "error");
+  items = (data || []).map((r) => ({ ...r, qty_beli: Number(r.qty_beli) || 0, harga_beli: Number(r.harga_beli) || 0, harga_satuan: Number(r.harga_satuan) || 0 }));
+  renderItemTables();
+  fillDropdowns();
+}
+const liveHarga = (id) => { const it = items.find((x) => String(x.id) === String(id)); return it ? it.harga_satuan : null; };
+function renderItemTables() {
+  const mk = (list, tb) => {
+    document.getElementById(tb).innerHTML = list.map((b) => `<tr>
+      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(b.nama)}</b><span class="muted">${esc(b.satuan)}</span></div></td>
+      <td data-l="Qty Beli">${fmt2(b.qty_beli)} ${esc(b.satuan)}</td>
+      <td data-l="Harga Beli">${fmtRp(b.harga_beli)}</td>
+      <td data-l="Harga Satuan">${fmtRp(b.harga_satuan)} / ${esc(b.satuan)}</td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-hppdel="${b.id}">Hapus</button></div></td></tr>`).join("")
+      || `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada data.</td></tr>`;
+  };
+  mk(items.filter((b) => b.tipe === "operasional"), "tabelOperasional");
+  mk(items.filter((b) => b.tipe === "bahan"), "tabelBahan");
+}
+function fillDropdowns() {
+  const mk = (tipe, sel, empty) => {
+    const el = document.getElementById(sel);
+    const list = items.filter((b) => b.tipe === tipe);
+    el.innerHTML = list.length
+      ? list.map((b) => `<option value="${b.id}">${esc(b.nama)} (${esc(b.satuan)}) - Rp ${fmt2(b.harga_satuan)}/${esc(b.satuan)}</option>`).join("")
+      : `<option value="">-- ${empty} --</option>`;
+  };
+  mk("operasional", "pilihOperasionalResep", "Operasional Kosong");
+  mk("bahan", "pilihBahanResep", "Bahan Baku Kosong");
+}
+$("#formBahan").onsubmit = async (e) => {
+  e.preventDefault();
+  const payload = {
+    tipe: $("#tipeBahan").value,
+    nama: $("#namaBahan").value.trim(),
+    satuan: $("#satuanBahan").value,
+    qty_beli: Number($("#qtyBeli").value) || 0,
+    harga_beli: Number($("#hargaBeli").value) || 0,
+  };
+  if (!payload.nama) return toast("Nama item wajib diisi", "error");
+  if (!(payload.qty_beli > 0)) return toast("Qty beli harus lebih dari 0 (pembagi harga satuan)", "error");
+  if (!(payload.harga_beli >= 0)) return toast("Harga beli tidak valid", "error");
+  const { error } = await sb().from("hpp_items").insert(payload);
+  if (error) return toast(error.message, "error");
+  e.target.reset();
+  toast(`Item "${payload.nama}" tersimpan`);
+  loadItems();
+};
+$("#hppApp").addEventListener("click", async (e) => {
+  const del = e.target.closest("[data-hppdel]");
+  if (del && await askDelete("Hapus item?", "Resep yang memakai item ini memakai harga snapshot.")) {
+    const { error } = await sb().from("hpp_items").delete().eq("id", del.dataset.hppdel);
+    toast(error ? error.message : "Item dihapus", error ? "error" : "success");
+    if (!error) loadItems();
+  }
+  const rdel = e.target.closest("[data-rdraft]");
+  if (rdel) { resepDraft.splice(+rdel.dataset.rdraft, 1); renderDraft(); }
+  const mdel = e.target.closest("[data-mdel]");
+  if (mdel && await askDelete("Hapus menu?", "Resep di dalamnya ikut terhapus.")) {
+    const { error } = await sb().from("hpp_menus").delete().eq("id", mdel.dataset.mdel);
+    toast(error ? error.message : "Menu dihapus", error ? "error" : "success");
+    if (!error) renderMenus();
+  }
+});
+
+// ---- Draft resep (in-memory) ----
+function addToDraft(selId, qtyId) {
+  const id = $(selId).value;
+  const qty = Number($(qtyId).value) || 0;
+  if (!id) return toast("Pilih item dulu", "error");
+  if (!(qty > 0)) return toast("Jumlah pemakaian harus lebih dari 0", "error");
+  const it = items.find((x) => String(x.id) === String(id));
+  if (!it) return toast("Item tidak ditemukan", "error");
+  resepDraft.push({ item_id: it.id, item_nama: it.nama, item_satuan: it.satuan, item_tipe: it.tipe, item_harga: it.harga_satuan, qty });
+  $(qtyId).value = "";
+  renderDraft();
+}
+$("#btnAddOps").onclick = () => addToDraft("#pilihOperasionalResep", "#qtyOperasionalResep");
+$("#btnAddBahan").onclick = () => addToDraft("#pilihBahanResep", "#qtyBahanResep");
+function draftSubtotal(d) { return (liveHarga(d.item_id) ?? d.item_harga) * d.qty; }
+function renderDraft() {
+  const mk = (tipe, tb) => {
+    const list = resepDraft.map((d, i) => ({ d, i })).filter(({ d }) => d.item_tipe === tipe);
+    document.getElementById(tb).innerHTML = list.map(({ d, i }) => {
+      const h = liveHarga(d.item_id) ?? d.item_harga;
+      return `<tr>
+        <td data-l="Item" class="cell-main"><div class="cell-body"><b>${esc(d.item_nama)}</b></div></td>
+        <td data-l="Pemakaian">${fmt2(d.qty)} ${esc(d.item_satuan)}</td>
+        <td data-l="Harga Satuan">${fmtRp(h)}</td>
+        <td data-l="Subtotal">${fmtRp(h * d.qty)}</td>
+        <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-rdraft="${i}">Hapus</button></div></td></tr>`;
+    }).join("") || `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada item ditambahkan.</td></tr>`;
+  };
+  mk("operasional", "tabelResepOps");
+  mk("bahan", "tabelResepBahan");
+  $("#hppSementara").textContent = fmtRp(resepDraft.reduce((a, d) => a + draftSubtotal(d), 0));
+}
+$("#btnSaveMenu").onclick = async () => {
+  const nama = $("#namaMenu").value.trim();
+  const kategori = $("#kategoriMenu").value;
+  const margin = Number($("#marginMenu").value);
+  if (!nama) return toast("Nama menu wajib diisi", "error");
+  if (!resepDraft.length) return toast("Komposisi resep belum diisi", "error");
+  if (!(margin >= 0)) return toast("Margin tidak valid", "error");
+  const { data: m, error: e1 } = await sb().from("hpp_menus").insert({ nama, kategori, margin }).select("id").single();
+  if (e1) return toast(e1.message, "error");
+  const rows = resepDraft.map((d) => ({ menu_id: m.id, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
+  const { error: e2 } = await sb().from("hpp_resep").insert(rows);
+  if (e2) return toast(e2.message, "error");
+  resepDraft = [];
+  $("#namaMenu").value = "";
+  renderDraft();
+  toast("Menu tersimpan");
+};
+
+// ---- Daftar menu (hitung ulang dari harga live) ----
+async function renderMenus() {
+  const tb = $("#tabelDaftarMenu");
+  tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Memuat...</td></tr>`;
+  const [{ data: menus, error: e1 }, { data: lines, error: e2 }] = await Promise.all([
+    sb().from("hpp_menus").select("*").order("nama"),
+    sb().from("hpp_resep").select("*, hpp_items(harga_satuan,nama,satuan,tipe)").order("id"),
+  ]);
+  if (e1 || e2) { tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Gagal memuat.</td></tr>`; return toast((e1 || e2).message, "error"); }
+  const byMenu = new Map();
+  (lines || []).forEach((r) => {
+    if (!byMenu.has(r.menu_id)) byMenu.set(r.menu_id, []);
+    byMenu.get(r.menu_id).push(r);
+  });
+  if (!menus?.length) { tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Belum ada menu tersimpan.</td></tr>`; return; }
+  tb.innerHTML = menus.map((m) => {
+    const rows = byMenu.get(m.id) || [];
+    let total = 0, ops = [], bahans = [];
+    rows.forEach((r) => {
+      const h = Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0;
+      const sub = h * (Number(r.qty) || 0);
+      total += sub;
+      const nm = r.hpp_items?.nama || r.item_nama;
+      const st = r.hpp_items?.satuan || r.item_satuan;
+      const tp = r.hpp_items?.tipe || r.item_tipe;
+      const li = `<li><b>${esc(nm)}</b>: ${fmt2(r.qty)} ${esc(st)} (${fmtRp(sub)})</li>`;
+      (tp === "operasional" ? ops : bahans).push(li);
+    });
+    const jual = total * (1 + (Number(m.margin) || 0) / 100);
+    const rinc = (arr) => arr.length ? `<ul class="detail-list">${arr.join("")}</ul>` : '<span class="muted"><i>- Tidak ada -</i></span>';
+    return `<tr>
+      <td data-l="Kategori"><span class="badge">${esc(m.kategori)}</span></td>
+      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(m.nama)}</b></div></td>
+      <td data-l="Rincian" class="cell-main"><div class="cell-body"><b class="muted">Operasional:</b>${rinc(ops)}<b class="muted">Bahan:</b>${rinc(bahans)}</div></td>
+      <td data-l="Total HPP"><b>${fmtRp(total)}</b></td>
+      <td data-l="Margin">${Number(m.margin) || 0}%</td>
+      <td data-l="Harga Jual"><b style="color:var(--primary-dark)">${fmtRp(jual)}</b></td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-mdel="${m.id}">Hapus</button></div></td></tr>`;
+  }).join("");
+}
+
+// ---- Impor sekali dari localStorage versi lama ----
+function checkLegacy() {
+  try {
+    const b = JSON.parse(localStorage.getItem("dataBahan") || "[]");
+    const m = JSON.parse(localStorage.getItem("dataMenu") || "[]");
+    if (b.length || m.length) $("#importRow").style.display = "";
+  } catch {}
+}
+$("#btnImport").onclick = async () => {
+  if (!confirm("Impor semua data HPP lama dari browser ini ke database?")) return;
+  try {
+    const b = JSON.parse(localStorage.getItem("dataBahan") || "[]");
+    const m = JSON.parse(localStorage.getItem("dataMenu") || "[]");
+    const idMap = {};
+    for (const x of b) {
+      const { data, error } = await sb().from("hpp_items").insert({
+        tipe: x.tipe === "operasional" ? "operasional" : "bahan",
+        nama: String(x.nama || ""), satuan: String(x.satuan || "pcs"),
+        qty_beli: Number(x.qty) || 0, harga_beli: Number(x.harga) || 0,
+      }).select("id").single();
+      if (error) throw error;
+      idMap[x.id] = data.id;
+    }
+    for (const menu of m) {
+      const { data: nm, error: e1 } = await sb().from("hpp_menus").insert({
+        nama: String(menu.namaMenu || menu.nama || ""), kategori: String(menu.kategori || "Jus Buah & Sayur"), margin: Number(menu.margin) || 0,
+      }).select("id").single();
+      if (e1) throw e1;
+      const rows = (menu.resep || []).map((r) => ({
+        menu_id: nm.id, item_id: idMap[r.bahanId] ?? null,
+        item_nama: String(r.nama || ""), item_satuan: String(r.satuan || "pcs"), item_tipe: r.tipe || "bahan",
+        item_harga: Number(r.hargaSatuan) || 0, qty: Number(r.qty) || 0,
+      }));
+      if (rows.length) {
+        const { error: e2 } = await sb().from("hpp_resep").insert(rows);
+        if (e2) throw e2;
+      }
+    }
+    localStorage.removeItem("dataBahan");
+    localStorage.removeItem("dataMenu");
+    $("#importRow").style.display = "none";
+    toast("Data lama berhasil diimpor");
+    loadItems();
+  } catch (e) { toast("Gagal impor: " + (e.message || e), "error"); }
+};
+</script>
+</body>
+</html>
