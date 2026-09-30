@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Phosphor Icons (Regular) -->
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <link rel="stylesheet" href="./assets/dropdown.css?v=1">
     
     <style>
         :root {
@@ -455,6 +456,26 @@
 
         .catalog-tools select option {
             color: #0e201b;
+        }
+
+        .catalog-tools .dd {
+            flex: 1 1 150px;
+            width: auto;
+            min-width: 150px;
+        }
+
+        .catalog-tools .dd-btn {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font-size: 0.85rem;
+            min-height: 0;
+        }
+
+        .catalog-tools .dd-chev {
+            color: #fff;
         }
 
         /* Product Grid */
@@ -1125,6 +1146,7 @@
     <script src="./assets/config.js?v=20260924"></script>
     <script type="module">
       import { api, isConfigured, sb } from "./assets/supabaseClient.js?v=20260924";
+      import { enhanceSelect } from "./assets/dropdown.js?v=1";
       if (isConfigured) {
         try {
           const s = await api.settings();
@@ -1228,6 +1250,7 @@
           }
           document.getElementById("shopSearch").oninput = (e) => { shopState.q = e.target.value; applyShopFilter(); };
           document.getElementById("shopSort").onchange = (e) => { shopState.sort = e.target.value; applyShopFilter(); };
+          enhanceSelect(document.getElementById("shopSort"));
           applyShopFilter();
           const slugify = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "produk";
           const siteUrl = (window.VITAMINUM_ENV.SITE_URL || location.origin).replace(/\/+$/, "");

@@ -1,0 +1,20 @@
+/* Dropdown custom bersama (toko + admin + hpp).
+   Mengganti tampilan <select> bawaan (daftar opsi OS tidak bisa di-CSS)
+   dengan tombol + kartu popup sesuai tema (font & warna mengikuti halaman).
+   Nilai tetap tersimpan di <select> asli (disembunyikan) sehingga semua
+   kode .value / .onchange yang ada tetap jalan tanpa diubah. */
+.dd{position:relative;display:flex;width:100%;min-width:0}
+.dd,.dd *{box-sizing:border-box}
+.dd select{display:none}
+.dd-btn{display:inline-flex;align-items:center;gap:.5rem;justify-content:space-between;width:100%;font:inherit;font-weight:500;cursor:pointer;border:1px solid var(--border-color);border-radius:8px;background:var(--white);color:var(--text-color);padding:.6rem .8rem;min-height:46px}
+.dd-btn:disabled{opacity:.5;cursor:not-allowed}
+.dd-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.dd-chev{width:.8em;height:.8em;flex-shrink:0;color:var(--primary-dark);transition:transform .15s}
+.dd.open .dd-chev{transform:rotate(180deg)}
+.dd-pop{position:fixed;display:none;box-sizing:border-box;background:#fff;color:#0e201b;border-radius:12px;box-shadow:0 12px 32px rgba(14,32,27,.20);padding:6px;z-index:9999;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dd-pop.open{display:block}
+.dd-opt{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;background:none;border:0;padding:.6rem .7rem;border-radius:8px;font:inherit;font-size:.88rem;color:inherit;cursor:pointer}
+.dd-opt:hover{background:var(--primary-light)}
+.dd-opt.sel{color:var(--primary-dark);font-weight:700}
+.dd-check{width:1em;height:1em;margin-left:auto;flex-shrink:0;visibility:hidden}
+.dd-opt.sel .dd-check{visibility:visible}

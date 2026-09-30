@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="./assets/dropdown.css?v=1">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
@@ -159,6 +160,8 @@ tbody tr:hover{background:#eef6f0}
 .prods-tools{flex:1;justify-content:flex-end;min-width:260px}
 .prods-tools input{width:auto;flex:1;min-width:160px;max-width:320px}
 .prods-tools select{width:auto}
+.prods-tools .dd{flex:1 1 160px;max-width:320px;width:auto}
+.nota-status .dd{flex:1;width:auto;min-width:0}
 @media(max-width:640px){
   .prods-bar{flex-direction:column;align-items:stretch}
   .prods-bar .row{flex-wrap:wrap}
@@ -382,6 +385,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
     <script src="./assets/config.js?v=20260924"></script>
 <script type="module">
 import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260924";
+import { enhanceSelect } from "./assets/dropdown.js?v=1";
 await loadLocalConfig();
 if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
@@ -896,6 +900,7 @@ async function loadProducts() {
 }
 $("#pSearch").oninput = (e) => { pState.q = e.target.value; pState.page = 1; loadProducts(); };
 $("#pSort").onchange = (e) => { pState.sort = e.target.value; pState.page = 1; loadProducts(); };
+enhanceSelect($("#pSort"));
 bindRp($("#pPrice"));
 $("#pSave").onclick = async () => {
   const img = await uploadImage($("#pFile").files[0]);
@@ -1210,6 +1215,7 @@ async function openNota(gid) {
   notaOrder = { g, s };
   document.getElementById("notaBody").innerHTML = notaHtml(g, s);
   const sel = document.getElementById("notaStatus");
+  if (sel) enhanceSelect(sel);
   if (sel) sel.onchange = async () => {
     const ids = g.items.map((r) => r.id);
     const { error } = await sb().from("orders").update({ status: sel.value }).in("id", ids);
