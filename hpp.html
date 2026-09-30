@@ -133,7 +133,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
             <label>Satuan<select id="satuanBahan"><option value="pcs">Pcs / Buah</option><option value="gram">Gram (g)</option><option value="ml">MiliLiter (ml)</option></select></label>
             <label>Jumlah Beli (Qty Utuh)<input id="qtyBeli" type="number" step="any" min="0" placeholder="1000" required></label>
             <label>Total Harga Beli (Rp)<input id="hargaBeli" type="number" min="0" placeholder="25000" required></label>
-            <label>&nbsp;<button type="submit" class="btn btn-primary">Simpan Item</button></label>
+            <label>&nbsp;<span class="row"><button type="submit" class="btn btn-primary" id="btnSaveItem">Simpan Item</button><button type="button" class="btn btn-outline" id="btnCancelItem" hidden>Batal</button></span></label>
           </div>
         </form>
         <div class="row" id="importRow" style="display:none;margin-top:.8rem">
@@ -172,6 +172,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         </div>
         <div class="summary-box">Total Estimasi HPP: <span id="hppSementara">Rp 0</span></div>
         <button type="button" class="btn btn-primary" id="btnSaveMenu" style="width:100%;margin-top:.8rem">Simpan Menu Lengkap</button>
+        <button type="button" class="btn btn-outline" id="btnCancelMenu" style="width:100%;margin-top:.5rem" hidden>Batal Edit Menu</button>
       </div>
 
       <div class="tabpane" data-pane="daftar">
@@ -279,7 +280,7 @@ function renderItemTables() {
       <td data-l="Qty Beli">${fmt2(b.qty_beli)} ${esc(b.satuan)}</td>
       <td data-l="Harga Beli">${fmtRp(b.harga_beli)}</td>
       <td data-l="Harga Satuan">${fmtRp(b.harga_satuan)} / ${esc(b.satuan)}</td>
-      <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-hppdel="${b.id}">Hapus</button></div></td></tr>`).join("")
+      <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-hppedit="${b.id}">Edit</button><button class="btn btn-danger btn-xs" data-hppdel="${b.id}">Hapus</button></div></td></tr>`).join("")
       || `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada data.</td></tr>`;
   };
   mk(items.filter((b) => b.tipe === "operasional"), "tabelOperasional");
@@ -296,6 +297,7 @@ function fillDropdowns() {
   mk("operasional", "pilihOperasionalResep", "Operasional Kosong");
   mk("bahan", "pilihBahanResep", "Bahan Baku Kosong");
 }
+let editingItemId = null;
 $("#formBahan").onsubmit = async (e) => {
   e.preventDefault();
   const payload = {
@@ -308,13 +310,41 @@ $("#formBahan").onsubmit = async (e) => {
   if (!payload.nama) return toast("Nama item wajib diisi", "error");
   if (!(payload.qty_beli > 0)) return toast("Qty beli harus lebih dari 0 (pembagi harga satuan)", "error");
   if (!(payload.harga_beli >= 0)) return toast("Harga beli tidak valid", "error");
-  const { error } = await sb().from("hpp_items").insert(payload);
+  const wasEdit = !!editingItemId;
+  let error;
+  if (wasEdit) {
+    ({ error } = await sb().from("hpp_items").update(payload).eq("id", editingItemId));
+  } else {
+    ({ error } = await sb().from("hpp_items").insert(payload));
+  }
   if (error) return toast(error.message, "error");
-  e.target.reset();
-  toast(`Item "${payload.nama}" tersimpan`);
+  resetItemForm();
+  toast(wasEdit ? "Item diperbarui" : `Item "${payload.nama}" tersimpan`);
   loadItems();
 };
+function resetItemForm() {
+  $("#formBahan").reset();
+  editingItemId = null;
+  $("#btnSaveItem").textContent = "Simpan Item";
+  $("#btnCancelItem").hidden = true;
+}
+$("#btnCancelItem").onclick = resetItemForm;
 $("#hppApp").addEventListener("click", async (e) => {
+  const hed = e.target.closest("[data-hppedit]");
+  if (hed) {
+    const it = items.find((x) => String(x.id) === String(hed.dataset.hppedit));
+    if (!it) return toast("Item tidak ditemukan", "error");
+    editingItemId = it.id;
+    $("#tipeBahan").value = it.tipe;
+    $("#namaBahan").value = it.nama;
+    $("#satuanBahan").value = it.satuan;
+    $("#qtyBeli").value = it.qty_beli;
+    $("#hargaBeli").value = it.harga_beli;
+    $("#btnSaveItem").textContent = "Update Item";
+    $("#btnCancelItem").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
   const del = e.target.closest("[data-hppdel]");
   if (del && await askDelete("Hapus item?", "Resep yang memakai item ini memakai harga snapshot.")) {
     const { error } = await sb().from("hpp_items").delete().eq("id", del.dataset.hppdel);
@@ -328,6 +358,30 @@ $("#hppApp").addEventListener("click", async (e) => {
     const { error } = await sb().from("hpp_menus").delete().eq("id", mdel.dataset.mdel);
     toast(error ? error.message : "Menu dihapus", error ? "error" : "success");
     if (!error) renderMenus();
+  }
+  const medit = e.target.closest("[data-medit]");
+  if (medit) {
+    const { data: m, error: e1 } = await sb().from("hpp_menus").select("*").eq("id", medit.dataset.medit).single();
+    if (e1 || !m) return toast("Menu tidak ditemukan", "error");
+    const { data: lines, error: e2 } = await sb().from("hpp_resep").select("*, hpp_items(harga_satuan,nama,satuan,tipe)").eq("menu_id", m.id).order("id");
+    if (e2) return toast(e2.message, "error");
+    editingMenuId = m.id;
+    $("#namaMenu").value = m.nama;
+    $("#kategoriMenu").value = m.kategori;
+    $("#marginMenu").value = m.margin;
+    resepDraft = (lines || []).map((r) => ({
+      item_id: r.item_id,
+      item_nama: r.hpp_items?.nama || r.item_nama,
+      item_satuan: r.hpp_items?.satuan || r.item_satuan,
+      item_tipe: r.hpp_items?.tipe || r.item_tipe,
+      item_harga: Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0,
+      qty: Number(r.qty) || 0,
+    }));
+    $("#btnSaveMenu").textContent = "Update Menu";
+    $("#btnCancelMenu").hidden = false;
+    renderDraft();
+    document.querySelector('#hppTabs .tab[data-t="menu"]').click();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 });
 
@@ -363,6 +417,17 @@ function renderDraft() {
   mk("bahan", "tabelResepBahan");
   $("#hppSementara").textContent = fmtRp(resepDraft.reduce((a, d) => a + draftSubtotal(d), 0));
 }
+let editingMenuId = null;
+function resetMenuForm() {
+  resepDraft = [];
+  $("#namaMenu").value = "";
+  $("#marginMenu").value = 100;
+  editingMenuId = null;
+  $("#btnSaveMenu").textContent = "Simpan Menu Lengkap";
+  $("#btnCancelMenu").hidden = true;
+  renderDraft();
+}
+$("#btnCancelMenu").onclick = resetMenuForm;
 $("#btnSaveMenu").onclick = async () => {
   const nama = $("#namaMenu").value.trim();
   const kategori = $("#kategoriMenu").value;
@@ -370,15 +435,23 @@ $("#btnSaveMenu").onclick = async () => {
   if (!nama) return toast("Nama menu wajib diisi", "error");
   if (!resepDraft.length) return toast("Komposisi resep belum diisi", "error");
   if (!(margin >= 0)) return toast("Margin tidak valid", "error");
-  const { data: m, error: e1 } = await sb().from("hpp_menus").insert({ nama, kategori, margin }).select("id").single();
-  if (e1) return toast(e1.message, "error");
-  const rows = resepDraft.map((d) => ({ menu_id: m.id, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
+  const wasEdit = !!editingMenuId;
+  let menuId = editingMenuId;
+  if (wasEdit) {
+    const { error } = await sb().from("hpp_menus").update({ nama, kategori, margin }).eq("id", menuId);
+    if (error) return toast(error.message, "error");
+    const { error: eDel } = await sb().from("hpp_resep").delete().eq("menu_id", menuId);
+    if (eDel) return toast(eDel.message, "error");
+  } else {
+    const { data: m, error: e1 } = await sb().from("hpp_menus").insert({ nama, kategori, margin }).select("id").single();
+    if (e1) return toast(e1.message, "error");
+    menuId = m.id;
+  }
+  const rows = resepDraft.map((d) => ({ menu_id: menuId, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
   const { error: e2 } = await sb().from("hpp_resep").insert(rows);
   if (e2) return toast(e2.message, "error");
-  resepDraft = [];
-  $("#namaMenu").value = "";
-  renderDraft();
-  toast("Menu tersimpan");
+  resetMenuForm();
+  toast(wasEdit ? "Menu diperbarui" : "Menu tersimpan");
 };
 
 // ---- Daftar menu (hitung ulang dari harga live) ----
@@ -418,7 +491,7 @@ async function renderMenus() {
       <td data-l="Total HPP"><b>${fmtRp(total)}</b></td>
       <td data-l="Margin">${Number(m.margin) || 0}%</td>
       <td data-l="Harga Jual"><b style="color:var(--primary-dark)">${fmtRp(jual)}</b></td>
-      <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-mdel="${m.id}">Hapus</button></div></td></tr>`;
+      <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-medit="${m.id}">Edit</button><button class="btn btn-danger btn-xs" data-mdel="${m.id}">Hapus</button></div></td></tr>`;
   }).join("");
 }
 
