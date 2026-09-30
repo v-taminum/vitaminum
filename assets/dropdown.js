@@ -6,7 +6,7 @@ function __ddCloseAll(except) {
 if (typeof document !== "undefined" && !document.__ddBound) {
   document.__ddBound = true;
   document.addEventListener("pointerdown", (e) => {
-    if (!e.target.closest?.(".dd")) __ddCloseAll();
+    if (!e.target.closest?.(".dd, .dd-pop")) __ddCloseAll();
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") __ddCloseAll();
@@ -15,7 +15,8 @@ if (typeof document !== "undefined" && !document.__ddBound) {
 const DD_CHEV = '<svg class="dd-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const DD_CHECK = '<svg class="dd-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 export function enhanceSelect(sel) {
-  if (!sel || sel.dataset.dd === "1") return { refresh: () => sync() };
+  if (!sel) return { refresh() {}, close() {}, value: null };
+  if (sel.dataset.dd === "1") return sel.__ddApi;
   sel.dataset.dd = "1";
   const wrap = document.createElement("div");
   wrap.className = "dd";
@@ -74,6 +75,7 @@ export function enhanceSelect(sel) {
     sync();
   }
   function place() {
+    const wasOpen = pop.classList.contains("open");
     const r = btn.getBoundingClientRect();
     pop.style.minWidth = Math.max(r.width, 160) + "px";
     pop.style.maxWidth = Math.min(Math.max(r.width, 200), window.innerWidth - 16) + "px";
@@ -82,6 +84,7 @@ export function enhanceSelect(sel) {
     pop.classList.add("open");
     const h = Math.min(pop.scrollHeight, window.innerHeight * 0.4);
     pop.classList.remove("open");
+    if (wasOpen) pop.classList.add("open");
     pop.style.visibility = "";
     let top = r.bottom + 6;
     if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - 6 - h);
@@ -117,8 +120,13 @@ export function enhanceSelect(sel) {
     else if (e.key === "Escape") { close(); btn.focus(); }
   });
   window.addEventListener("resize", () => { if (wrap.classList.contains("open")) place(); });
-  window.addEventListener("scroll", () => { if (wrap.classList.contains("open")) place(); }, true);
+  window.addEventListener("scroll", (e) => {
+    if (!wrap.classList.contains("open")) return;
+    if (pop.contains(e.target)) return;
+    place();
+  }, true);
   new MutationObserver(() => build()).observe(sel, { childList: true });
   build();
+  sel.__ddApi = api;
   return api;
 }

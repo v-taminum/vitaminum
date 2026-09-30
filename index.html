@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Phosphor Icons (Regular) -->
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-    <link rel="stylesheet" href="./assets/dropdown.css?v=1">
+    <link rel="stylesheet" href="./assets/dropdown.css?v=2">
     
     <style>
         :root {
@@ -1146,7 +1146,7 @@
     <script src="./assets/config.js?v=20260924"></script>
     <script type="module">
       import { api, isConfigured, sb } from "./assets/supabaseClient.js?v=20260924";
-      import { enhanceSelect } from "./assets/dropdown.js?v=1";
+      import { enhanceSelect } from "./assets/dropdown.js?v=2";
       if (isConfigured) {
         try {
           const s = await api.settings();
