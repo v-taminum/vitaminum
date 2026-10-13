@@ -121,8 +121,9 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <p class="muted">Harga satuan = harga beli &divide; qty beli &nbsp;•&nbsp; HPP = &Sigma;(qty pakai &times; harga satuan) &nbsp;•&nbsp; Jual = HPP &times; (1 + margin%)</p>
       <div class="tabs" id="hppTabs">
         <button class="tab on" data-t="bahan">1. Bahan Baku &amp; Operasional</button>
-        <button class="tab" data-t="menu">2. Buat Menu &amp; Resep</button>
-        <button class="tab" data-t="daftar">3. Daftar Menu &amp; HPP</button>
+        <button class="tab" data-t="template">2. Template Resep</button>
+        <button class="tab" data-t="menu">3. Buat Menu &amp; Resep</button>
+        <button class="tab" data-t="daftar">4. Daftar Menu &amp; HPP</button>
       </div>
 
       <div class="tabpane on" data-pane="bahan">
@@ -146,7 +147,48 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Qty Beli</th><th>Harga Beli</th><th>Harga Satuan</th><th>Aksi</th></tr></thead><tbody id="tabelBahan"></tbody></table></div>
       </div>
 
+      <div class="tabpane" data-pane="template">
+        <p class="muted">Template = cetakan komposisi (operasional + bahan) yang bisa dipanggil ke tab <b>3. Buat Menu &amp; Resep</b>. Harga mengikuti harga satuan <b>terkini</b> bila item master masih ada, snapshot bila dihapus.</p>
+        <div class="grid3" style="margin-top:.6rem">
+          <label>Nama Template<input id="namaTemplate" placeholder="Fresh — Jus Segar 350ml"></label>
+          <label>Kategori<select id="kategoriTemplate"><option>Fresh</option><option>Squash</option><option>Jus Buah &amp; Sayur</option><option>Smoothie</option><option>Wellness Shot</option><option>Infused Water</option><option>Botanical Tea</option><option>Minuman Rempah Kekinian</option></select></label>
+          <label>Target Margin Profit (%)<input id="marginTemplate" type="number" value="100" min="0"></label>
+        </div>
+        <div class="recipe-builder" style="margin-top:.8rem">
+          <h3>1. Rincian Operasional &amp; Kemasan</h3>
+          <div class="grid3">
+            <label>Pilih Item<select id="pilihOperasionalTemplate"></select></label>
+            <label>Jumlah Pemakaian<input id="qtyOperasionalTemplate" type="number" step="any" min="0" placeholder="1"></label>
+            <label>&nbsp;<button type="button" class="btn btn-primary" id="btnAddOpsTemplate">+ Tambah</button></label>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Pemakaian</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelTemplateOps"></tbody></table></div>
+        </div>
+        <div class="recipe-builder">
+          <h3>2. Rincian Bahan Baku Minuman</h3>
+          <div class="grid3">
+            <label>Pilih Item<select id="pilihBahanTemplate"></select></label>
+            <label>Jumlah Pemakaian<input id="qtyBahanTemplate" type="number" step="any" min="0" placeholder="250"></label>
+            <label>&nbsp;<button type="button" class="btn btn-primary" id="btnAddBahanTemplate">+ Tambah</button></label>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Pemakaian</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelTemplateBahan"></tbody></table></div>
+        </div>
+        <div class="summary-box">Total Estimasi HPP Template: <span id="hppTemplateSementara">Rp 0</span></div>
+        <button type="button" class="btn btn-primary" id="btnSaveTemplate" style="width:100%;margin-top:.8rem">Simpan Template</button>
+        <button type="button" class="btn btn-outline" id="btnCancelTemplate" style="width:100%;margin-top:.5rem" hidden>Batal Edit Template</button>
+        <h3 style="margin-top:1.2rem;color:var(--primary-dark)">Daftar Template Tersimpan</h3>
+        <p class="muted">Klik <b>Pakai</b> untuk mengisi tab 3. Buat Menu &amp; Resep (semua kolom ikut terisi dan bisa disesuaikan). Klik <b>Edit</b> untuk mengubah isi template.</p>
+        <div class="table-wrap"><table><thead><tr><th>Nama Template</th><th>Kategori</th><th>Rincian</th><th>Estimasi HPP</th><th>Margin</th><th>Aksi</th></tr></thead><tbody id="tabelDaftarTemplate"></tbody></table></div>
+      </div>
+
       <div class="tabpane" data-pane="menu">
+        <div class="recipe-builder">
+          <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Mulai dari Template (opsional)</h3>
+          <div class="grid3">
+            <label style="grid-column:span 2">Pilih Template<select id="pilihTemplate"></select></label>
+            <label>&nbsp;<button type="button" class="btn btn-outline" id="btnUseTemplate"><i class="fa-solid fa-download"></i> Gunakan Template</button></label>
+          </div>
+          <p class="muted" style="margin-top:.4rem">Memakai template akan mengisi nama, kategori, margin, dan seluruh rincian resep di bawah — semuanya tetap bisa diedit/disesuaikan sebelum disimpan.</p>
+        </div>
         <div class="grid3">
           <label>Nama Menu<input id="namaMenu" placeholder="Jus Mangga Mix Nanas"></label>
           <label>Kategori<select id="kategoriMenu"><option>Jus Buah &amp; Sayur</option><option>Smoothie</option><option>Wellness Shot</option><option>Infused Water</option><option>Botanical Tea</option><option>Minuman Rempah Kekinian</option></select></label>
@@ -237,6 +279,10 @@ async function applyIdentity() {
 // ---- Auth gate: khusus admin login ----
 let items = [];
 let resepDraft = [];
+let templates = [];
+let templateLines = new Map(); // template_id -> array lines
+let templateDraft = [];
+let editingTemplateId = null;
 try {
   if (!isConfigured) throw new Error("assets/config.js belum diisi.");
   const { data: { session } } = await sb().auth.getSession();
@@ -246,9 +292,11 @@ try {
     $("#siteHeader").style.display = "";
     $("#hppApp").style.display = "";
     applyIdentity();
-    ["tipeBahan", "satuanBahan", "kategoriMenu", "pilihOperasionalResep", "pilihBahanResep"].forEach((id) => enhanceSelect(document.getElementById(id)));
+    ["tipeBahan", "satuanBahan", "kategoriMenu", "pilihOperasionalResep", "pilihBahanResep", "kategoriTemplate", "pilihOperasionalTemplate", "pilihBahanTemplate", "pilihTemplate"].forEach((id) => enhanceSelect(document.getElementById(id)));
     await loadItems();
+    await loadTemplates();
     renderDraft();
+    renderTemplateDraft();
     checkLegacy();
   }
 } catch (e) {
@@ -262,6 +310,7 @@ $("#hppTabs").onclick = (e) => {
   $$("#hppTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
   $$("#hppApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
   if (b.dataset.t === "daftar") renderMenus();
+  if (b.dataset.t === "template") loadTemplates();
 };
 
 // ---- Items (bahan & operasional) ----
@@ -271,6 +320,8 @@ async function loadItems() {
   items = (data || []).map((r) => ({ ...r, qty_beli: Number(r.qty_beli) || 0, harga_beli: Number(r.harga_beli) || 0, harga_satuan: Number(r.harga_satuan) || 0 }));
   renderItemTables();
   fillDropdowns();
+  if (typeof renderTemplates === "function" && templates?.length) renderTemplates();
+  if (typeof renderTemplateDraft === "function" && document.getElementById("tabelTemplateOps")) renderTemplateDraft();
 }
 const liveHarga = (id) => { const it = items.find((x) => String(x.id) === String(id)); return it ? it.harga_satuan : null; };
 function renderItemTables() {
@@ -296,6 +347,8 @@ function fillDropdowns() {
   };
   mk("operasional", "pilihOperasionalResep", "Operasional Kosong");
   mk("bahan", "pilihBahanResep", "Bahan Baku Kosong");
+  mk("operasional", "pilihOperasionalTemplate", "Operasional Kosong");
+  mk("bahan", "pilihBahanTemplate", "Bahan Baku Kosong");
 }
 let editingItemId = null;
 $("#formBahan").onsubmit = async (e) => {
@@ -353,6 +406,8 @@ $("#hppApp").addEventListener("click", async (e) => {
   }
   const rdel = e.target.closest("[data-rdraft]");
   if (rdel) { resepDraft.splice(+rdel.dataset.rdraft, 1); renderDraft(); }
+  const tddel = e.target.closest("[data-tdraft]");
+  if (tddel) { templateDraft.splice(+tddel.dataset.tdraft, 1); renderTemplateDraft(); }
   const mdel = e.target.closest("[data-mdel]");
   if (mdel && await askDelete("Hapus menu?", "Resep di dalamnya ikut terhapus.")) {
     const { error } = await sb().from("hpp_menus").delete().eq("id", mdel.dataset.mdel);
@@ -383,6 +438,16 @@ $("#hppApp").addEventListener("click", async (e) => {
     document.querySelector('#hppTabs .tab[data-t="menu"]').click();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  const tedit = e.target.closest("[data-tedit]");
+  if (tedit) { startEditTemplate(tedit.dataset.tedit); }
+  const tdel = e.target.closest("[data-tdel]");
+  if (tdel && await askDelete("Hapus template?", "Isi di dalamnya ikut terhapus.")) {
+    const { error } = await sb().from("hpp_templates").delete().eq("id", tdel.dataset.tdel);
+    toast(error ? error.message : "Template dihapus", error ? "error" : "success");
+    if (!error) loadTemplates();
+  }
+  const tuse = e.target.closest("[data-tuse]");
+  if (tuse) { applyTemplateToMenu(tuse.dataset.tuse); }
 });
 
 // ---- Draft resep (in-memory) ----
@@ -453,6 +518,208 @@ $("#btnSaveMenu").onclick = async () => {
   resetMenuForm();
   toast(wasEdit ? "Menu diperbarui" : "Menu tersimpan");
 };
+
+// ---- Template Resep (cetakan untuk tab Buat Menu) ----
+function matchLiveItem(name, satuan) {
+  const n = String(name || "").trim().toLowerCase();
+  if (!n) return null;
+  return items.find((x) => String(x.nama || "").trim().toLowerCase() === n) || null;
+}
+
+function syncSelect(id) {
+  const el = document.getElementById(id);
+  try { el?.__ddApi?.refresh(); } catch {}
+  el?.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+async function loadTemplates() {
+  const [{ data: tpls, error: e1 }, { data: lines, error: e2 }] = await Promise.all([
+    sb().from("hpp_templates").select("*").order("nama"),
+    sb().from("hpp_template_items").select("*, hpp_items(harga_satuan,nama,satuan,tipe)").order("id"),
+  ]);
+  if (e1 || e2) {
+    const msg = (e1 || e2).message || "";
+    if (/relation.*hpp_template|does not exist|404|PGRST/i.test(msg)) {
+      $("#tabelDaftarTemplate").innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Tabel template belum ada. Jalankan <b>supabase/hpp_templates.sql</b> di SQL Editor, lalu muat ulang.</td></tr>`;
+      return toast("Tabel hpp_templates belum ada — jalankan supabase/hpp_templates.sql", "error");
+    }
+    return toast((e1 || e2).message, "error");
+  }
+  templates = tpls || [];
+  templateLines = new Map();
+  (lines || []).forEach((r) => {
+    if (!templateLines.has(r.template_id)) templateLines.set(r.template_id, []);
+    templateLines.get(r.template_id).push(r);
+  });
+  renderTemplates();
+}
+
+function templateTotal(id) {
+  return (templateLines.get(Number(id)) || templateLines.get(String(id)) || []).reduce((a, r) => {
+    const h = Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0;
+    return a + h * (Number(r.qty) || 0);
+  }, 0);
+}
+
+function renderTemplates() {
+  // dropdown pemanggil di tab Menu
+  const pick = $("#pilihTemplate");
+  if (pick) {
+    pick.innerHTML = templates.length
+      ? templates.map((t) => `<option value="${t.id}">${esc(t.nama)} [${esc(t.kategori)}]</option>`).join("")
+      : `<option value="">Belum ada template</option>`;
+  }
+  const tb = $("#tabelDaftarTemplate");
+  if (!tb) return;
+  if (!templates.length) { tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada template. Buat di form atas atau jalankan seed SQL.</td></tr>`; return; }
+  tb.innerHTML = templates.map((t) => {
+    const rows = templateLines.get(t.id) || [];
+    let ops = [], bahans = [];
+    rows.forEach((r) => {
+      const h = Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0;
+      const sub = h * (Number(r.qty) || 0);
+      const nm = r.hpp_items?.nama || r.item_nama;
+      const st = r.hpp_items?.satuan || r.item_satuan;
+      const tp = r.hpp_items?.tipe || r.item_tipe;
+      const li = `<li><b>${esc(nm)}</b>: ${fmt2(r.qty)} ${esc(st)} (${fmtRp(sub)})</li>`;
+      (tp === "operasional" ? ops : bahans).push(li);
+    });
+    const rinc = (arr) => arr.length ? `<ul class="detail-list">${arr.join("")}</ul>` : '<span class="muted"><i>- Tidak ada -</i></span>';
+    return `<tr>
+      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(t.nama)}</b></div></td>
+      <td data-l="Kategori"><span class="badge">${esc(t.kategori)}</span></td>
+      <td data-l="Rincian" class="cell-main"><div class="cell-body"><b class="muted">Operasional:</b>${rinc(ops)}<b class="muted">Bahan:</b>${rinc(bahans)}</div></td>
+      <td data-l="Estimasi HPP"><b>${fmtRp(templateTotal(t.id))}</b></td>
+      <td data-l="Margin">${Number(t.margin) || 0}%</td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-primary btn-xs" data-tuse="${t.id}">Pakai</button><button class="btn btn-outline btn-xs" data-tedit="${t.id}">Edit</button><button class="btn btn-danger btn-xs" data-tdel="${t.id}">Hapus</button></div></td></tr>`;
+  }).join("");
+}
+
+function renderTemplateDraft() {
+  const mk = (tipe, tb) => {
+    const list = templateDraft.map((d, i) => ({ d, i })).filter(({ d }) => d.item_tipe === tipe);
+    document.getElementById(tb).innerHTML = list.map(({ d, i }) => {
+      const h = liveHarga(d.item_id) ?? d.item_harga;
+      return `<tr>
+        <td data-l="Item" class="cell-main"><div class="cell-body"><b>${esc(d.item_nama)}</b></div></td>
+        <td data-l="Pemakaian">${fmt2(d.qty)} ${esc(d.item_satuan)}</td>
+        <td data-l="Harga Satuan">${fmtRp(h)}</td>
+        <td data-l="Subtotal">${fmtRp(h * d.qty)}</td>
+        <td data-l="Aksi"><div class="row"><button class="btn btn-danger btn-xs" data-tdraft="${i}">Hapus</button></div></td></tr>`;
+    }).join("") || `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada item ditambahkan.</td></tr>`;
+  };
+  mk("operasional", "tabelTemplateOps");
+  mk("bahan", "tabelTemplateBahan");
+  $("#hppTemplateSementara").textContent = fmtRp(templateDraft.reduce((a, d) => a + (liveHarga(d.item_id) ?? d.item_harga) * d.qty, 0));
+}
+
+function addToTemplateDraft(selId, qtyId) {
+  const id = $(selId).value;
+  const qty = Number($(qtyId).value) || 0;
+  if (!id) return toast("Pilih item dulu", "error");
+  if (!(qty > 0)) return toast("Jumlah pemakaian harus lebih dari 0", "error");
+  const it = items.find((x) => String(x.id) === String(id));
+  if (!it) return toast("Item tidak ditemukan", "error");
+  templateDraft.push({ item_id: it.id, item_nama: it.nama, item_satuan: it.satuan, item_tipe: it.tipe, item_harga: it.harga_satuan, qty });
+  $(qtyId).value = "";
+  renderTemplateDraft();
+}
+$("#btnAddOpsTemplate").onclick = () => addToTemplateDraft("#pilihOperasionalTemplate", "#qtyOperasionalTemplate");
+$("#btnAddBahanTemplate").onclick = () => addToTemplateDraft("#pilihBahanTemplate", "#qtyBahanTemplate");
+
+function resetTemplateForm() {
+  templateDraft = [];
+  $("#namaTemplate").value = "";
+  $("#marginTemplate").value = 100;
+  editingTemplateId = null;
+  $("#btnSaveTemplate").textContent = "Simpan Template";
+  $("#btnCancelTemplate").hidden = true;
+  renderTemplateDraft();
+}
+$("#btnCancelTemplate").onclick = resetTemplateForm;
+
+$("#btnSaveTemplate").onclick = async () => {
+  const nama = $("#namaTemplate").value.trim();
+  const kategori = $("#kategoriTemplate").value;
+  const margin = Number($("#marginTemplate").value);
+  if (!nama) return toast("Nama template wajib diisi", "error");
+  if (!templateDraft.length) return toast("Komposisi template belum diisi", "error");
+  if (!(margin >= 0)) return toast("Margin tidak valid", "error");
+  const wasEdit = !!editingTemplateId;
+  let tplId = editingTemplateId;
+  if (wasEdit) {
+    const { error } = await sb().from("hpp_templates").update({ nama, kategori, margin }).eq("id", tplId);
+    if (error) return toast(error.message, "error");
+    const { error: eDel } = await sb().from("hpp_template_items").delete().eq("template_id", tplId);
+    if (eDel) return toast(eDel.message, "error");
+  } else {
+    const { data: t, error: e1 } = await sb().from("hpp_templates").insert({ nama, kategori, margin }).select("id").single();
+    if (e1) return toast(e1.message, "error");
+    tplId = t.id;
+  }
+  const rows = templateDraft.map((d) => ({ template_id: tplId, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
+  const { error: e2 } = await sb().from("hpp_template_items").insert(rows);
+  if (e2) return toast(e2.message, "error");
+  resetTemplateForm();
+  toast(wasEdit ? "Template diperbarui" : "Template tersimpan");
+  loadTemplates();
+};
+
+async function startEditTemplate(id) {
+  const { data: t, error: e1 } = await sb().from("hpp_templates").select("*").eq("id", id).single();
+  if (e1 || !t) return toast("Template tidak ditemukan", "error");
+  const { data: lines, error: e2 } = await sb().from("hpp_template_items").select("*, hpp_items(harga_satuan,nama,satuan,tipe)").eq("template_id", t.id).order("id");
+  if (e2) return toast(e2.message, "error");
+  editingTemplateId = t.id;
+  $("#namaTemplate").value = t.nama;
+  $("#kategoriTemplate").value = t.kategori;
+  syncSelect("kategoriTemplate");
+  $("#marginTemplate").value = t.margin;
+  templateDraft = (lines || []).map((r) => ({
+    item_id: r.item_id,
+    item_nama: r.hpp_items?.nama || r.item_nama,
+    item_satuan: r.hpp_items?.satuan || r.item_satuan,
+    item_tipe: r.hpp_items?.tipe || r.item_tipe,
+    item_harga: Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0,
+    qty: Number(r.qty) || 0,
+  }));
+  $("#btnSaveTemplate").textContent = "Update Template";
+  $("#btnCancelTemplate").hidden = false;
+  renderTemplateDraft();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function applyTemplateToMenu(id) {
+  const t = templates.find((x) => String(x.id) === String(id));
+  if (!t) return toast("Pilih template dulu", "error");
+  const rows = templateLines.get(t.id) || [];
+  // Isi semua kolom menu: nama (tanpa prefix template), kategori, margin + rincian.
+  // Cocokkan ulang ke item master by nama agar harga live terpakai; bila tak cocok pakai snapshot.
+  $("#namaMenu").value = String(t.nama || "").replace(/^(Fresh|Squash)\s*[—–-]\s*/i, "");
+  $("#kategoriMenu").value = t.kategori;
+  syncSelect("kategoriMenu");
+  $("#marginMenu").value = t.margin;
+  resepDraft = (rows || []).map((r) => {
+    const nm = r.hpp_items?.nama || r.item_nama;
+    const live = matchLiveItem(nm) || (r.item_id ? items.find((x) => String(x.id) === String(r.item_id)) : null);
+    return {
+      item_id: live ? live.id : r.item_id,
+      item_nama: live ? live.nama : nm,
+      item_satuan: live ? live.satuan : (r.hpp_items?.satuan || r.item_satuan),
+      item_tipe: live ? live.tipe : (r.hpp_items?.tipe || r.item_tipe),
+      item_harga: live ? live.harga_satuan : (Number(r.hpp_items?.harga_satuan ?? r.item_harga) || 0),
+      qty: Number(r.qty) || 0,
+    };
+  });
+  editingMenuId = null;
+  $("#btnSaveMenu").textContent = "Simpan Menu Lengkap";
+  $("#btnCancelMenu").hidden = true;
+  renderDraft();
+  document.querySelector('#hppTabs .tab[data-t="menu"]').click();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  toast(`Template "${t.nama}" dimuat — silakan sesuaikan lalu simpan`);
+}
+$("#btnUseTemplate").onclick = () => applyTemplateToMenu($("#pilihTemplate").value);
 
 // ---- Daftar menu (hitung ulang dari harga live) ----
 async function renderMenus() {
