@@ -150,7 +150,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <div class="tabpane" data-pane="template">
         <p class="muted">Template = cetakan komposisi (operasional + bahan) yang bisa dipanggil ke tab <b>3. Buat Menu &amp; Resep</b>. Harga mengikuti harga satuan <b>terkini</b> bila item master masih ada, snapshot bila dihapus.</p>
         <div class="grid3" style="margin-top:.6rem">
-          <label>Nama Template<input id="namaTemplate" placeholder="Fresh — Jus Segar 350ml"></label>
+          <label>Nama Template<input id="namaTemplate" placeholder="Fresh - Jus Segar 350ml"></label>
           <label>Kategori<select id="kategoriTemplate"><option>Fresh</option><option>Squash</option><option>Jus Buah &amp; Sayur</option><option>Smoothie</option><option>Wellness Shot</option><option>Infused Water</option><option>Botanical Tea</option><option>Minuman Rempah Kekinian</option></select></label>
           <label>Target Margin Profit (%)<input id="marginTemplate" type="number" value="100" min="0"></label>
         </div>
@@ -187,7 +187,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
             <label style="grid-column:span 2">Pilih Template<select id="pilihTemplate"></select></label>
             <label>&nbsp;<button type="button" class="btn btn-outline" id="btnUseTemplate"><i class="fa-solid fa-download"></i> Gunakan Template</button></label>
           </div>
-          <p class="muted" style="margin-top:.4rem">Memakai template akan mengisi nama, kategori, margin, dan seluruh rincian resep di bawah — semuanya tetap bisa diedit/disesuaikan sebelum disimpan.</p>
+          <p class="muted" style="margin-top:.4rem">Memakai template akan mengisi nama, kategori, margin, dan seluruh rincian resep di bawah - semuanya tetap bisa diedit/disesuaikan sebelum disimpan.</p>
         </div>
         <div class="grid3">
           <label>Nama Menu<input id="namaMenu" placeholder="Jus Mangga Mix Nanas"></label>
@@ -541,7 +541,7 @@ async function loadTemplates() {
     const msg = (e1 || e2).message || "";
     if (/relation.*hpp_template|does not exist|404|PGRST/i.test(msg)) {
       $("#tabelDaftarTemplate").innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Tabel template belum ada. Jalankan <b>supabase/hpp_templates.sql</b> di SQL Editor, lalu muat ulang.</td></tr>`;
-      return toast("Tabel hpp_templates belum ada — jalankan supabase/hpp_templates.sql", "error");
+      return toast("Tabel hpp_templates belum ada - jalankan supabase/hpp_templates.sql", "error");
     }
     return toast((e1 || e2).message, "error");
   }
@@ -695,7 +695,7 @@ function applyTemplateToMenu(id) {
   const rows = templateLines.get(t.id) || [];
   // Isi semua kolom menu: nama (tanpa prefix template), kategori, margin + rincian.
   // Cocokkan ulang ke item master by nama agar harga live terpakai; bila tak cocok pakai snapshot.
-  $("#namaMenu").value = String(t.nama || "").replace(/^(Fresh|Squash)\s*[—–-]\s*/i, "");
+  $("#namaMenu").value = String(t.nama || "").replace(/^(Fresh|Squash)\s*[-\u2013\u2014]\s*/i, "");
   $("#kategoriMenu").value = t.kategori;
   syncSelect("kategoriMenu");
   $("#marginMenu").value = t.margin;
@@ -717,7 +717,7 @@ function applyTemplateToMenu(id) {
   renderDraft();
   document.querySelector('#hppTabs .tab[data-t="menu"]').click();
   window.scrollTo({ top: 0, behavior: "smooth" });
-  toast(`Template "${t.nama}" dimuat — silakan sesuaikan lalu simpan`);
+  toast(`Template "${t.nama}" dimuat - silakan sesuaikan lalu simpan`);
 }
 $("#btnUseTemplate").onclick = () => applyTemplateToMenu($("#pilihTemplate").value);
 

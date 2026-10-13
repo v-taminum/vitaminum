@@ -53,7 +53,7 @@ begin
   end if;
 
   insert into public.hpp_templates (nama, kategori, margin)
-  values ('Fresh — Jus Buah Segar 350ml', 'Fresh', 100)
+  values ('Fresh - Jus Buah Segar 350ml', 'Fresh', 100)
   returning id into t_fresh;
 
   insert into public.hpp_template_items (template_id, item_id, item_nama, item_satuan, item_tipe, item_harga, qty) values
@@ -65,7 +65,7 @@ begin
     (t_fresh, null, 'Es Batu Kristal', 'gram', 'bahan', 8, 100);
 
   insert into public.hpp_templates (nama, kategori, margin)
-  values ('Squash — Konsentrat Buah 350ml', 'Squash', 120)
+  values ('Squash - Konsentrat Buah 350ml', 'Squash', 120)
   returning id into t_squash;
 
   insert into public.hpp_template_items (template_id, item_id, item_nama, item_satuan, item_tipe, item_harga, qty) values
