@@ -139,6 +139,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <button class="tab" data-t="master">Master Item</button>
         <button class="tab" data-t="beli">Pembelian Bahan</button>
         <button class="tab" data-t="produksi">Produksi</button>
+        <button class="tab" data-t="alat">Alat &amp; BEP</button>
       </div>
 
       <!-- DASHBOARD -->
@@ -201,6 +202,42 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <h3>Rincian Produksi (dari resep HPP)</h3>
           <div class="table-wrap"><table><thead><tr><th>Bahan</th><th>Qty Per Unit</th><th>Qty Total Digunakan</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelProdRows"></tbody></table></div>
           <div class="row" style="margin-top:.5rem"><span class="muted">Total HPP Produksi: <b id="totalProdHPP">Rp 0</b></span> <button type="button" class="btn btn-success" id="btnSimpanProd" style="margin-left:auto">Simpan Produksi &amp; Kurangi Stok</button></div>
+        </div>
+      </div>
+
+      <!-- ALAT & BEP -->
+      <div class="tabpane" data-pane="alat">
+        <form id="formAlat" class="grid3">
+          <label>Nama Alat<input id="inAlatNama" placeholder="Mesin Press Cup / Blender / Gelas Ukur" required></label>
+          <label>Kategori<select id="inAlatKategori"><option value="mesin">Mesin Berat (umur 5 thn)</option><option value="peralatan_kecil">Peralatan Kecil (umur 2 thn)</option><option value="perabot">Perabot / Furnitur (umur 5 thn)</option></select></label>
+          <label>Harga Beli (Rp)<input id="inAlatHarga" type="number" min="0" placeholder="2500000" required></label>
+          <label>Tanggal Beli<input id="inAlatTgl" type="date"></label>
+          <label>Umur Manfaat (tahun)<input id="inAlatUmur" type="number" min="1" max="50" value="5"></label>
+          <label>Sisa Nilai / Salvage (Rp)<input id="inAlatSisa" type="number" min="0" value="0"></label>
+          <label>Kondisi<select id="inAlatKondisi"><option value="baik">Baik</option><option value="rusak">Rusak</option><option value="dijual">Dijual / Tidak Dipakai</option></select></label>
+          <label style="grid-column:1/-1">Catatan<input id="inAlatCatatan" placeholder="Opsional: merek, lokasi, nomor seri..."></label>
+          <label style="grid-column:1/-1;display:flex;gap:.5rem;margin-top:.8rem"><button type="submit" class="btn btn-primary" id="btnSaveAlat" style="flex:1">Simpan Alat</button><button type="button" class="btn btn-outline" id="btnCancelAlat" hidden style="flex:1">Batal</button></label>
+        </form>
+
+        <div class="kpi-row" style="margin-top:1rem">
+          <div class="kpi"><div class="val" id="kpiTotalAlat">Rp 0</div><div class="lab">Total Investasi Alat</div></div>
+          <div class="kpi"><div class="val neg" id="kpiPenyusutanBln">Rp 0</div><div class="lab">Penyusutan / Bulan</div></div>
+          <div class="kpi"><div class="val" id="kpiNilaiBuku">Rp 0</div><div class="lab">Nilai Buku Total</div></div>
+          <div class="kpi"><div class="val pos" id="kpiSetoranBEP">Rp 0</div><div class="lab">Setoran BEP / Bulan</div></div>
+        </div>
+
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Kategori</th><th>Harga Beli</th><th>Umur</th><th>Penyusutan/Thn</th><th>Nilai Buku</th><th>Kondisi</th><th>Aksi</th></tr></thead><tbody id="tabelAlat"></tbody></table></div>
+
+        <div class="recipe-builder" style="margin-top:1rem">
+          <h3><i class="fa-solid fa-chart-line"></i> Break-Even Point Investasi Alat</h3>
+          <div class="grid3">
+            <label>Target BEP (bulan)<input id="inBEPBulan" type="number" min="1" max="120" value="12"></label>
+            <label>Pendapatan Bulan Ini<input id="bepPendapatan" readonly value="Rp 0"></label>
+            <label>Laba Bulan Ini<input id="bepLaba" readonly value="Rp 0"></label>
+          </div>
+          <div class="summary-box" style="margin-top:.8rem" id="bepRingkas">Isi data alat untuk hitung BEP.</div>
+          <div class="detail-list" id="bepDetail"></div>
+          <div class="formula">Penyusutan garis lurus = (Harga Beli - Sisa Nilai) &divide; Umur. BEP = Total Investasi &divide; Target Bulan. Setoran disisihkan dari laba bulanan.</div>
         </div>
       </div>
     </section>
@@ -273,9 +310,10 @@ try {
     $("#siteHeader").style.display = "";
     $("#inventoryApp").style.display = "";
     applyIdentity();
-    ["inTipe","inSatuan","inMetode","inProdMenu","inBeliItem"].forEach((id) => enhanceSelect(document.getElementById(id)));
+    ["inTipe","inSatuan","inMetode","inProdMenu","inBeliItem","inAlatKategori","inAlatKondisi"].forEach((id) => enhanceSelect(document.getElementById(id)));
     $("#inTglBeli").valueAsDate = new Date();
     $("#inTglProd").valueAsDate = new Date();
+    $("#inAlatTgl").valueAsDate = new Date();
     await loadAll();
     renderDashboard();
     renderItems();
@@ -294,6 +332,7 @@ $("#invTabs").onclick = (e) => {
   if (b.dataset.t === "master") renderItems();
   if (b.dataset.t === "beli") fillBeliDropdowns();
   if (b.dataset.t === "produksi") { fillProdMenu(); renderProdRows(); }
+  if (b.dataset.t === "alat") loadAlat();
 };
 
 // ---------- Load ----------
@@ -444,6 +483,33 @@ $("#inventoryApp").addEventListener("click", async (e) => {
       prodRows.splice(+rp.dataset.remprod, 1);
       renderProdRows();
     }
+    return;
+  }
+  const ea = e.target.closest("[data-editalat]");
+  if (ea) {
+    const a = alatList.find(x => String(x.id) === String(ea.dataset.editalat));
+    if (!a) return;
+    editingAlatId = a.id;
+    $("#inAlatNama").value = a.nama || "";
+    $("#inAlatKategori").value = a.kategori || "mesin";
+    $("#inAlatHarga").value = a.harga_beli || 0;
+    $("#inAlatTgl").value = a.tanggal_beli || todayISO();
+    $("#inAlatUmur").value = a.umur_tahun || 5;
+    $("#inAlatSisa").value = a.sisa_nilai || 0;
+    $("#inAlatKondisi").value = a.kondisi || "baik";
+    $("#inAlatCatatan").value = a.catatan || "";
+    enhanceSelect(document.getElementById("inAlatKategori")).refresh();
+    enhanceSelect(document.getElementById("inAlatKondisi")).refresh();
+    $("#btnSaveAlat").textContent = "Update Alat";
+    $("#btnCancelAlat").hidden = false;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  const da = e.target.closest("[data-delalat]");
+  if (da && await askDelete("Hapus alat?", "Data alat akan dihapus permanen.")) {
+    const { error } = await sb().from("alat_produksi").delete().eq("id", da.dataset.delalat);
+    toast(error ? error.message : "Alat dihapus", error ? "error" : "success");
+    if (!error) loadAlat();
     return;
   }
 });
@@ -763,6 +829,164 @@ $("#btnSimpanProd").onclick = async () => {
   renderProdRows();
   renderItems();
   renderDashboard();
+};
+
+// ---------- ALAT PRODUKSI & BEP ----------
+let alatList = [];
+let editingAlatId = null;
+const UMUR_DEFAULT = { mesin: 5, peralatan_kecil: 2, perabot: 5 };
+const KATEGORI_LABEL = { mesin: "Mesin", peralatan_kecil: "Peralatan Kecil", perabot: "Perabot" };
+
+function bulanJalan(dariStr) {
+  if (!dariStr) return 0;
+  const d = new Date(dariStr + "T00:00:00");
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth()));
+}
+
+function hitungAlat(a) {
+  const harga = Number(a.harga_beli) || 0;
+  const sisa = Number(a.sisa_nilai) || 0;
+  const umur = Math.max(1, Number(a.umur_tahun) || 1);
+  const penyusutanTahun = Math.max(0, harga - sisa) / umur;
+  const jb = bulanJalan(a.tanggal_beli);
+  const kumulatif = Math.min(penyusutanTahun / 12 * jb, Math.max(0, harga - sisa));
+  return { penyusutanTahun, penyusutanBulan: penyusutanTahun / 12, kumulatif, nilaiBuku: harga - kumulatif, bulanJalan: jb };
+}
+
+async function loadAlat() {
+  const { data, error } = await sb().from("alat_produksi").select("*").order("tanggal_beli", { ascending: false });
+  if (error) {
+    $("#tabelAlat").innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center">Tabel belum ada. Jalankan <b>supabase/alat_produksi.sql</b> di SQL Editor.</td></tr>`;
+    return toast("Tabel alat_produksi belum ada - jalankan supabase/alat_produksi.sql", "error");
+  }
+  alatList = data || [];
+  renderAlat();
+  hitungBEP();
+}
+
+function renderAlat() {
+  const aktif = alatList.filter(a => a.kondisi !== "dijual");
+  let total = 0, penyBulan = 0, nilaiBuku = 0;
+  aktif.forEach(a => {
+    const h = hitungAlat(a);
+    total += Number(a.harga_beli) || 0;
+    penyBulan += h.penyusutanBulan;
+    nilaiBuku += h.nilaiBuku;
+  });
+  const target = Math.max(1, Number($("#inBEPBulan").value) || 12);
+  const setoran = total / target;
+  $("#kpiTotalAlat").textContent = fmtRp(total);
+  $("#kpiPenyusutanBln").textContent = fmtRp(penyBulan);
+  $("#kpiNilaiBuku").textContent = fmtRp(nilaiBuku);
+  $("#kpiSetoranBEP").textContent = fmtRp(setoran);
+
+  const tb = $("#tabelAlat");
+  if (!alatList.length) { tb.innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center">Belum ada alat. Isi form di atas.</td></tr>`; return; }
+  tb.innerHTML = alatList.map(a => {
+    const h = hitungAlat(a);
+    const dimatikan = a.kondisi === "dijual";
+    const kondisiBadge = a.kondisi === "baik" ? '<span class="badge ok">Baik</span>' : a.kondisi === "rusak" ? '<span class="badge warn">Rusak</span>' : '<span class="badge err">Dijual</span>';
+    return `<tr${dimatikan ? ' style="opacity:.55"' : ""}>
+      <td data-l="Nama" class="cell-main"><b>${esc(a.nama)}</b>${a.catatan ? `<br><span class="muted">${esc(a.catatan)}</span>` : ""}</td>
+      <td data-l="Kategori"><span class="badge">${esc(KATEGORI_LABEL[a.kategori] || a.kategori)}</span></td>
+      <td data-l="Harga Beli">${fmtRp(a.harga_beli)}</td>
+      <td data-l="Umur">${fmt2(a.umur_tahun)} thn · ${h.bulanJalan} bln</td>
+      <td data-l="Penyusutan">${fmtRp(h.penyusutanTahun)}/thn</td>
+      <td data-l="Nilai Buku">${fmtRp(h.nilaiBuku)}</td>
+      <td data-l="Kondisi">${kondisiBadge}</td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-editalat="${a.id}">Edit</button><button class="btn btn-danger btn-xs" data-delalat="${a.id}">Hapus</button></div></td>
+    </tr>`;
+  }).join("");
+}
+
+async function hitungBEP() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const tglAwal = `${y}-${String(m+1).padStart(2,"0")}-01`;
+  const lastDay = new Date(y, m+1, 0).getDate();
+  const tglAkhir = `${y}-${String(m+1).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
+  const { data: rows } = await sb().from("penutupan_buku_harian")
+    .select("total_penjualan,laba_rugi_harian")
+    .gte("tanggal", tglAwal).lte("tanggal", tglAkhir).eq("status", "ditutup");
+  const pendapatan = (rows||[]).reduce((a,r) => a + Number(r.total_penjualan||0), 0);
+  const laba = (rows||[]).reduce((a,r) => a + Number(r.laba_rugi_harian||0), 0);
+  const jmlHari = (rows||[]).length;
+
+  const aktif = alatList.filter(a => a.kondisi !== "dijual");
+  const total = aktif.reduce((s,a) => s + (Number(a.harga_beli)||0), 0);
+  const target = Math.max(1, Number($("#inBEPBulan").value) || 12);
+  const setoranBulan = total / target;
+  const setoranHari = setoranBulan / 30;
+  const pct = laba > 0 ? (setoranBulan / laba) * 100 : 0;
+  const tglPalingAwal = aktif.map(a => a.tanggal_beli).filter(Boolean).sort()[0];
+  const jalan = tglPalingAwal ? bulanJalan(tglPalingAwal) : 0;
+  const progres = Math.min(100, target > 0 ? (jalan / target) * 100 : 0);
+  const sisaBulan = Math.max(0, target - jalan);
+  let penyBulanTotal = 0;
+  aktif.forEach(a => { penyBulanTotal += hitungAlat(a).penyusutanBulan; });
+
+  $("#bepPendapatan").value = fmtRp(pendapatan);
+  $("#bepLaba").value = fmtRp(laba);
+
+  $("#bepRingkas").innerHTML = total <= 0
+    ? "Belum ada data alat. Isi form di atas untuk mulai hitung BEP."
+    : `Setoran per bulan: <b>${fmtRp(setoranBulan)}</b> &nbsp;•&nbsp; per hari: <b>${fmtRp(setoranHari)}</b>`;
+
+  const detail = [];
+  if (total > 0) {
+    detail.push(`Total investasi alat aktif: <b>${fmtRp(total)}</b> dari ${aktif.length} alat`);
+    detail.push(`Target BEP: <b>${target} bulan</b> → setoran wajib <b>${fmtRp(setoranBulan)}/bulan</b>`);
+    detail.push(`Laba bulan ini: <b>${fmtRp(laba)}</b> (dari ${jmlHari} hari tutup buku)`);
+    detail.push(laba > 0
+      ? `Dari laba bulan ini, sisihkan <b>${pct.toFixed(1)}%</b> (${fmtRp(setoranBulan)}) untuk BEP alat`
+      : `<span style="color:var(--danger)">Belum ada laba bulan ini - setoran BEP belum bisa ditutup dari keuntungan</span>`);
+    if (laba > 0 && laba < setoranBulan) detail.push(`<span style="color:var(--danger)">⚠ Laba kurang dari setoran bulanan. Kurangi target BEP atau tingkatkan penjualan.</span>`);
+    detail.push(`Progres waktu BEP: <b>${jalan}/${target} bulan</b> (${progres.toFixed(0)}%)${sisaBulan > 0 ? `, sisa <b>${sisaBulan} bulan</b>` : " — <b>BEP tercapai secara waktu</b>"}`);
+    detail.push(`Penyusutan standar (garis lurus): <b>${fmtRp(penyBulanTotal)}/bulan</b> sebagai beban non-kas`);
+  }
+  $("#bepDetail").innerHTML = detail.map(d => `<li>${d}</li>`).join("");
+}
+
+function resetAlatForm() {
+  $("#formAlat").reset();
+  editingAlatId = null;
+  $("#btnSaveAlat").textContent = "Simpan Alat";
+  $("#btnCancelAlat").hidden = true;
+  $("#inAlatTgl").valueAsDate = new Date();
+  $("#inAlatUmur").value = UMUR_DEFAULT[$("#inAlatKategori").value] || 5;
+  enhanceSelect(document.getElementById("inAlatKategori")).refresh();
+  enhanceSelect(document.getElementById("inAlatKondisi")).refresh();
+}
+
+$("#inAlatKategori").onchange = () => {
+  if (!editingAlatId) $("#inAlatUmur").value = UMUR_DEFAULT[$("#inAlatKategori").value] || 5;
+};
+$("#inBEPBulan").oninput = () => { renderAlat(); hitungBEP(); };
+$("#btnCancelAlat").onclick = resetAlatForm;
+
+$("#formAlat").onsubmit = async (e) => {
+  e.preventDefault();
+  const nama = $("#inAlatNama").value.trim();
+  const harga = Number($("#inAlatHarga").value) || 0;
+  const umur = Number($("#inAlatUmur").value) || 0;
+  if (!nama) return toast("Nama alat wajib diisi", "error");
+  if (!(harga > 0)) return toast("Harga beli harus > 0", "error");
+  if (!(umur > 0)) return toast("Umur manfaat harus > 0", "error");
+  const payload = {
+    nama, kategori: $("#inAlatKategori").value, harga_beli: harga,
+    tanggal_beli: $("#inAlatTgl").value || todayISO(),
+    umur_tahun: umur, sisa_nilai: Number($("#inAlatSisa").value) || 0,
+    kondisi: $("#inAlatKondisi").value, catatan: $("#inAlatCatatan").value.trim() || null
+  };
+  const wasEdit = !!editingAlatId;
+  let error;
+  if (wasEdit) ({ error } = await sb().from("alat_produksi").update(payload).eq("id", editingAlatId));
+  else ({ error } = await sb().from("alat_produksi").insert(payload));
+  if (error) return toast(error.message, "error");
+  toast(wasEdit ? "Alat diperbarui" : "Alat tersimpan");
+  resetAlatForm();
+  loadAlat();
 };
 
 // ---------- Saldo kas helper ----------
