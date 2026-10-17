@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#255746">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+<title>Inventory &amp; Produksi - Vitaminum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="../assets/dropdown.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
+  --bg-color:#f1f8f4;--text-color:#0e201b;--text-muted:#575757;--white:#ffffff;
+  --border-color:#90c5ad;--danger:#b3261e;--success:#2e7d32;--warn:#b26a00;
+  --shadow:0 10px 15px -3px rgba(46,109,85,.10),0 4px 6px -4px rgba(46,109,85,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Quicksand',system-ui,sans-serif}
+html,body{width:100%;overflow-x:clip}
+body{background:var(--bg-color);color:var(--text-color);line-height:1.5;min-height:100vh}
+a{color:inherit;text-decoration:none}
+.container{max-width:1366px;margin:0 auto;padding:0 32px}
+header{background:var(--white);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:100}
+.navbar{display:flex;align-items:center;gap:1rem;padding-top:.8rem;padding-bottom:.8rem}
+.nav-left{display:flex;align-items:center}
+.logo{display:inline-flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.2rem;color:var(--primary-dark)}
+.logo-img{width:34px;height:34px;border-radius:9px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;flex-shrink:0}
+.logo-img img{width:100%;height:100%;object-fit:cover}
+.nav-right{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.btn{padding:.55rem 1rem;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid transparent;font-size:.85rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:42px;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border-color:var(--primary);color:var(--primary-dark)}.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}.btn-danger:hover{filter:brightness(.9)}
+.btn-success{background:var(--success);color:#fff;border-color:var(--success)}.btn-success:hover{filter:brightness(.9)}
+.btn-xs{padding:.35rem .6rem;font-size:.75rem;min-height:38px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+main.container{padding-top:1.25rem;padding-bottom:2rem}
+.card{background:var(--white);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.02)}
+.card h2{font-size:1.15rem;color:var(--primary-dark);margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+.muted{color:var(--text-muted);font-size:.82rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:.9rem 0 0}
+.tab{border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;font-family:inherit}
+.tab:hover{background:var(--primary-light)}
+.tab.on{background:var(--primary);color:#fff}
+.tabpane{display:none;margin-top:1rem}
+.tabpane.on{display:block}
+.grid3{display:grid;gap:10px}
+.grid3>*{min-width:0}
+@media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}
+.kpi-row{display:grid;gap:1rem;margin-bottom:1rem}
+.kpi{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;text-align:center}
+.kpi .val{font-size:1.5rem;font-weight:700;color:var(--primary-dark)}
+.kpi .lab{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.kpi .pos{color:var(--success)}
+.kpi .neg{color:var(--danger)}
+.label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
+input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
+input[type="text"],input[type="number"],input[type="date"],select{min-height:46px}
+select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23255746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+.table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+th,td{padding:.6rem;text-align:left;vertical-align:top;border-bottom:1px solid #e6f0ea}
+th{background:var(--primary-light);color:var(--primary-dark);font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
+.table-wrap td.cell-main{white-space:normal;min-width:200px}
+img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eef4f0}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;background:var(--primary-light);color:var(--primary-dark);white-space:nowrap}
+.badge.ok{background:#d4edda;color:#155724}
+.badge.warn{background:#fff3cd;color:#856404}
+.badge.err{background:#f8d7da;color:#721c24}
+.summary-box{background:var(--primary-light);color:var(--primary-dark);padding:.8rem 1rem;border-radius:8px;margin-top:.8rem;font-weight:700;border:1px solid var(--border-color)}
+.recipe-builder{border:2px dashed var(--border-color);padding:1rem;border-radius:10px;background:#f7faf8;margin-bottom:1rem}
+.recipe-builder h3{font-size:.95rem;color:var(--primary-dark);margin-bottom:.6rem}
+.detail-list{margin:.2rem 0 .2rem 1.1rem;font-size:.82rem}
+.detail-list li{margin-bottom:2px}
+.formula{background:#f7faf8;border:1px dashed var(--border-color);border-radius:8px;padding:.55rem .8rem;font-size:.78rem;color:var(--text-muted);margin-top:.6rem}
+.pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
+@media(max-width:768px){.container,.navbar{padding-left:16px;padding-right:16px}.navbar{flex-wrap:wrap;gap:.75rem}}
+@media(max-width:640px){
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs .tab{flex-shrink:0;font-size:.8rem;padding:.55rem .8rem}
+  .kpi-row{grid-template-columns:1fr}
+  section .table-wrap{overflow:visible;border:0;background:transparent}
+  .table-wrap table{display:block;width:100%;min-width:0;border:0}
+  .table-wrap tbody{display:block;width:100%}
+  .table-wrap thead{display:none}
+  .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.5rem .9rem;background:#fff}
+  .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;padding:.4rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
+  .table-wrap tbody td:first-child,.table-wrap tbody td:last-child{width:auto;text-align:left}
+  .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.72rem;font-weight:800;text-align:left;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem;padding-right:.6rem;border-right:1px solid var(--border-color)}
+  .table-wrap tbody td[colspan]{display:block;text-align:center}
+  .table-wrap tbody td[colspan]::before{content:none}
+  .table-wrap td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
+  .table-wrap td .cell-body>*{min-width:0}
+  .table-wrap td .row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;flex:1;min-width:0}
+  .table-wrap td .row .btn{min-width:0;white-space:nowrap;min-height:44px}
+  .pager{justify-content:center}
+}
+</style>
+</head>
+<body>
+<header id="siteHeader" style="display:none">
+  <div class="container navbar">
+    <div class="nav-left">
+      <a href="../index.html" class="logo" id="brandLogo"><span class="logo-img"><i class="fa-solid fa-boxes"></i></span><span class="logo-text">Inventory</span></a>
+    </div>
+    <div class="nav-right">
+      <a href="./admin.html" class="btn btn-outline"><i class="fa-solid fa-gear"></i> Admin</a>
+      <a href="./hpp.html" class="btn btn-outline"><i class="fa-solid fa-calculator"></i> HPP</a>
+      <a href="./laporan.html" class="btn btn-outline"><i class="fa-solid fa-chart-pie"></i> Laporan</a>
+      <a href="../index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card" id="authGate" style="display:none">
+    <h2><i class="fa-solid fa-lock"></i> Khusus Admin</h2>
+    <p class="muted">Silakan login dulu untuk mengelola inventory dan produksi.</p>
+    <div class="row" style="margin-top:.8rem"><a href="./admin.html" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Ke Halaman Login</a></div>
+  </div>
+
+  <div id="inventoryApp" style="display:none">
+    <section class="card">
+      <h2><i class="fa-solid fa-boxes"></i> Inventory &amp; Produksi</h2>
+      <p class="muted">Stok dikelola dengan FIFO. Produk jadi bisa diberi expired date. Bahan bawah <i>min stok</i> akan diperingatkan.</p>
+
+      <div class="tabs" id="invTabs">
+        <button class="tab on" data-t="dashboard">Dashboard</button>
+        <button class="tab" data-t="master">Master Item</button>
+        <button class="tab" data-t="beli">Pembelian Bahan</button>
+        <button class="tab" data-t="produksi">Produksi</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="tabpane on" data-pane="dashboard">
+        <div class="kpi-row">
+          <div class="kpi"><div class="val" id="kpiTotalStok">-</div><div class="lab">Jenis Item</div></div>
+          <div class="kpi"><div class="val neg" id="kpiStokRendah">0</div><div class="lab">Stok di Bawah Min</div></div>
+          <div class="kpi"><div class="val warn" id="kpiExpired">0</div><div class="lab">Expired 3 Hari</div></div>
+          <div class="kpi"><div class="val" id="kpiNilaiStok">Rp 0</div><div class="lab">Est. Nilai Stok</div></div>
+        </div>
+        <p class="muted">Item yang perlu pembelian ulang (stok ≤ min_stok):</p>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Stok</th><th>Min</th><th>Expired</th><th>Aksi</th></tr></thead><tbody id="tabelStokRendah"></tbody></table></div>
+      </div>
+
+      <!-- MASTER ITEM -->
+      <div class="tabpane" data-pane="master">
+        <form id="formItem" class="grid3">
+          <label>Nama Item<input id="inNama" placeholder="Mangga Harum Manis" required></label>
+          <label>Tipe<select id="inTipe"><option value="bahan_baku">Bahan Baku</option><option value="operasional">Operasional</option><option value="produk_jadi">Produk Jadi</option></select></label>
+          <label>Satuan<select id="inSatuan"><option value="pcs">Pcs / Buah</option><option value="gram">Gram</option><option value="ml">ml</option><option value="liter">Liter</option><option value="bulan">Bulan</option></select></label>
+          <label>Stok Minimal<input id="inMin" type="number" min="0" value="0"></label>
+          <label>Expired Date (produk jadi)<input id="inExpired" type="date"></label>
+          <label style="grid-column:1/-1;display:flex;gap:.5rem;margin-top:.8rem;"><button type="submit" class="btn btn-primary" id="btnSaveItem" style="flex:1">Simpan Item</button><button type="button" class="btn btn-outline" id="btnCancelItem" hidden style="flex:1">Batal</button></label>
+        </form>
+        <h3 style="margin-top:1rem;color:var(--primary-dark)">Daftar Item</h3>
+        <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Tipe</th><th>Stok</th><th>Satuan</th><th>Expired</th><th>Aksi</th></tr></thead><tbody id="tabelItem"></tbody></table></div>
+      </div>
+
+      <!-- PEMBELIAN BAHAN -->
+      <div class="tabpane" data-pane="beli">
+        <form id="formBeli" class="grid3" style="margin-bottom:1rem">
+          <label>Supplier<input id="inSupplier" placeholder="Toko Buah Segar"></label>
+          <label>Tanggal<input id="inTglBeli" type="date"></label>
+          <label>Metode Pembayaran<select id="inMetode"><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="dana">DANA</option></select></label>
+        </form>
+        <div class="recipe-builder">
+          <h3>Rincian Pembelian</h3>
+          <div class="grid3">
+            <label>Pilih Item<select id="inBeliItem"></select></label>
+            <label>Qty<input id="inBeliQty" type="number" step="any" min="0" placeholder="1"></label>
+            <label>Harga Satuan (Rp)<input id="inBeliHarga" type="number" min="0" placeholder="0"></label>
+            <label>&nbsp;<button type="button" class="btn btn-primary" id="btnAddBeliRow">+ Masukkan</button></label>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelBeliRows"></tbody></table></div>
+          <div class="row" style="margin-top:.5rem"><span class="muted">Total: <b id="totalBeli">Rp 0</b></span> <button type="button" class="btn btn-primary" id="btnSimpanBeli" style="margin-left:auto">Simpan Pembelian &amp; Stok</button></div>
+        </div>
+      </div>
+
+      <!-- PRODUKSI -->
+      <div class="tabpane" data-pane="produksi">
+        <form id="formProd" class="grid3">
+          <label>Menu<select id="inProdMenu"></select></label>
+          <label>Qty Produksi (botol)<input id="inProdQty" type="number" min="1" placeholder="1"></label>
+          <label>Tanggal<input id="inTglProd" type="date"></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnCekKapasitas"><i class="fa-solid fa-calculator"></i> Cek Kapasitas Maks</button></label>
+        </form>
+        <div id="boxKapasitas" class="summary-box" style="display:none"></div>
+        <div class="recipe-builder">
+          <h3>Rincian Produksi (dari resep HPP)</h3>
+          <div class="table-wrap"><table><thead><tr><th>Bahan</th><th>Qty Per Unit</th><th>Qty Total Digunakan</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelProdRows"></tbody></table></div>
+          <div class="row" style="margin-top:.5rem"><span class="muted">Total HPP Produksi: <b id="totalProdHPP">Rp 0</b></span> <button type="button" class="btn btn-success" id="btnSimpanProd" style="margin-left:auto">Simpan Produksi &amp; Kurangi Stok</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="../assets/config.js?v=20261017"></script>
+<script type="module">
+import { sb, isConfigured, loadLocalConfig } from "../assets/supabaseClient.js?v=20261017";
+import { enhanceSelect } from "../assets/dropdown.js?v=2";
+await loadLocalConfig();
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+const fmt2 = (v) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
+function toast(msg, icon = "success") { Toast.fire({ icon, title: msg }); }
+async function askDelete(title, text) {
+  const r = await Swal.fire({ title, text, icon: "warning", showCancelButton: true, confirmButtonText: "Ya", cancelButtonText: "Batal", confirmButtonColor: "#b3261e" });
+  return r.isConfirmed;
+}
+function applyTheme(s) {
+  try {
+    let t = s && s.app_theme;
+    if (typeof t === "string") t = JSON.parse(t);
+    if (!t || typeof t !== "object") return;
+    const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+    const r = document.documentElement.style;
+    if (ok(t.primary)) r.setProperty("--primary", t.primary);
+    if (ok(t.dark)) r.setProperty("--primary-dark", t.dark);
+    if (ok(t.light)) r.setProperty("--primary-light", t.light);
+  } catch {}
+}
+async function applyIdentity() {
+  try {
+    const { data, error } = await sb().from("app_settings").select("key,value");
+    if (error) throw error;
+    const s = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    applyTheme(s);
+    const txt = document.querySelector(".logo-text");
+    if (txt) txt.textContent = "Inventory " + (s.app_name || "Vitaminum");
+    if (s.app_name) document.title = "Inventory " + s.app_name;
+    if (s.app_favicon) {
+      let l = document.querySelector('link[rel="icon"]');
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.append(l); }
+      l.href = s.app_favicon;
+    }
+    if (s.app_logo) {
+      const slot = document.querySelector(".logo-img");
+      if (slot) { slot.innerHTML = ""; const img = document.createElement("img"); img.src = s.app_logo; img.alt = "logo"; img.onerror = () => { slot.innerHTML = '<i class="fa-solid fa-boxes"></i>'; }; slot.append(img); }
+    }
+  } catch (e) { console.warn(e.message); }
+}
+
+// ---------- State ----------
+let items = [];
+let menus = [];
+let beliRows = [];
+let prodRows = [];
+let editingItemId = null;
+
+// ---------- Auth gate ----------
+try {
+  if (!isConfigured) throw new Error("assets/config.js belum diisi.");
+  const { data: { session } } = await sb().auth.getSession();
+  if (!session?.user) {
+    $("#authGate").style.display = "";
+  } else {
+    $("#siteHeader").style.display = "";
+    $("#inventoryApp").style.display = "";
+    applyIdentity();
+    ["inTipe","inSatuan","inMetode","inProdMenu","inBeliItem"].forEach((id) => enhanceSelect(document.getElementById(id)));
+    $("#inTglBeli").valueAsDate = new Date();
+    $("#inTglProd").valueAsDate = new Date();
+    await loadAll();
+    renderDashboard();
+    renderItems();
+  }
+} catch (e) {
+  $("#authGate").style.display = "";
+  $("#authGate").querySelector(".muted").textContent = "Gagal koneksi: " + (e.message || e);
+}
+
+// ---------- Tabs ----------
+$("#invTabs").onclick = (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  $$("#invTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
+  $$("#inventoryApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
+  if (b.dataset.t === "dashboard") renderDashboard();
+  if (b.dataset.t === "master") renderItems();
+  if (b.dataset.t === "beli") fillBeliDropdowns();
+  if (b.dataset.t === "produksi") { fillProdMenu(); renderProdRows(); }
+};
+
+// ---------- Load ----------
+async function loadAll() {
+  const [{ data: it, error: e1 }, { data: mn, error: e2 }] = await Promise.all([
+    sb().from("inventory_items").select("*").order("nama"),
+    sb().from("hpp_menus").select("*").order("nama")
+  ]);
+  if (e1 || e2) return toast((e1 || e2).message, "error");
+  items = (it || []).map((x) => ({ ...x, current_stock: Number(x.current_stock) || 0, min_stock: Number(x.min_stock) || 0 }));
+  menus = (mn || []);
+}
+async function loadBatches(itemId) {
+  const { data, error } = await sb().from("inventory_batches").select("*").eq("item_id", itemId).order("received_date", { ascending: true });
+  if (error) return [];
+  return data || [];
+}
+
+// ---------- Render Dashboard ----------
+async function renderDashboard() {
+  const totalItems = items.length;
+  const stokRendah = items.filter(i => i.current_stock <= i.min_stock);
+  const today = new Date();
+  const limit = new Date(); limit.setDate(today.getDate() + 3);
+  const expiredSoon = items.filter(i => i.tipe === "produk_jadi" && i.expired_date && new Date(i.expired_date) <= limit);
+  let nilaiStok = 0;
+  for (const i of items) {
+    const batches = await loadBatches(i.id);
+    nilaiStok += batches.reduce((a,b) => a + (Number(b.qty_remaining || 0) * Number(b.cost_per_unit || 0)), 0);
+  }
+  $("#kpiTotalStok").textContent = totalItems;
+  $("#kpiStokRendah").textContent = stokRendah.length;
+  $("#kpiExpired").textContent = expiredSoon.length;
+  $("#kpiNilaiStok").textContent = fmtRp(nilaiStok);
+
+  const tb = $("#tabelStokRendah");
+  if (!stokRendah.length) { tb.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center">Semua stok aman.</td></tr>`; return; }
+  tb.innerHTML = stokRendah.map((i) => {
+    const batches = items.find(x => x.id === i.id); // placeholder
+    return `<tr>
+      <td data-l="Nama" class="cell-main"><b>${esc(i.nama)}</b></td>
+      <td data-l="Stok">${fmt2(i.current_stock)} ${esc(i.satuan)}</td>
+      <td data-l="Min">${fmt2(i.min_stock)} ${esc(i.satuan)}</td>
+      <td data-l="Expired">${i.expired_date ? fmtDate(i.expired_date) : "-"} </td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-edititem="${i.id}">Edit</button></div></td>
+    </tr>`;
+  }).join("");
+}
+function fmtDate(d) {
+  if (!d) return "-";
+  const dd = new Date(d + "T00:00:00");
+  return dd.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+const todayISO = () => new Date().toISOString().slice(0,10);
+
+// ---------- Master Item ----------
+async function renderItems() {
+  const tb = $("#tabelItem");
+  tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Memuat...</td></tr>`;
+  await loadAll();
+  if (!items.length) { tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Belum ada item.</td></tr>`; return; }
+  tb.innerHTML = items.map((i) => `<tr>
+    <td data-l="Nama" class="cell-main"><b>${esc(i.nama)}</b></td>
+    <td data-l="Tipe"><span class="badge">${esc(i.tipe)}</span></td>
+    <td data-l="Stok">${fmt2(i.current_stock)} ${esc(i.satuan)}</td>
+    <td data-l="Min">${fmt2(i.min_stock)} ${esc(i.satuan)}</td>
+    <td data-l="Expired">${i.expired_date ? fmtDate(i.expired_date) : "-"} </td>
+    <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-edititem="${i.id}">Edit</button><button class="btn btn-danger btn-xs" data-delitem="${i.id}">Hapus</button></div></td>
+  </tr>`).join("");
+}
+
+$("#formItem").onsubmit = async (e) => {
+  e.preventDefault();
+  const payload = {
+    nama: $("#inNama").value.trim(),
+    tipe: $("#inTipe").value,
+    satuan: $("#inSatuan").value,
+    min_stock: Number($("#inMin").value) || 0,
+    expired_date: $("#inExpired").value || null
+  };
+  if (!payload.nama) return toast("Nama wajib diisi", "error");
+  const wasEdit = !!editingItemId;
+  let error;
+  if (wasEdit) {
+    ({ error } = await sb().from("inventory_items").update(payload).eq("id", editingItemId));
+  } else {
+    ({ error } = await sb().from("inventory_items").insert(payload));
+  }
+  if (error) return toast(error.message, "error");
+  resetItemForm();
+  toast(wasEdit ? "Item diperbarui" : "Item tersimpan");
+  renderItems();
+};
+function resetItemForm() {
+  $("#formItem").reset();
+  editingItemId = null;
+  $("#btnSaveItem").textContent = "Simpan Item";
+  $("#btnCancelItem").hidden = true;
+}
+$("#btnCancelItem").onclick = resetItemForm;
+$("#inventoryApp").addEventListener("click", async (e) => {
+  const ed = e.target.closest("[data-edititem]");
+  if (ed) {
+    const it = items.find(x => String(x.id) === String(ed.dataset.edititem));
+    if (!it) return;
+    editingItemId = it.id;
+    $("#inNama").value = it.nama;
+    $("#inTipe").value = it.tipe;
+    $("#inSatuan").value = it.satuan;
+    $("#inMin").value = it.min_stock;
+    $("#inExpired").value = it.expired_date || "";
+    enhanceSelect(document.getElementById("inTipe")).refresh();
+    enhanceSelect(document.getElementById("inSatuan")).refresh();
+    $("#btnSaveItem").textContent = "Update Item";
+    $("#btnCancelItem").hidden = false;
+    const masterTab = $("#invTabs .tab[data-t='master']");
+    if (masterTab) masterTab.click();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  const dl = e.target.closest("[data-delitem]");
+  if (dl && await askDelete("Hapus item?", "Item dan riwayat stoknya akan dihapus.")) {
+    const { error } = await sb().from("inventory_items").delete().eq("id", dl.dataset.delitem);
+    toast(error ? error.message : "Item dihapus", error ? "error" : "success");
+    if (!error) renderItems();
+  }
+});
+
+// ---------- Pembelian ----------
+async function fillBeliDropdowns() {
+  const el = $("#inBeliItem");
+  const list = items.filter(i => i.tipe === "bahan_baku" || i.tipe === "operasional");
+  el.innerHTML = list.length ? list.map(i => `<option value="${i.id}">${esc(i.nama)} (${esc(i.satuan)})</option>`).join("") : `<option value="">Bahan Kosong</option>`;
+  enhanceSelect(el).refresh();
+}
+$("#inTglBeli").valueAsDate = new Date();
+
+function addBeliRow() {
+  const id = $("#inBeliItem").value;
+  const qty = Number($("#inBeliQty").value) || 0;
+  const harga = Number($("#inBeliHarga").value) || 0;
+  if (!id) return toast("Pilih item", "error");
+  if (!(qty > 0)) return toast("Qty wajib > 0", "error");
+  if (!(harga >= 0)) return toast("Harga invalid", "error");
+  const it = items.find(x => String(x.id) === String(id));
+  beliRows.push({ inventory_item_id: id, item_nama: it.nama, item_satuan: it.satuan, qty, harga_satuan: harga, subtotal: qty * harga });
+  $("#inBeliQty").value = "";
+  $("#inBeliHarga").value = "";
+  renderBeliRows();
+}
+$("#btnAddBeliRow").onclick = addBeliRow;
+
+function renderBeliRows() {
+  const tb = $("#tabelBeliRows");
+  const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
+  $("#totalBeli").textContent = fmtRp(total);
+  tb.innerHTML = beliRows.map((r,i) => `<tr>
+    <td data-l="Item">${esc(r.item_nama)}</td>
+    <td data-l="Qty">${fmt2(r.qty)} ${esc(r.item_satuan)}</td>
+    <td data-l="Harga">${fmtRp(r.harga_satuan)}</td>
+    <td data-l="Subtotal">${fmtRp(r.subtotal)}</td>
+    <td data-l="Aksi"><button class="btn btn-danger btn-xs" data-rembeli="${i}">Hapus</button></td>
+  </tr>`).join("");
+}
+
+$("#btnSimpanBeli").onclick = async () => {
+  if (!beliRows.length) return toast("Isi rincian pembelian dulu", "error");
+  const supplier = $("#inSupplier").value.trim();
+  const tanggal = $("#inTglBeli").value || todayISO();
+  const metode = $("#inMetode").value;
+  const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
+  const { data: pb, error: e1 } = await sb().from("pembelian_bahan").insert({ supplier, tanggal, total_bayar: total, metode_pembayaran: metode, status: "selesai" }).select("id").single();
+  if (e1) return toast(e1.message, "error");
+  const batchRows = [];
+  const itemUpdates = [];
+  const transRows = [];
+  for (const r of beliRows) {
+    const { data: b, error: eb } = await sb().from("inventory_batches").insert({
+      item_id: r.inventory_item_id,
+      qty_remaining: r.qty,
+      cost_per_unit: r.harga_satuan,
+      expired_date: null,
+      received_date: tanggal
+    }).select("id").single();
+    if (eb) return toast(eb.message, "error");
+    batchRows.push({ pembelian_id: pb.id, inventory_item_id: r.inventory_item_id, batch_id: b.id, qty: r.qty, satuan: r.item_satuan, harga_satuan: r.harga_satuan, subtotal: r.subtotal });
+    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (items.find(x=>String(x.id)===String(r.inventory_item_id)).current_stock || 0) + r.qty }).eq("id", r.inventory_item_id));
+    transRows.push({ item_id: r.inventory_item_id, batch_id: b.id, tipe: "pembelian", qty: r.qty, harga_satuan: r.harga_satuan, total: r.subtotal, reference_type: "pembelian", reference_id: pb.id, catatan: `Pembelian dari ${supplier || "-"}` });
+  }
+  const { error: e2 } = await sb().from("pembelian_items").insert(batchRows);
+  if (e2) return toast(e2.message, "error");
+  await Promise.all(itemUpdates);
+  const { error: e3 } = await sb().from("inventory_transactions").insert(transRows);
+  if (e3) return toast(e3.message, "error");
+  // kas keluar
+  const saldo = await getSaldoKas();
+  await sb().from("keuangan").insert({ tipe: "pengeluaran", kategori: "bahan", jumlah: -total, saldo_akhir: saldo - total, tanggal, referensi_type: "pembelian", referensi_id: pb.id, catatan: `Pembelian bahan dari ${supplier || "-"}` });
+  beliRows = [];
+  renderBeliRows();
+  $("#formBeli").reset();
+  $("#inTglBeli").valueAsDate = new Date();
+  $("#totalBeli").textContent = fmtRp(0);
+  toast("Pembelian disimpan dan stok ditambahkan (FIFO batch)");
+  renderItems();
+  renderDashboard();
+};
+
+// ---------- Produksi ----------
+async function fillProdMenu() {
+  const el = $("#inProdMenu");
+  el.innerHTML = menus.length ? menus.map(m => `<option value="${m.id}">${esc(m.nama)} (Margin ${m.margin}%)</option>`).join("") : `<option value="">Menu Kosong</option>`;
+  enhanceSelect(el).refresh();
+}
+async function hitungKapasitas() {
+  const menuId = $("#inProdMenu").value;
+  if (!menuId) return toast("Pilih menu dulu", "error");
+  const { data: resep, error: e } = await sb().from("hpp_resep").select("*").eq("menu_id", menuId);
+  if (e) return toast(e.message, "error");
+  if (!resep?.length) return toast("Menu belum punya resep di HPP", "error");
+  let min = Infinity;
+  const detail = [];
+  for (const r of resep) {
+    const it = items.find(x => String(x.nama || "").toLowerCase() === String(r.item_nama || "").toLowerCase());
+    const stok = it ? it.current_stock : 0;
+    const bisa = Math.floor(stok / Number(r.qty || 0));
+    min = Math.min(min, bisa);
+    detail.push(`${esc(r.item_nama)}: stok ${fmt2(stok)} ${esc(r.item_satuan)}, butuh ${fmt2(r.qty)} per unit → cukup untuk ${bisa} unit`);
+  }
+  $("#boxKapasitas").style.display = "";
+  $("#boxKapasitas").innerHTML = `<b>Kapasitas maksimum produksi: ${min} unit</b><br>${detail.map(d => `<div class="detail-list"><li>${d}</li></div>`).join("")}`;
+}
+$("#btnCekKapasitas").onclick = hitungKapasitas;
+
+$("#inProdMenu").onchange = async () => {
+  prodRows = [];
+  const menuId = $("#inProdMenu").value;
+  if (!menuId) { renderProdRows(); return; }
+  const { data: resep, error } = await sb().from("hpp_resep").select("*").eq("menu_id", menuId);
+  if (error) return toast(error.message, "error");
+  for (const r of (resep || [])) {
+    const it = items.find(x => String(x.nama || "").toLowerCase() === String(r.item_nama || "").toLowerCase());
+    prodRows.push({
+      inventory_item_id: it ? it.id : null,
+      item_nama: it ? it.nama : r.item_nama,
+      item_satuan: it ? it.satuan : r.item_satuan,
+      qty_per_unit: Number(r.qty) || 0,
+      qty_total: 0,
+      harga_satuan: it && it.hpp_item_id ? (items.find(x=>String(x.id)===String(it.id)).current_stock || 0) : 0,
+      subtotal: 0
+    });
+  }
+  renderProdRows();
+};
+function renderProdRows() {
+  const qtyProduksi = Number($("#inProdQty").value) || 0;
+  const tb = $("#tabelProdRows");
+  let totalHPP = 0;
+  tb.innerHTML = prodRows.map((r) => {
+    r.qty_total = r.qty_per_unit * qtyProduksi;
+    r.harga_satuan = 0;
+    r.subtotal = 0;
+    return `<tr>
+      <td data-l="Bahan">${esc(r.item_nama)}</td>
+      <td data-l="Qty/Unit">${fmt2(r.qty_per_unit)} ${esc(r.item_satuan)}</td>
+      <td data-l="Qty Total">${fmt2(r.qty_total)} ${esc(r.item_satuan)}</td>
+      <td data-l="Harga">${fmtRp(r.harga_satuan)}</td>
+      <td data-l="Subtotal">${fmtRp(r.subtotal)}</td>
+      <td data-l="Aksi"><button class="btn btn-danger btn-xs" data-remprod="${prodRows.indexOf(r)}">Hapus</button></td>
+    </tr>`;
+  }).join("");
+  $("#totalProdHPP").textContent = fmtRp(totalHPP);
+}
+$("#inProdQty").onchange = renderProdRows;
+
+$("#btnSimpanProd").onclick = async () => {
+  const menuId = $("#inProdMenu").value;
+  const qtyProduksi = Number($("#inProdQty").value) || 0;
+  const tanggal = $("#inTglProd").value || todayISO();
+  if (!menuId) return toast("Pilih menu", "error");
+  if (!(qtyProduksi > 0)) return toast("Qty produksi wajib > 0", "error");
+  if (!prodRows.length) return toast("Rincian produksi kosong", "error");
+
+  // Hitung total HPP dari view hpp_menu_kalkulasi (snapshot)
+  const { data: kalk, error: ek } = await sb().from("hpp_menu_kalkulasi").select("total_hpp,harga_jual").eq("menu_id", menuId).single();
+  if (ek) return toast(ek.message, "error");
+  const hppSatuan = Number(kalk?.total_hpp || 0);
+  const totalHPP = hppSatuan * qtyProduksi;
+
+  // Cek stok bahan cukup (FIFO sederhana)
+  for (const r of prodRows) {
+    const it = items.find(x => String(x.id) === String(r.inventory_item_id));
+    if (!it || it.current_stock < r.qty_total) {
+      return toast(`Stok ${esc(r.item_nama)} tidak cukup untuk produksi ${qtyProduksi} unit`, "error");
+    }
+  }
+
+  const { data: prd, error: e1 } = await sb().from("produksi").insert({
+    menu_id: menuId,
+    nama_batch: `BATCH-${tanggal}-${Math.floor(Math.random()*1000)}`,
+    qty_produksi: qtyProduksi,
+    hpp_satuan_saat_produksi: hppSatuan,
+    total_hpp_digunakan: totalHPP,
+    tanggal,
+    status: "selesai"
+  }).select("id").single();
+  if (e1) return toast(e1.message, "error");
+
+  const prodItemRows = [];
+  const itemUpdates = [];
+  const transRows = [];
+  for (const r of prodRows) {
+    // FIFO: kurangi dari batch terlama
+    let sisa = r.qty_total;
+    const batches = await loadBatches(r.inventory_item_id);
+    for (const b of batches) {
+      if (sisa <= 0) break;
+      const ambil = Math.min(Number(b.qty_remaining || 0), sisa);
+      await sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id);
+      sisa -= ambil;
+      prodItemRows.push({
+        produksi_id: prd.id,
+        inventory_item_id: r.inventory_item_id,
+        batch_id: b.id,
+        item_nama_snapshot: r.item_nama,
+        item_satuan_snapshot: r.item_satuan,
+        qty_digunakan: ambil,
+        harga_satuan_snapshot: Number(b.cost_per_unit || 0),
+        subtotal: ambil * Number(b.cost_per_unit || 0)
+      });
+      transRows.push({
+        item_id: r.inventory_item_id,
+        batch_id: b.id,
+        tipe: "produksi_keluar",
+        qty: -ambil,
+        harga_satuan: Number(b.cost_per_unit || 0),
+        total: -ambil * Number(b.cost_per_unit || 0),
+        reference_type: "produksi",
+        reference_id: prd.id,
+        catatan: `Digunakan produksi ${esc(r.item_nama)}`
+      });
+    }
+    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (it.current_stock || 0) - r.qty_total }).eq("id", r.inventory_item_id));
+  }
+  // Tambah stok produk jadi (menu)
+  const menu = menus.find(m => String(m.id) === String(menuId));
+  const jadiItem = items.find(i => i.tipe === "produk_jadi" && String(i.nama || "").toLowerCase() === String(menu?.nama || "").toLowerCase());
+  if (jadiItem) {
+    await sb().from("inventory_items").update({ current_stock: (jadiItem.current_stock || 0) + qtyProduksi }).eq("id", jadiItem.id);
+    await sb().from("inventory_batches").insert({
+      item_id: jadiItem.id,
+      qty_remaining: qtyProduksi,
+      cost_per_unit: hppSatuan,
+      expired_date: null,
+      received_date: tanggal
+    });
+    transRows.push({
+      item_id: jadiItem.id,
+      batch_id: null,
+      tipe: "produksi_masuk",
+      qty: qtyProduksi,
+      harga_satuan: hppSatuan,
+      total: totalHPP,
+      reference_type: "produksi",
+      reference_id: prd.id,
+      catatan: `Hasil produksi ${esc(menu.nama)}`
+    });
+  } else {
+    toast("Peringatan: produk jadi untuk menu ini belum ada di inventory_items. Stok produk jadi tidak bertambah.", "warn");
+  }
+  await sb().from("produksi_items").insert(prodItemRows);
+  await Promise.all(itemUpdates);
+  await sb().from("inventory_transactions").insert(transRows);
+
+  // Kas: produksi tidak langsung keluar kas (hpp sudah dibeli sebelumnya), tapi catat HPP digunakan sebagai internal
+  toast("Produksi disimpan. Stok bahan dikurangi (FIFO), stok produk jadi bertambah.");
+  $("#formProd").reset();
+  $("#inTglProd").valueAsDate = new Date();
+  prodRows = [];
+  renderProdRows();
+  renderItems();
+  renderDashboard();
+};
+
+// ---------- Event delegation global untuk tombol hapus di tabel ----------
+$("#inventoryApp").onclick = async (e) => {
+  const rb = e.target.closest("[data-rembeli]");
+  if (rb) {
+    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian pembelian.")) {
+      beliRows.splice(+rb.dataset.rembeli, 1);
+      renderBeliRows();
+    }
+    return;
+  }
+  const rp = e.target.closest("[data-remprod]");
+  if (rp) {
+    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian produksi.")) {
+      prodRows.splice(+rp.dataset.remprod, 1);
+      renderProdRows();
+    }
+    return;
+  }
+};
+
+// ---------- Saldo kas helper ----------
+async function getSaldoKas() {
+  const { data } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+  return data?.[0]?.saldo_akhir ?? 0;
+}
+</script>
+</body>
+</html>

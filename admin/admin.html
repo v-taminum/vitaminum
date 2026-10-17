@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#255746">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./assets/icons/icon-192.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
 <title>Admin Vitaminum</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="./assets/dropdown.css?v=2">
+<link rel="stylesheet" href="../assets/dropdown.css?v=2">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
@@ -266,7 +266,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 <header id="siteHeader">
   <div class="container navbar">
     <div class="nav-left">
-      <a href="./index.html" class="logo" id="brandLogo"><span class="logo-img"></span><span class="logo-text">Vitaminum</span></a>
+      <a href="../index.html" class="logo" id="brandLogo"><span class="logo-img"></span><span class="logo-text">Vitaminum</span></a>
     </div>
     <nav class="headnav" id="tabs">
        <button class="tab on" data-t="settings"><i class="fa-solid fa-gear"></i> Info Aplikasi</button>
@@ -275,7 +275,9 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
     </nav>
     <div class="nav-right">
       <a href="./hpp.html" class="btn btn-outline"><i class="fa-solid fa-calculator"></i> HPP</a>
-      <a href="./index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
+      <a href="./inventory.html" class="btn btn-outline"><i class="fa-solid fa-boxes"></i> Inventory</a>
+      <a href="./laporan.html" class="btn btn-outline"><i class="fa-solid fa-chart-pie"></i> Laporan</a>
+      <a href="../index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
       <button class="btn btn-primary" id="btnOut" style="display:none"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
     </div>
   </div>
@@ -382,10 +384,10 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
   </div>
 </div>
 
-    <script src="./assets/config.js?v=20260924"></script>
+    <script src="../assets/config.js?v=20260924"></script>
 <script type="module">
-import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "./assets/supabaseClient.js?v=20260924";
-import { enhanceSelect } from "./assets/dropdown.js?v=2";
+import { sb, isConfigured, configError, hasAdminKey, loadLocalConfig } from "../assets/supabaseClient.js?v=20260924";
+import { enhanceSelect } from "../assets/dropdown.js?v=2";
 await loadLocalConfig();
 if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }

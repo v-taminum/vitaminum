@@ -62,6 +62,9 @@ alter table public.hpp_items enable row level security;
 alter table public.hpp_menus enable row level security;
 alter table public.hpp_resep enable row level security;
 
+-- Amankan view kalkulasi HPP: pakai RLS dari pemanggil (admin yang login), bukan pemilik view.
+alter view public.hpp_menu_kalkulasi set (security_invoker = true);
+
 drop policy if exists "admin all hpp_items" on public.hpp_items;
 create policy "admin all hpp_items" on public.hpp_items
   for all using (public.has_admin_key() or (lower(auth.jwt() ->> 'email') = 'uhilokal@gmail.com'))

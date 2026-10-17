@@ -16,6 +16,7 @@ const DD_CHEV = '<svg class="dd-chev" viewBox="0 0 12 8" aria-hidden="true"><pat
 const DD_CHECK = '<svg class="dd-check" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 export function enhanceSelect(sel) {
   if (!sel) return { refresh() {}, close() {}, value: null };
+  if (sel.tagName !== "SELECT") return { refresh() {}, close() {}, toggle: () => {}, open: () => {}, close: () => {}, value: sel.value };
   if (sel.dataset.dd === "1") return sel.__ddApi;
   sel.dataset.dd = "1";
   const wrap = document.createElement("div");

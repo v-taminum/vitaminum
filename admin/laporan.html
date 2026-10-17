@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#255746">
+<link rel="apple-touch-icon" href="../assets/icons/icon-192.png">
+<title>Laporan &amp; Tutup Buku - Vitaminum</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="../assets/dropdown.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
+  --bg-color:#f1f8f4;--text-color:#0e201b;--text-muted:#575757;--white:#ffffff;
+  --border-color:#90c5ad;--danger:#b3261e;--success:#2e7d32;
+  --shadow:0 10px 15px -3px rgba(46,109,85,.10),0 4px 6px -4px rgba(46,109,85,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Quicksand',system-ui,sans-serif}
+html,body{width:100%;overflow-x:clip}
+body{background:var(--bg-color);color:var(--text-color);line-height:1.5;min-height:100vh}
+a{color:inherit;text-decoration:none}
+.container{max-width:1366px;margin:0 auto;padding:0 32px}
+header{background:var(--white);border-bottom:1px solid var(--border-color);position:sticky;top:0;z-index:100}
+.navbar{display:flex;align-items:center;gap:1rem;padding-top:.8rem;padding-bottom:.8rem}
+.nav-left{display:flex;align-items:center}
+.logo{display:inline-flex;align-items:center;gap:.6rem;font-weight:800;font-size:1.2rem;color:var(--primary-dark)}
+.logo-img{width:34px;height:34px;border-radius:9px;background:var(--primary);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden;flex-shrink:0}
+.logo-img img{width:100%;height:100%;object-fit:cover}
+.nav-right{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.btn{padding:.55rem 1rem;border-radius:8px;font-weight:700;cursor:pointer;border:1px solid transparent;font-size:.85rem;display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:42px;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:transparent;border-color:var(--primary);color:var(--primary-dark)}.btn-outline:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}.btn-danger:hover{filter:brightness(.9)}
+.btn-xs{padding:.35rem .6rem;font-size:.75rem;min-height:38px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+main.container{padding-top:1.25rem;padding-bottom:2rem}
+.card{background:var(--white);border:1px solid var(--border-color);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:0 4px 6px -1px rgba(0,0,0,.02)}
+.card h2{font-size:1.15rem;color:var(--primary-dark);margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+.muted{color:var(--text-muted);font-size:.82rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:.5rem;flex-wrap:wrap;margin:.9rem 0 0}
+.tab{border:1px solid transparent;background:transparent;color:var(--text-muted);border-radius:8px;padding:.6rem 1rem;font-weight:700;cursor:pointer;font-size:.88rem;font-family:inherit}
+.tab:hover{background:var(--primary-light)}
+.tab.on{background:var(--primary);color:#fff}
+.tabpane{display:none;margin-top:1rem}
+.tabpane.on{display:block}
+.grid3{display:grid;gap:10px}
+.grid3>*{min-width:0}
+@media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}
+label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
+input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
+input[type="text"],input[type="number"],input[type="date"],select{min-height:46px}
+select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23255746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
+.table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:560px}
+th,td{padding:.6rem;text-align:left;vertical-align:top;border-bottom:1px solid #e6f0ea}
+th{background:var(--primary-light);color:var(--primary-dark);font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+.table-wrap th,.table-wrap td{vertical-align:middle;white-space:nowrap}
+.table-wrap td.cell-main{white-space:normal;min-width:200px}
+img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#eef4f0}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:700;background:var(--primary-light);color:var(--primary-dark);white-space:nowrap}
+.badge.ok{background:#d4edda;color:#155724}
+.badge.warn{background:#fff3cd;color:#856404}
+.badge.err{background:#f8d7da;color:#721c24}
+.summary-box{background:var(--primary-light);color:var(--primary-dark);padding:.8rem 1rem;border-radius:8px;margin-top:.8rem;font-weight:700;border:1px solid var(--border-color)}
+.kpi-row{display:grid;gap:1rem;margin-bottom:1rem}
+.kpi{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;text-align:center}
+.kpi .val{font-size:1.5rem;font-weight:700;color:var(--primary-dark)}
+.kpi .lab{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+.kpi .pos{color:var(--success)}
+.kpi .neg{color:var(--danger)}
+.formula{background:#f7faf8;border:1px dashed var(--border-color);border-radius:8px;padding:.55rem .8rem;font-size:.78rem;color:var(--text-muted);margin-top:.6rem}
+.detail-list{margin:.2rem 0 .2rem 1.1rem;font-size:.82rem}
+.detail-list li{margin-bottom:2px}
+.pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
+@media(max-width:768px){.container,.navbar{padding-left:16px;padding-right:16px}.navbar{flex-wrap:wrap;gap:.75rem}}
+@media(max-width:640px){
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs .tab{flex-shrink:0;font-size:.8rem;padding:.55rem .8rem}
+  .kpi-row{grid-template-columns:1fr}
+  section .table-wrap{overflow:visible;border:0;background:transparent}
+  .table-wrap table{display:block;width:100%;min-width:0;border:0}
+  .table-wrap tbody{display:block;width:100%}
+  .table-wrap thead{display:none}
+  .table-wrap tbody tr{display:block;border:1px solid var(--border-color);border-radius:10px;margin-bottom:.6rem;padding:.5rem .9rem;background:#fff}
+  .table-wrap tbody td{display:flex;gap:.6rem;align-items:flex-start;border:0;padding:.4rem 0;white-space:normal;text-align:left;width:auto;min-width:0;max-width:none}
+  .table-wrap tbody td:first-child,.table-wrap tbody td:last-child{width:auto;text-align:left}
+  .table-wrap tbody td::before{content:attr(data-l);flex:0 0 84px;font-size:.72rem;font-weight:800;text-align:left;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.03em;padding-top:.15rem;padding-right:.6rem;border-right:1px solid var(--border-color)}
+  .table-wrap tbody td[colspan]{display:block;text-align:center}
+  .table-wrap tbody td[colspan]::before{content:none}
+  .table-wrap td .cell-body{flex:1;min-width:0;display:grid;gap:2px}
+  .table-wrap td .cell-body>*{min-width:0}
+  .table-wrap td .row{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;flex:1;min-width:0}
+  .table-wrap td .row .btn{min-width:0;white-space:nowrap;min-height:44px}
+  .pager{justify-content:center}
+}
+</style>
+</head>
+<body>
+<header id="siteHeader" style="display:none">
+  <div class="container navbar">
+    <div class="nav-left">
+      <a href="../index.html" class="logo" id="brandLogo"><span class="logo-img"><i class="fa-solid fa-chart-pie"></i></span><span class="logo-text">Laporan</span></a>
+    </div>
+    <div class="nav-right">
+      <a href="./admin.html" class="btn btn-outline"><i class="fa-solid fa-gear"></i> Admin</a>
+      <a href="./hpp.html" class="btn btn-outline"><i class="fa-solid fa-calculator"></i> HPP</a>
+      <a href="../index.html" class="btn btn-outline"><i class="fa-solid fa-store"></i> Toko</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card" id="authGate" style="display:none">
+    <h2><i class="fa-solid fa-lock"></i> Khusus Admin</h2>
+    <p class="muted">Silakan login dulu untuk membuka laporan dan tutup buku.</p>
+    <div class="row" style="margin-top:.8rem"><a href="./admin.html" class="btn btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Ke Halaman Login</a></div>
+  </div>
+
+  <div id="laporanApp" style="display:none">
+    <section class="card">
+      <h2><i class="fa-solid fa-chart-pie"></i> Laba Rugi &amp; Tutup Buku</h2>
+      <p class="muted">Pendapatan dari <b>orders</b>, HPP dari <b>produksi</b>, beban dari <b>keuangan</b>. Tutup buku setiap jam 20:00 WIB.</p>
+
+      <div class="tabs" id="laporanTabs">
+        <button class="tab on" data-t="harian">Harian</button>
+        <button class="tab" data-t="bulanan">Bulanan</button>
+        <button class="tab" data-t="riwayat">Riwayat Tutup Buku</button>
+      </div>
+
+      <!-- HARIAN -->
+      <div class="tabpane on" data-pane="harian">
+        <div class="row" style="margin-bottom:1rem">
+          <label>Tanggal<input type="date" id="tglLaporan"></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatHarian"><i class="fa-solid fa-refresh"></i> Muat Laporan</button></label>
+          <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-success" id="btnTutupBuku" style="background:var(--success);border-color:var(--success)"><i class="fa-solid fa-lock"></i> Tutup Buku Hari Ini</button></label>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="val" id="kpiPendapatan">Rp 0</div><div class="lab">Pendapatan</div></div>
+          <div class="kpi"><div class="val pos" id="kpiHPP">Rp 0</div><div class="lab">HPP (COGS)</div></div>
+          <div class="kpi"><div class="val pos" id="kpiLabaKotor">Rp 0</div><div class="lab">Laba Kotor</div></div>
+          <div class="kpi"><div class="val neg" id="kpiBeban">Rp 0</div><div class="lab">Beban Operasional</div></div>
+          <div class="kpi"><div class="val" id="kpiLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Hari Ini</div></div>
+        </div>
+
+        <div class="summary-box">
+          <b>Rumus:</b> Pendapatan − HPP = Laba Kotor &nbsp;•&nbsp; Laba Kotor − Beban Operasional = Laba / Rugi Harian
+        </div>
+
+        <div class="formula">
+          Detail:<br>
+          • Pendapatan: jumlah <code>total</code> dari <b>orders</b> pada tanggal tersebut (status selesai/lunas).<br>
+          • HPP: jumlah <code>total_hpp_digunakan</code> dari <b>produksi</b> pada tanggal tersebut.<br>
+          • Beban Operasional: jumlah <code>jumlah</code> dari <b>keuangan</b> kategori <i>operasional</i> + <b>petty_cash</b> pada tanggal tersebut.
+        </div>
+      </div>
+
+      <!-- BULANAN -->
+      <div class="tabpane" data-pane="bulanan">
+        <div class="row" style="margin-bottom:1rem">
+          <label>Bulan<input type="month" id="blnLaporan"></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatBulanan"><i class="fa-solid fa-refresh"></i> Muat Laporan</button></label>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="val" id="kpiBlnPendapatan">Rp 0</div><div class="lab">Pendapatan Bulan Ini</div></div>
+          <div class="kpi"><div class="val pos" id="kpiBlnHPP">Rp 0</div><div class="lab">HPP Bulan Ini</div></div>
+          <div class="kpi"><div class="val pos" id="kpiBlnLabaKotor">Rp 0</div><div class="lab">Laba Kotor</div></div>
+          <div class="kpi"><div class="val neg" id="kpiBlnBeban">Rp 0</div><div class="lab">Beban Operasional</div></div>
+          <div class="kpi"><div class="val" id="kpiBlnLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Bulanan</div></div>
+        </div>
+      </div>
+
+      <!-- RIWAYAT -->
+      <div class="tabpane" data-pane="riwayat">
+        <p class="muted">Riwayat penutupan buku harian yang sudah dikunci.</p>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Pendapatan</th><th>HPP</th><th>Laba Kotor</th><th>Beban Operasional</th><th>Laba / Rugi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="tabelRiwayat"></tbody></table></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="../assets/config.js?v=20261017"></script>
+<script type="module">
+import { sb, isConfigured, loadLocalConfig } from "../assets/supabaseClient.js?v=20261017";
+import { enhanceSelect } from "../assets/dropdown.js?v=2";
+await loadLocalConfig();
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
+function toast(msg, icon = "success") { Toast.fire({ icon, title: msg }); }
+async function askDelete(title, text) {
+  const r = await Swal.fire({ title, text, icon: "warning", showCancelButton: true, confirmButtonText: "Ya", cancelButtonText: "Batal", confirmButtonColor: "#b3261e" });
+  return r.isConfirmed;
+}
+function applyTheme(s) {
+  try {
+    let t = s && s.app_theme;
+    if (typeof t === "string") t = JSON.parse(t);
+    if (!t || typeof t !== "object") return;
+    const ok = (v) => /^#[0-9a-fA-F]{6}$/.test(v || "");
+    const r = document.documentElement.style;
+    if (ok(t.primary)) r.setProperty("--primary", t.primary);
+    if (ok(t.dark)) r.setProperty("--primary-dark", t.dark);
+    if (ok(t.light)) r.setProperty("--primary-light", t.light);
+  } catch {}
+}
+async function applyIdentity() {
+  try {
+    const { data, error } = await sb().from("app_settings").select("key,value");
+    if (error) throw error;
+    const s = Object.fromEntries((data || []).map((r) => [r.key, r.value]));
+    applyTheme(s);
+    const txt = document.querySelector(".logo-text");
+    if (txt) txt.textContent = "Laporan " + (s.app_name || "Vitaminum");
+    if (s.app_name) document.title = "Laporan " + s.app_name;
+    if (s.app_favicon) {
+      let l = document.querySelector('link[rel="icon"]');
+      if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.append(l); }
+      l.href = s.app_favicon;
+    }
+    if (s.app_logo) {
+      const slot = document.querySelector(".logo-img");
+      if (slot) { slot.innerHTML = ""; const img = document.createElement("img"); img.src = s.app_logo; img.alt = "logo"; img.onerror = () => { slot.innerHTML = '<i class="fa-solid fa-chart-pie"></i>'; }; slot.append(img); }
+    }
+  } catch (e) { console.warn(e.message); }
+}
+
+// ---------- Auth gate ----------
+try {
+  if (!isConfigured) throw new Error("assets/config.js belum diisi.");
+  const { data: { session } } = await sb().auth.getSession();
+  if (!session?.user) {
+    $("#authGate").style.display = "";
+  } else {
+    $("#siteHeader").style.display = "";
+    $("#laporanApp").style.display = "";
+    applyIdentity();
+    $("#tglLaporan").valueAsDate = new Date();
+    const m = new Date().toISOString().slice(0,7);
+    $("#blnLaporan").value = m;
+    muatHarian();
+    muatBulanan();
+    muatRiwayat();
+  }
+} catch (e) {
+  $("#authGate").style.display = "";
+  $("#authGate").querySelector(".muted").textContent = "Gagal koneksi: " + (e.message || e);
+}
+
+// ---------- Tabs ----------
+$("#laporanTabs").onclick = (e) => {
+  const b = e.target.closest(".tab"); if (!b) return;
+  $$("#laporanTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
+  $$("#laporanApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
+};
+
+// ---------- Helpers ----------
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtDate = (d) => {
+  if (!d) return "-";
+  const dd = new Date(d + "T00:00:00");
+  return dd.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
+// ---------- Laporan Harian ----------
+async function muatHarian() {
+  const tgl = $("#tglLaporan").value || todayISO();
+  const tglStart = tgl + "T00:00:00Z";
+  const tglEnd = tgl + "T23:59:59Z";
+  const [rOrd, rPrd, rKeu, rPetty] = await Promise.all([
+    sb().from("orders").select("total,status,created_at").gte("created_at", tglStart).lte("created_at", tglEnd),
+    sb().from("produksi").select("total_hpp_digunakan").eq("tanggal", tgl).eq("status", "selesai"),
+    sb().from("keuangan").select("jumlah,kategori,tipe").eq("tanggal", tgl),
+    sb().from("petty_cash").select("pengeluaran").eq("tanggal", tgl)
+  ]);
+  const ord = rOrd.data || [], e1 = rOrd.error;
+  const prd = rPrd.data || [], e2 = rPrd.error;
+  const keu = rKeu.data || [], e3 = rKeu.error;
+  const petty = rPetty.data || [], e4 = rPetty.error;
+  // Note: orders.created_at is timestamptz; eq with date string may not match time portion.
+  // Better: use range. Below is client-side fallback if needed.
+  let pendapatan = 0;
+  if (!e1 && ord) {
+    pendapatan = ord.filter(o => {
+      const d = new Date(o.created_at || 0).toISOString().slice(0,10);
+      return d === tgl && (o.status === "selesai" || o.status === "lunas");
+    }).reduce((a,o) => a + Number(o.total || 0), 0);
+  } else if (e1) toast(e1.message, "error");
+
+  const hpp = (!e2 && prd ? prd.reduce((a,p) => a + Number(p.total_hpp_digunakan || 0), 0) : 0);
+  if (e2) toast(e2.message, "error");
+
+  let beban = 0;
+  if (!e3 && keu) {
+    beban = keu.filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional")
+      .reduce((a,k) => a + Math.abs(Number(k.jumlah || 0)), 0);
+  }
+  if (e3) toast(e3.message, "error");
+
+  const pettyTotal = (!e4 && petty ? petty.reduce((a,p) => a + Number(p.pengeluaran || 0), 0) : 0);
+  if (e4) toast(e4.message, "error");
+
+  const totalBeban = beban + pettyTotal;
+  const labaKotor = pendapatan - hpp;
+  const labaRugi = labaKotor - totalBeban;
+
+  $("#kpiPendapatan").textContent = fmtRp(pendapatan);
+  $("#kpiHPP").textContent = fmtRp(hpp);
+  $("#kpiLabaKotor").textContent = fmtRp(labaKotor);
+  $("#kpiBeban").textContent = fmtRp(totalBeban);
+  $("#kpiLabaRugi").textContent = fmtRp(labaRugi);
+  $("#kpiLabaRugi").className = "val " + (labaRugi >= 0 ? "pos" : "neg");
+}
+
+// Simpan / Tutup buku harian
+$("#btnTutupBuku").onclick = async () => {
+  const tgl = $("#tglLaporan").value || todayISO();
+  const existing = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).single();
+  if (existing.data && existing.data.status === "ditutup") {
+    return toast("Buku hari ini sudah ditutup", "warning");
+  }
+  if (!await askDelete("Tutup buku?", "Data pada " + fmtDate(tgl) + " akan dikunci dan tidak dapat diubah lagi.")) return;
+
+  // Hitung ulang (sederhana)
+  const pendapatan = Number($("#kpiPendapatan").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
+  const hpp = Number($("#kpiHPP").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
+  const beban = Number($("#kpiBeban").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
+  const labaKotor = pendapatan - hpp;
+  const labaRugi = labaKotor - beban;
+
+  const { error } = await sb().from("penutupan_buku_harian").upsert({
+    tanggal: tgl,
+    total_penjualan: pendapatan,
+    total_hpp: hpp,
+    laba_kotor: labaKotor,
+    total_beban_operasional: beban,
+    laba_rugi_harian: labaRugi,
+    ditutup_pukul: new Date().toISOString(),
+    status: "ditutup"
+  }, { onConflict: "tanggal" });
+  if (error) return toast(error.message, "error");
+  toast("Buku " + fmtDate(tgl) + " ditutup");
+  muatRiwayat();
+};
+
+$("#btnMuatHarian").onclick = muatHarian;
+
+// ---------- Laporan Bulanan ----------
+async function muatBulanan() {
+  const bln = $("#blnLaporan").value; // YYYY-MM
+  if (!bln) return;
+  const [y, m] = bln.split("-").map(Number);
+  const lastDay = new Date(y, m, 0).getDate(); // hari 0 bulan berikutnya = hari terakhir bulan ini
+  const tglAwal = bln + "-01";
+  const tglAkhir = bln + "-" + String(lastDay).padStart(2, "0");
+  const { data: rows, error: e } = await sb()
+    .from("penutupan_buku_harian")
+    .select("*")
+    .gte("tanggal", tglAwal)
+    .lte("tanggal", tglAkhir)
+    .eq("status", "ditutup");
+  if (e) return toast(e.message, "error");
+  const list = rows || [];
+  const pendapatan = list.reduce((a,r) => a + Number(r.total_penjualan || 0), 0);
+  const hpp = list.reduce((a,r) => a + Number(r.total_hpp || 0), 0);
+  const labaKotor = list.reduce((a,r) => a + Number(r.laba_kotor || 0), 0);
+  const beban = list.reduce((a,r) => a + Number(r.total_beban_operasional || 0), 0);
+  const labaRugi = list.reduce((a,r) => a + Number(r.laba_rugi_harian || 0), 0);
+
+  $("#kpiBlnPendapatan").textContent = fmtRp(pendapatan);
+  $("#kpiBlnHPP").textContent = fmtRp(hpp);
+  $("#kpiBlnLabaKotor").textContent = fmtRp(labaKotor);
+  $("#kpiBlnBeban").textContent = fmtRp(beban);
+  $("#kpiBlnLabaRugi").textContent = fmtRp(labaRugi);
+  $("#kpiBlnLabaRugi").className = "val " + (labaRugi >= 0 ? "pos" : "neg");
+}
+$("#btnMuatBulanan").onclick = muatBulanan;
+
+// ---------- Riwayat ----------
+async function muatRiwayat() {
+  const tb = $("#tabelRiwayat");
+  tb.innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center">Memuat...</td></tr>`;
+  const { data, error } = await sb().from("penutupan_buku_harian").select("*").order("tanggal", { ascending: false });
+  if (error) { tb.innerHTML = `<tr><td colspan="8" class="muted" style="text-align:center">Gagal memuat.</td></tr>`; return toast(error.message, "error"); }
+  if (!data?.length) { tb.innerHTML = `<tr><td colspan="8" class="muted" style="text-align-center">Belum ada penutupan buku.</td></tr>`; return; }
+  tb.innerHTML = data.map((r) => {
+    const lr = Number(r.laba_rugi_harian || 0);
+    return `<tr>
+      <td data-l="Tanggal">${fmtDate(r.tanggal)}</td>
+      <td data-l="Pendapatan">${fmtRp(r.total_penjualan)}</td>
+      <td data-l="HPP">${fmtRp(r.total_hpp)}</td>
+      <td data-l="Laba Kotor">${fmtRp(r.laba_kotor)}</td>
+      <td data-l="Beban">${fmtRp(r.total_beban_operasional)}</td>
+      <td data-l="Laba/Rugi" class="${lr >= 0 ? 'pos' : 'neg'}"><b>${fmtRp(lr)}</b></td>
+      <td data-l="Status"><span class="badge ${r.status === 'ditutup' ? 'ok' : 'warn'}">${r.status === 'ditutup' ? 'Ditutup' : 'Draft'}</span></td>
+      <td data-l="Aksi"><div class="row"><button class="btn btn-outline btn-xs" data-open="${r.tanggal}">Buka</button></div></td>
+    </tr>`;
+  }).join("");
+}
+
+$("#laporanApp").addEventListener("click", (e) => {
+  const open = e.target.closest("[data-open]");
+  if (open) {
+    $("#tglLaporan").value = open.dataset.open;
+    muatHarian();
+    document.querySelector('#laporanTabs .tab[data-t="harian"]').click();
+  }
+});
+</script>
+</body>
+</html>
