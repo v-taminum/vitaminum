@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="../assets/dropdown.css?v=2">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
@@ -102,6 +103,28 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
   .table-wrap td .row .btn{min-width:0;white-space:nowrap;min-height:44px}
   .pager{justify-content:center}
 }
+/* --- Tambahan Laporan --- */
+.cmp-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.cmp{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:.8rem 1rem;text-align:center}
+.cmp .delta{font-size:.8rem;font-weight:700;margin-top:2px}
+.cmp .delta.up{color:var(--success)}.cmp .delta.down{color:var(--danger)}.cmp .delta.flat{color:var(--text-muted)}
+.cmp .lab{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+.cmp .val{font-size:1.1rem;font-weight:700;color:var(--primary-dark)}
+.chart-box{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-bottom:1rem}
+.chart-box h3{font-size:.9rem;color:var(--primary-dark);margin-bottom:.6rem}
+.chart-wrap{position:relative;width:100%;max-height:280px}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;margin-bottom:1rem}
+.stat{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:.6rem .8rem;text-align:center}
+.stat .sv{font-size:1rem;font-weight:700;color:var(--primary-dark)}
+.stat .sl{font-size:.7rem;color:var(--text-muted)}
+.section-title{font-size:.95rem;font-weight:700;color:var(--primary-dark);margin:1.2rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+.export-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.kas-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem}
+.kas-card{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;text-align:center}
+.kas-card .kv{font-size:1.3rem;font-weight:700}
+.kas-card .kl{font-size:.72rem;color:var(--text-muted);margin-top:2px}
+.kas-card.in .kv{color:var(--success)}.kas-card.out .kv{color:var(--danger)}.kas-card.bal .kv{color:var(--primary-dark)}
+@media(max-width:640px){.cmp-row,.kas-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -134,6 +157,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <button class="tab on" data-t="harian">Harian</button>
         <button class="tab" data-t="bulanan">Bulanan</button>
         <button class="tab" data-t="riwayat">Riwayat Tutup Buku</button>
+        <button class="tab" data-t="kas">Kas / Arus Kas</button>
       </div>
 
       <!-- HARIAN -->
@@ -175,6 +199,38 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <div class="kpi kpi-full"><div class="val" id="kpiLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Hari Ini</div></div>
         </div>
 
+        <!-- Statistik Transaksi -->
+        <div class="stat-row">
+          <div class="stat"><div class="sv" id="stJmlTrx">0</div><div class="sl">Jumlah Transaksi</div></div>
+          <div class="stat"><div class="sv" id="stRataTrx">Rp 0</div><div class="sl">Rata-rata/Transaksi</div></div>
+          <div class="stat"><div class="sv" id="stSaldoAwal">Rp 0</div><div class="sl">Saldo Kas Awal</div></div>
+          <div class="stat"><div class="sv" id="stSaldoAkhir">Rp 0</div><div class="sl">Saldo Kas Akhir</div></div>
+        </div>
+
+        <!-- Perbandingan vs Kemarin -->
+        <div class="section-title"><i class="fa-solid fa-arrows-up-down"></i> Perbandingan vs Kemarin</div>
+        <div class="cmp-row" id="cmpRow">
+          <div class="cmp"><div class="val" id="cmpPendapatan">Rp 0</div><div class="delta flat" id="cmpPendapatanDelta">-</div><div class="lab">Pendapatan</div></div>
+          <div class="cmp"><div class="val" id="cmpLabaRugi">Rp 0</div><div class="delta flat" id="cmpLabaRugiDelta">-</div><div class="lab">Laba / Rugi</div></div>
+        </div>
+
+        <!-- Pendapatan per Menu -->
+        <div class="section-title"><i class="fa-solid fa-mug-hot"></i> Pendapatan per Menu</div>
+        <div class="table-wrap"><table><thead><tr><th>Menu</th><th>Qty Terjual</th><th>Pendapatan</th><th>% dari Total</th></tr></thead><tbody id="tabelMenuHarian"></tbody></table></div>
+
+        <!-- Rincian Beban Operasional -->
+        <div class="section-title"><i class="fa-solid fa-receipt"></i> Rincian Beban Operasional</div>
+        <div class="table-wrap"><table><thead><tr><th>Sumber</th><th>Keterangan</th><th>Jumlah</th></tr></thead><tbody id="tabelBebanHarian"></tbody></table></div>
+
+        <!-- Jam Tersibuk -->
+        <div class="section-title"><i class="fa-solid fa-clock"></i> Jam Tersibuk</div>
+        <div class="chart-box"><div class="chart-wrap"><canvas id="chartJamHarian"></canvas></div></div>
+
+        <!-- Export -->
+        <div class="export-row" style="margin-top:1rem">
+          <button type="button" class="btn btn-outline" id="btnExportHarian"><i class="fa-solid fa-print"></i> Cetak / Export PDF</button>
+        </div>
+
         <div class="summary-box">
           <b>Rumus:</b> Pendapatan − HPP = Laba Kotor &nbsp;•&nbsp; Laba Kotor − Beban Operasional = Laba / Rugi Harian
         </div>
@@ -201,12 +257,59 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <div class="kpi"><div class="val neg" id="kpiBlnBeban">Rp 0</div><div class="lab">Beban Operasional</div></div>
           <div class="kpi kpi-full"><div class="val" id="kpiBlnLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Bulanan</div></div>
         </div>
+
+        <!-- Statistik Bulanan -->
+        <div class="stat-row">
+          <div class="stat"><div class="sv" id="stBlnHariTutup">0</div><div class="sl">Hari Tutup Buku</div></div>
+          <div class="stat"><div class="sv" id="stBlnRataHari">Rp 0</div><div class="sl">Rata-rata Pendapatan/Hari</div></div>
+          <div class="stat"><div class="sv" id="stBlnRataLaba">Rp 0</div><div class="sl">Rata-rata Laba/Hari</div></div>
+          <div class="stat"><div class="sv" id="stBlnSaldoAkhir">Rp 0</div><div class="sl">Saldo Kas Akhir</div></div>
+        </div>
+
+        <!-- Grafik Tren Bulanan -->
+        <div class="chart-box"><h3><i class="fa-solid fa-chart-line"></i> Tren Harian Bulan Ini</h3><div class="chart-wrap"><canvas id="chartTrenBulanan"></canvas></div></div>
+
+        <!-- Menu Terlaris + Pie Chart -->
+        <div style="display:grid;grid-template-columns:1fr;gap:1rem">
+          <div class="chart-box"><h3><i class="fa-solid fa-ranking-star"></i> Menu Terlaris</h3><div class="table-wrap" style="margin-top:0"><table><thead><tr><th>#</th><th>Menu</th><th>Qty Terjual</th><th>Pendapatan</th></tr></thead><tbody id="tabelTopMenu"></tbody></table></div></div>
+          <div class="chart-box"><h3><i class="fa-solid fa-chart-pie"></i> Komposisi Beban Operasional</h3><div class="chart-wrap"><canvas id="chartBebanBulanan"></canvas></div></div>
+        </div>
+
+        <!-- Export -->
+        <div class="export-row" style="margin-top:1rem">
+          <button type="button" class="btn btn-outline" id="btnExportBulanan"><i class="fa-solid fa-print"></i> Cetak / Export PDF</button>
+        </div>
       </div>
 
       <!-- RIWAYAT -->
       <div class="tabpane" data-pane="riwayat">
         <p class="muted">Riwayat penutupan buku harian yang sudah dikunci.</p>
         <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Pendapatan</th><th>HPP</th><th>Laba Kotor</th><th>Beban Operasional</th><th>Laba / Rugi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="tabelRiwayat"></tbody></table></div>
+      </div>
+
+      <!-- KAS / ARUS KAS -->
+      <div class="tabpane" data-pane="kas">
+        <div class="row" style="margin-bottom:1rem">
+          <label>Dari Tanggal<input type="date" id="kasDari"></label>
+          <label>Sampai<input type="date" id="kasSampai"></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatKas"><i class="fa-solid fa-refresh"></i> Muat Arus Kas</button></label>
+        </div>
+
+        <div class="kas-row">
+          <div class="kas-card in"><div class="kv" id="kasMasuk">Rp 0</div><div class="kl">Kas Masuk</div></div>
+          <div class="kas-card out"><div class="kv" id="kasKeluar">Rp 0</div><div class="kl">Kas Keluar</div></div>
+          <div class="kas-card bal"><div class="kv" id="kasSaldo">Rp 0</div><div class="kl">Saldo Akhir</div></div>
+        </div>
+
+        <div class="section-title"><i class="fa-solid fa-layer-group"></i> Breakdown per Kategori</div>
+        <div class="table-wrap"><table><thead><tr><th>Kategori</th><th>Masuk</th><th>Keluar</th><th>Net</th></tr></thead><tbody id="tabelKasKategori"></tbody></table></div>
+
+        <div class="section-title"><i class="fa-solid fa-list"></i> Detail Transaksi Kas</div>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Tipe</th><th>Kategori</th><th>Jumlah</th><th>Saldo</th><th>Keterangan</th></tr></thead><tbody id="tabelKasDetail"></tbody></table></div>
+
+        <div class="export-row" style="margin-top:1rem">
+          <button type="button" class="btn btn-outline" id="btnExportKas"><i class="fa-solid fa-print"></i> Cetak / Export PDF</button>
+        </div>
       </div>
     </section>
   </div>
@@ -287,6 +390,7 @@ $("#laporanTabs").onclick = (e) => {
   const b = e.target.closest(".tab"); if (!b) return;
   $$("#laporanTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
   $$("#laporanApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
+  if (b.dataset.t === "kas" && !window._kasData) { initKasDates(); muatKas(); }
 };
 
 // ---------- Helpers ----------
@@ -300,7 +404,17 @@ const fmtDate = (d) => {
   return dd.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
+// ---------- Chart instances (prevent duplicates) ----------
+const _charts = {};
+function makeChart(id, cfg) {
+  if (_charts[id]) _charts[id].destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  _charts[id] = new Chart(el.getContext("2d"), cfg);
+}
+
 // ---------- Laporan Harian ----------
+let _harianData = {};
 async function muatHarian() {
   const tgl = $("#tglLaporan").value || todayISO();
   const [ry, rm, rd] = tgl.split("-").map(Number);
@@ -308,50 +422,144 @@ async function muatHarian() {
   const lokalEnd = new Date(ry, rm - 1, rd, 23, 59, 59);
   const tglStart = lokalStart.toISOString();
   const tglEnd = lokalEnd.toISOString();
-  const [rOrd, rPrd, rKeu, rPetty] = await Promise.all([
-    sb().from("orders").select("total,status,created_at").gte("created_at", tglStart).lte("created_at", tglEnd),
+
+  // Kemarin untuk perbandingan
+  const kmrn = new Date(ry, rm - 1, rd - 1);
+  const tglKmrn = `${kmrn.getFullYear()}-${String(kmrn.getMonth()+1).padStart(2,"0")}-${String(kmrn.getDate()).padStart(2,"0")}`;
+  const kmrnStart = new Date(kmrn.getFullYear(), kmrn.getMonth(), kmrn.getDate(), 0, 0, 0).toISOString();
+  const kmrnEnd = new Date(kmrn.getFullYear(), kmrn.getMonth(), kmrn.getDate(), 23, 59, 59).toISOString();
+
+  const [rOrd, rOrdK, rPrd, rKeu, rPetty] = await Promise.all([
+    sb().from("orders").select("total,qty,product_name,price,status,created_at").gte("created_at", tglStart).lte("created_at", tglEnd),
+    sb().from("orders").select("total,status,created_at").gte("created_at", kmrnStart).lte("created_at", kmrnEnd),
     sb().from("produksi").select("total_hpp_digunakan").eq("tanggal", tgl).eq("status", "selesai"),
-    sb().from("keuangan").select("jumlah,kategori,tipe").eq("tanggal", tgl),
-    sb().from("petty_cash").select("pengeluaran").eq("tanggal", tgl)
+    sb().from("keuangan").select("jumlah,kategori,tipe,saldo_akhir,catatan").eq("tanggal", tgl),
+    sb().from("petty_cash").select("pengeluaran,kegiatan,penerima").eq("tanggal", tgl)
   ]);
-  const ord = rOrd.data || [], e1 = rOrd.error;
-  const prd = rPrd.data || [], e2 = rPrd.error;
-  const keu = rKeu.data || [], e3 = rKeu.error;
-  const petty = rPetty.data || [], e4 = rPetty.error;
-  // Note: orders.created_at is timestamptz; eq with date string may not match time portion.
-  // Better: use range. Below is client-side fallback if needed.
-  let pendapatan = 0;
-  if (!e1 && ord) {
-    pendapatan = ord.filter(o => {
-      const d = new Date(o.created_at || 0);
-      const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-      return local === tgl && o.status === "lunas";
-    }).reduce((a,o) => a + Number(o.total || 0), 0);
-  } else if (e1) toast(e1.message, "error");
 
-  const hpp = (!e2 && prd ? prd.reduce((a,p) => a + Number(p.total_hpp_digunakan || 0), 0) : 0);
-  if (e2) toast(e2.message, "error");
+  const ord = (rOrd.data || []).filter(o => {
+    const d = new Date(o.created_at || 0);
+    const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    return local === tgl && o.status === "lunas";
+  });
+  if (rOrd.error) toast(rOrd.error.message, "error");
 
-  let beban = 0;
-  if (!e3 && keu) {
-    beban = keu.filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional")
-      .reduce((a,k) => a + Math.abs(Number(k.jumlah || 0)), 0);
-  }
-  if (e3) toast(e3.message, "error");
+  const ordK = (rOrdK.data || []).filter(o => {
+    const d = new Date(o.created_at || 0);
+    const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    return local === tglKmrn && o.status === "lunas";
+  });
 
-  const pettyTotal = (!e4 && petty ? petty.reduce((a,p) => a + Number(p.pengeluaran || 0), 0) : 0);
-  if (e4) toast(e4.message, "error");
+  const pendapatan = ord.reduce((a,o) => a + Number(o.total || 0), 0);
+  const hpp = (rPrd.data || []).reduce((a,p) => a + Number(p.total_hpp_digunakan || 0), 0);
+  if (rPrd.error) toast(rPrd.error.message, "error");
 
-  const totalBeban = beban + pettyTotal;
+  const keu = rKeu.data || [];
+  const bebanKeu = keu.filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional")
+    .reduce((a,k) => a + Math.abs(Number(k.jumlah || 0)), 0);
+  const petty = rPetty.data || [];
+  const bebanPetty = petty.reduce((a,p) => a + Number(p.pengeluaran || 0), 0);
+  const totalBeban = bebanKeu + bebanPetty;
   const labaKotor = pendapatan - hpp;
   const labaRugi = labaKotor - totalBeban;
 
+  // Transaksi stats
+  const jmlTrx = ord.length;
+  const rataTrx = jmlTrx > 0 ? pendapatan / jmlTrx : 0;
+
+  // Saldo kas
+  const saldoAkhir = keu.length ? keu.reduce((max, k) => Math.max(max, Number(k.saldo_akhir || 0)), -Infinity) : 0;
+  const { data: lastSebelum } = await sb().from("keuangan").select("saldo_akhir").lt("tanggal", tgl).order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+  const saldoAwal = lastSebelum?.[0]?.saldo_akhir ?? saldoAkhir;
+
+  // Perbandingan kemarin
+  const pendKmrn = ordK.reduce((a,o) => a + Number(o.total || 0), 0);
+  const dPend = pendapatan - pendKmrn;
+  const pctPend = pendKmrn > 0 ? (dPend / pendKmrn * 100) : 0;
+
+  // Render KPI
   $("#kpiPendapatan").textContent = fmtRp(pendapatan);
   $("#kpiHPP").textContent = fmtRp(hpp);
   $("#kpiLabaKotor").textContent = fmtRp(labaKotor);
   $("#kpiBeban").textContent = fmtRp(totalBeban);
   $("#kpiLabaRugi").textContent = fmtRp(labaRugi);
   $("#kpiLabaRugi").className = "val " + (labaRugi >= 0 ? "pos" : "neg");
+
+  // Render stats
+  $("#stJmlTrx").textContent = jmlTrx;
+  $("#stRataTrx").textContent = fmtRp(rataTrx);
+  $("#stSaldoAwal").textContent = fmtRp(saldoAwal);
+  $("#stSaldoAkhir").textContent = fmtRp(saldoAkhir);
+
+  // Render comparison
+  $("#cmpPendapatan").textContent = fmtRp(pendapatan);
+  const dEl1 = $("#cmpPendapatanDelta");
+  dEl1.textContent = (dPend >= 0 ? "▲ +" : "▼ ") + fmtRp(dPend) + (pendKmrn > 0 ? ` (${pctPend.toFixed(1)}%)` : "");
+  dEl1.className = "delta " + (dPend > 0 ? "up" : dPend < 0 ? "down" : "flat");
+
+  // Perbandingan laba kemarin
+  const { data: keuK } = await sb().from("keuangan").select("jumlah,kategori,tipe").eq("tanggal", tglKmrn);
+  const { data: pettyK } = await sb().from("petty_cash").select("pengeluaran").eq("tanggal", tglKmrn);
+  const bebanKmrn = (keuK || []).filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional").reduce((a,k) => a + Math.abs(Number(k.jumlah||0)), 0)
+    + (pettyK || []).reduce((a,p) => a + Number(p.pengeluaran||0), 0);
+  const labaKmrn = pendKmrn - bebanKmrn;
+  const dLaba = labaRugi - labaKmrn;
+  $("#cmpLabaRugi").textContent = fmtRp(labaRugi);
+  const dEl2 = $("#cmpLabaRugiDelta");
+  dEl2.textContent = (dLaba >= 0 ? "▲ +" : "▼ ") + fmtRp(dLaba);
+  dEl2.className = "delta " + (dLaba > 0 ? "up" : dLaba < 0 ? "down" : "flat");
+
+  // Pendapatan per menu
+  const menuMap = {};
+  ord.forEach(o => {
+    const nm = o.product_name || "(Tanpa Nama)";
+    if (!menuMap[nm]) menuMap[nm] = { qty: 0, pend: 0 };
+    menuMap[nm].qty += Number(o.qty || 0);
+    menuMap[nm].pend += Number(o.total || 0);
+  });
+  const menuArr = Object.entries(menuMap).sort((a,b) => b[1].pend - a[1].pend);
+  const tbM = $("#tabelMenuHarian");
+  if (!menuArr.length) {
+    tbM.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center">Belum ada penjualan.</td></tr>`;
+  } else {
+    tbM.innerHTML = menuArr.map(([nm, v]) => {
+      const pct = pendapatan > 0 ? (v.pend / pendapatan * 100) : 0;
+      return `<tr><td data-l="Menu" class="cell-main"><b>${esc(nm)}</b></td><td data-l="Qty">${v.qty}</td><td data-l="Pendapatan">${fmtRp(v.pend)}</td><td data-l="%">${pct.toFixed(1)}%</td></tr>`;
+    }).join("");
+  }
+
+  // Rincian beban
+  const tbB = $("#tabelBebanHarian");
+  const bebanRows = [];
+  keu.filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional").forEach(k => {
+    bebanRows.push({ sumber: "Operasional", ket: k.catatan || "-", jumlah: Math.abs(Number(k.jumlah || 0)) });
+  });
+  petty.forEach(p => {
+    bebanRows.push({ sumber: "Petty Cash", ket: `${p.kegiatan || "-"}${p.penerima ? " → " + p.penerima : ""}`, jumlah: Number(p.pengeluaran || 0) });
+  });
+  if (!bebanRows.length) {
+    tbB.innerHTML = `<tr><td colspan="3" class="muted" style="text-align:center">Tidak ada beban operasional.</td></tr>`;
+  } else {
+    tbB.innerHTML = bebanRows.map(r => `<tr><td data-l="Sumber"><span class="badge">${esc(r.sumber)}</span></td><td data-l="Keterangan" class="cell-main">${esc(r.ket)}</td><td data-l="Jumlah">${fmtRp(r.jumlah)}</td></tr>`).join("")
+      + `<tr style="background:var(--primary-light);font-weight:700"><td colspan="2" data-l="Total">Total Beban</td><td data-l="Jumlah">${fmtRp(totalBeban)}</td></tr>`;
+  }
+
+  // Jam tersibuk
+  const jamMap = {};
+  ord.forEach(o => {
+    const h = new Date(o.created_at).getHours();
+    jamMap[h] = (jamMap[h] || 0) + 1;
+  });
+  const jamLabels = Array.from({length:24}, (_, i) => `${i}:00`);
+  const jamData = jamLabels.map((_, i) => jamMap[i] || 0);
+  const jamColors = jamData.map(v => v === Math.max(...jamData) && v > 0 ? "#255746" : "#40896c");
+  makeChart("chartJamHarian", {
+    type: "bar",
+    data: { labels: jamLabels, datasets: [{ label: "Transaksi", data: jamData, backgroundColor: jamColors, borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+
+  _harianData = { tgl, pendapatan, hpp, labaKotor, totalBeban, labaRugi, jmlTrx, saldoAwal, saldoAkhir, menuArr, bebanRows };
 }
 
 // Simpan / Tutup buku harian
@@ -477,11 +685,12 @@ $("#btnAddPetty").onclick = async () => {
 };
 
 // ---------- Laporan Bulanan ----------
+let _bulanData = {};
 async function muatBulanan() {
-  const bln = $("#blnLaporan").value; // YYYY-MM
+  const bln = $("#blnLaporan").value;
   if (!bln) return;
   const [y, m] = bln.split("-").map(Number);
-  const lastDay = new Date(y, m, 0).getDate(); // hari 0 bulan berikutnya = hari terakhir bulan ini
+  const lastDay = new Date(y, m, 0).getDate();
   const tglAwal = bln + "-01";
   const tglAkhir = bln + "-" + String(lastDay).padStart(2, "0");
   const { data: rows, error: e } = await sb()
@@ -489,7 +698,8 @@ async function muatBulanan() {
     .select("*")
     .gte("tanggal", tglAwal)
     .lte("tanggal", tglAkhir)
-    .eq("status", "ditutup");
+    .eq("status", "ditutup")
+    .order("tanggal");
   if (e) return toast(e.message, "error");
   const list = rows || [];
   const pendapatan = list.reduce((a,r) => a + Number(r.total_penjualan || 0), 0);
@@ -497,13 +707,83 @@ async function muatBulanan() {
   const labaKotor = list.reduce((a,r) => a + Number(r.laba_kotor || 0), 0);
   const beban = list.reduce((a,r) => a + Number(r.total_beban_operasional || 0), 0);
   const labaRugi = list.reduce((a,r) => a + Number(r.laba_rugi_harian || 0), 0);
+  const jmlHari = list.length;
+  const rataHari = jmlHari > 0 ? pendapatan / jmlHari : 0;
+  const rataLaba = jmlHari > 0 ? labaRugi / jmlHari : 0;
 
+  // Saldo kas akhir bulan
+  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").lte("tanggal", tglAkhir).order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+  const saldoAkhir = lastKeu?.[0]?.saldo_akhir ?? 0;
+
+  // Render KPI
   $("#kpiBlnPendapatan").textContent = fmtRp(pendapatan);
   $("#kpiBlnHPP").textContent = fmtRp(hpp);
   $("#kpiBlnLabaKotor").textContent = fmtRp(labaKotor);
   $("#kpiBlnBeban").textContent = fmtRp(beban);
   $("#kpiBlnLabaRugi").textContent = fmtRp(labaRugi);
   $("#kpiBlnLabaRugi").className = "val " + (labaRugi >= 0 ? "pos" : "neg");
+
+  // Render stats
+  $("#stBlnHariTutup").textContent = jmlHari;
+  $("#stBlnRataHari").textContent = fmtRp(rataHari);
+  $("#stBlnRataLaba").textContent = fmtRp(rataLaba);
+  $("#stBlnSaldoAkhir").textContent = fmtRp(saldoAkhir);
+
+  // Grafik tren harian
+  const labels = list.map(r => {
+    const d = new Date(r.tanggal + "T00:00:00");
+    return d.getDate() + "/" + (d.getMonth()+1);
+  });
+  makeChart("chartTrenBulanan", {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "Pendapatan", data: list.map(r => Number(r.total_penjualan||0)), borderColor: "#40896c", backgroundColor: "rgba(64,137,108,.15)", fill: true, tension: .3 },
+        { label: "Laba/Rugi", data: list.map(r => Number(r.laba_rugi_harian||0)), borderColor: "#255746", backgroundColor: "rgba(37,87,70,.1)", fill: true, tension: .3 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true } } }
+  });
+
+  // Menu terlaris (query orders bulan ini, status lunas)
+  const tglEndISO = new Date(y, m - 1, lastDay, 23, 59, 59).toISOString();
+  const tglStartISO = new Date(y, m - 1, 1, 0, 0, 0).toISOString();
+  const { data: ordBln } = await sb().from("orders").select("product_name,qty,total,status,created_at").gte("created_at", tglStartISO).lte("created_at", tglEndISO).eq("status", "lunas");
+  const menuMap = {};
+  (ordBln || []).forEach(o => {
+    const nm = o.product_name || "(Tanpa Nama)";
+    if (!menuMap[nm]) menuMap[nm] = { qty: 0, pend: 0 };
+    menuMap[nm].qty += Number(o.qty || 0);
+    menuMap[nm].pend += Number(o.total || 0);
+  });
+  const topMenu = Object.entries(menuMap).sort((a,b) => b[1].pend - a[1].pend).slice(0, 5);
+  const tbT = $("#tabelTopMenu");
+  if (!topMenu.length) {
+    tbT.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center">Belum ada data penjualan.</td></tr>`;
+  } else {
+    tbT.innerHTML = topMenu.map(([nm, v], i) => `<tr><td data-l="#"><b>${i+1}</b></td><td data-l="Menu" class="cell-main">${esc(nm)}</td><td data-l="Qty">${v.qty}</td><td data-l="Pendapatan">${fmtRp(v.pend)}</td></tr>`).join("");
+  }
+
+  // Pie chart beban per kategori
+  const { data: keuBln } = await sb().from("keuangan").select("jumlah,kategori,tipe").gte("tanggal", tglAwal).lte("tanggal", tglAkhir).eq("tipe", "pengeluaran");
+  const katMap = {};
+  (keuBln || []).forEach(k => {
+    const kat = k.kategori || "lainnya";
+    katMap[kat] = (katMap[kat] || 0) + Math.abs(Number(k.jumlah || 0));
+  });
+  const katLabels = Object.keys(katMap);
+  const katValues = Object.values(katMap);
+  const katColors = ["#40896c", "#255746", "#b3261e", "#e6a23c", "#6b7280", "#8b5cf6"];
+  if (katLabels.length) {
+    makeChart("chartBebanBulanan", {
+      type: "doughnut",
+      data: { labels: katLabels, datasets: [{ data: katValues, backgroundColor: katColors.slice(0, katLabels.length) }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    });
+  }
+
+  _bulanData = { bln, pendapatan, hpp, labaKotor, beban, labaRugi, jmlHari, rataHari, rataLaba, saldoAkhir };
 }
 $("#btnMuatBulanan").onclick = muatBulanan;
 
@@ -537,6 +817,150 @@ $("#laporanApp").addEventListener("click", (e) => {
     document.querySelector('#laporanTabs .tab[data-t="harian"]').click();
   }
 });
+
+// ---------- Kas / Arus Kas ----------
+function initKasDates() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  $("#kasDari").value = `${y}-${String(m+1).padStart(2,"0")}-01`;
+  $("#kasSampai").value = todayISO();
+}
+async function muatKas() {
+  const dari = $("#kasDari").value;
+  const sampai = $("#kasSampai").value;
+  if (!dari || !sampai) return toast("Isi tanggal awal dan akhir", "error");
+  const { data, error } = await sb().from("keuangan")
+    .select("tanggal,tipe,kategori,jumlah,saldo_akhir,catatan")
+    .gte("tanggal", dari).lte("tanggal", sampai)
+    .order("tanggal").order("created_at");
+  if (error) return toast(error.message, "error");
+  const rows = data || [];
+
+  const masuk = rows.filter(r => Number(r.jumlah) > 0).reduce((a,r) => a + Number(r.jumlah || 0), 0);
+  const keluar = rows.filter(r => Number(r.jumlah) < 0).reduce((a,r) => a + Math.abs(Number(r.jumlah || 0)), 0);
+  const saldo = rows.length ? Number(rows[rows.length - 1].saldo_akhir || 0) : 0;
+
+  $("#kasMasuk").textContent = fmtRp(masuk);
+  $("#kasKeluar").textContent = fmtRp(keluar);
+  $("#kasSaldo").textContent = fmtRp(saldo);
+
+  // Breakdown per kategori
+  const katMap = {};
+  rows.forEach(r => {
+    const kat = r.kategori || "lainnya";
+    if (!katMap[kat]) katMap[kat] = { masuk: 0, keluar: 0 };
+    const j = Number(r.jumlah || 0);
+    if (j > 0) katMap[kat].masuk += j;
+    else katMap[kat].keluar += Math.abs(j);
+  });
+  const tbK = $("#tabelKasKategori");
+  const katEntries = Object.entries(katMap).sort((a,b) => (b[1].masuk + b[1].keluar) - (a[1].masuk + a[1].keluar));
+  if (!katEntries.length) {
+    tbK.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center">Tidak ada transaksi kas.</td></tr>`;
+  } else {
+    tbK.innerHTML = katEntries.map(([kat, v]) => {
+      const net = v.masuk - v.keluar;
+      return `<tr><td data-l="Kategori" class="cell-main"><span class="badge">${esc(kat)}</span></td><td data-l="Masuk" style="color:var(--success)">${v.masuk > 0 ? fmtRp(v.masuk) : "-"}</td><td data-l="Keluar" style="color:var(--danger)">${v.keluar > 0 ? fmtRp(v.keluar) : "-"}</td><td data-l="Net"><b>${fmtRp(net)}</b></td></tr>`;
+    }).join("");
+  }
+
+  // Detail transaksi
+  const tbD = $("#tabelKasDetail");
+  if (!rows.length) {
+    tbD.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Tidak ada transaksi.</td></tr>`;
+  } else {
+    tbD.innerHTML = rows.map(r => {
+      const j = Number(r.jumlah || 0);
+      const tipeBadge = j > 0 ? '<span class="badge ok">Masuk</span>' : '<span class="badge err">Keluar</span>';
+      return `<tr><td data-l="Tanggal">${fmtDate(r.tanggal)}</td><td data-l="Tipe">${tipeBadge}</td><td data-l="Kategori">${esc(r.kategori || "-")}</td><td data-l="Jumlah" style="color:${j > 0 ? 'var(--success)' : 'var(--danger)'}">${fmtRp(j)}</td><td data-l="Saldo">${fmtRp(r.saldo_akhir)}</td><td data-l="Keterangan" class="cell-main">${esc(r.catatan || "-")}</td></tr>`;
+    }).join("");
+  }
+
+  window._kasData = { dari, sampai, masuk, keluar, saldo, katEntries, rows };
+}
+$("#btnMuatKas").onclick = muatKas;
+
+// ---------- Export / Cetak ----------
+function printLaporan(title, bodyHTML) {
+  const w = window.open("", "_blank", "width=800,height=600");
+  w.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
+    body{font-family:'Segoe UI',Arial,sans-serif;padding:2rem;color:#0e201b}
+    h1{font-size:1.3rem;color:#255746;margin-bottom:.2rem}
+    h2{font-size:1rem;color:#40896c;margin-top:1.2rem}
+    .meta{font-size:.8rem;color:#666;margin-bottom:1rem}
+    table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.82rem}
+    th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}
+    th{background:#e8f3ee;color:#255746}
+    .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.5rem 0}
+    .kpi-item{border:1px solid #ccc;border-radius:6px;padding:.5rem .8rem;text-align:center}
+    .kpi-item .kv{font-size:1.1rem;font-weight:700}
+    .kpi-item .kl{font-size:.7rem;color:#666}
+    .total-row{font-weight:700;background:#e8f3ee}
+    @media print{body{padding:1rem}}
+  </style></head><body>
+  <h1>${title}</h1>
+  <div class="meta">Dicetak: ${new Date().toLocaleString("id-ID")} | Vitaminum</div>
+  ${bodyHTML}
+  <script>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+$("#btnExportHarian").onclick = () => {
+  const d = _harianData;
+  if (!d?.tgl) return toast("Muat laporan dulu", "warning");
+  const menuRows = (d.menuArr || []).map(([nm, v]) => `<tr><td>${esc(nm)}</td><td>${v.qty}</td><td>${fmtRp(v.pend)}</td></tr>`).join("");
+  const bebanRows = (d.bebanRows || []).map(r => `<tr><td>${esc(r.sumber)}</td><td>${esc(r.ket)}</td><td>${fmtRp(r.jumlah)}</td></tr>`).join("");
+  printLaporan(`Laporan Harian ${fmtDate(d.tgl)}`, `
+    <div class="kpi-grid">
+      <div class="kpi-item"><div class="kv">${fmtRp(d.pendapatan)}</div><div class="kl">Pendapatan</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.hpp)}</div><div class="kl">HPP</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.labaKotor)}</div><div class="kl">Laba Kotor</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.totalBeban)}</div><div class="kl">Beban Operasional</div></div>
+    </div>
+    <h2>Laba / Rugi: ${fmtRp(d.labaRugi)}</h2>
+    <p style="font-size:.8rem;color:#666">Transaksi: ${d.jmlTrx} | Saldo Awal: ${fmtRp(d.saldoAwal)} | Saldo Akhir: ${fmtRp(d.saldoAkhir)}</p>
+    <h2>Pendapatan per Menu</h2>
+    <table><tr><th>Menu</th><th>Qty</th><th>Pendapatan</th></tr>${menuRows}</table>
+    <h2>Rincian Beban Operasional</h2>
+    <table><tr><th>Sumber</th><th>Keterangan</th><th>Jumlah</th></tr>${bebanRows}</table>
+  `);
+};
+
+$("#btnExportBulanan").onclick = () => {
+  const d = _bulanData;
+  if (!d?.bln) return toast("Muat laporan dulu", "warning");
+  const [y, m] = d.bln.split("-");
+  const namaBln = new Date(y, m-1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  printLaporan(`Laporan Bulanan ${namaBln}`, `
+    <div class="kpi-grid">
+      <div class="kpi-item"><div class="kv">${fmtRp(d.pendapatan)}</div><div class="kl">Pendapatan</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.hpp)}</div><div class="kl">HPP</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.labaKotor)}</div><div class="kl">Laba Kotor</div></div>
+      <div class="kpi-item"><div class="kv">${fmtRp(d.beban)}</div><div class="kl">Beban Operasional</div></div>
+    </div>
+    <h2>Laba / Rugi: ${fmtRp(d.labaRugi)}</h2>
+    <p style="font-size:.8rem;color:#666">Hari Tutup Buku: ${d.jmlHari} | Rata-rata/Hari: ${fmtRp(d.rataHari)} | Saldo Akhir: ${fmtRp(d.saldoAkhir)}</p>
+  `);
+};
+
+$("#btnExportKas").onclick = () => {
+  const d = window._kasData;
+  if (!d?.dari) return toast("Muat arus kas dulu", "warning");
+  const katRows = (d.katEntries || []).map(([kat, v]) => `<tr><td>${esc(kat)}</td><td>${fmtRp(v.masuk)}</td><td>${fmtRp(v.keluar)}</td></tr>`).join("");
+  const detailRows = (d.rows || []).slice(0, 50).map(r => `<tr><td>${fmtDate(r.tanggal)}</td><td>${esc(r.kategori||"-")}</td><td>${fmtRp(r.jumlah)}</td><td>${fmtRp(r.saldo_akhir)}</td><td>${esc(r.catatan||"-")}</td></tr>`).join("");
+  printLaporan(`Laporan Arus Kas ${fmtDate(d.dari)} - ${fmtDate(d.sampai)}`, `
+    <div class="kpi-grid">
+      <div class="kpi-item"><div class="kv" style="color:#2e7d32">${fmtRp(d.masuk)}</div><div class="kl">Kas Masuk</div></div>
+      <div class="kpi-item"><div class="kv" style="color:#b3261e">${fmtRp(d.keluar)}</div><div class="kl">Kas Keluar</div></div>
+    </div>
+    <h2>Saldo Akhir: ${fmtRp(d.saldo)}</h2>
+    <h2>Breakdown per Kategori</h2>
+    <table><tr><th>Kategori</th><th>Masuk</th><th>Keluar</th></tr>${katRows}</table>
+    <h2>Detail Transaksi (maks 50)</h2>
+    <table><tr><th>Tanggal</th><th>Kategori</th><th>Jumlah</th><th>Saldo</th><th>Keterangan</th></tr>${detailRows}</table>
+  `);
+};
 </script>
 </body>
 </html>
