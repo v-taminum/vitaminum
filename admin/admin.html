@@ -509,7 +509,7 @@ $("#btnTest").onclick = async () => {
 };
 $("#btnOut").onclick = async () => { await sb().auth.signOut(); location.reload(); };
 // PWA: service worker untuk push saat browser tertutup + fallback offline ringan.
-if ("serviceWorker" in navigator) { navigator.serviceWorker.register("./sw.js").catch((e) => console.warn("SW:", e.message)); }
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("../sw.js").catch((e) => console.warn("SW:", e.message)); }
 
 $("#tabs").onclick = (e) => {
   const b = e.target.closest(".tab"); if (!b) return;
@@ -922,7 +922,7 @@ $("#pSave").onclick = async () => {
   toast("Produk tersimpan"); resetProductForm(true); if (!wasEdit) pState.page = 1; loadProducts();
 };
 function resetProductForm(silent) {
-  editingProduct = null; $("#pLabel").value = ""; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); $("#pStockLabel").value = "Pre Order";
+  editingProduct = null; $("#pLabel").value = ""; $("#pName").value = ""; $("#pDesc").innerHTML = ""; $("#pFile").value = ""; $("#pPrice").value = ""; $("#pPrice").dispatchEvent(new Event("input")); $("#pStockLabel").value = "Pre Order"; $("#pStock").value = "0"; $("#pUnit").value = ""; $("#pActive").checked = true;
   if (!silent) toast("Form dikosongkan", "success");
 }
 $("#pReset").onclick = () => resetProductForm(false);
@@ -940,7 +940,8 @@ $("#pRows").onclick = async (e) => {
   const del = e.target.dataset?.del, ed = e.target.dataset?.edit;
   if (del && (await askDelete("Hapus produk?", "Produk hilang dari toko."))) { const { error } = await sb().from("products").delete().eq("id", del); toast(error ? error.message : "Dihapus", error ? "error" : "success"); loadProducts(); }
   if (ed) {
-    const { data } = await sb().from("products").select("*").eq("id", ed).single();
+    const { data, error } = await sb().from("products").select("*").eq("id", ed).single();
+    if (error || !data) return toast(error?.message || "Produk tidak ditemukan", "error");
     editingProduct = ed; $("#pLabel").value = data.label || ""; $("#pName").value = data.name;
     $("#pPrice").value = data.price; $("#pPrice").dispatchEvent(new Event("input")); $("#pStock").value = data.stock; $("#pStockLabel").value = data.stock_label || ""; $("#pUnit").value = data.unit;
     $("#pDesc").innerHTML = data.description || ""; $("#pActive").checked = data.is_active; scrollTo({ top: 0, behavior: "smooth" });

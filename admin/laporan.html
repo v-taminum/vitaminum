@@ -289,7 +289,10 @@ $("#laporanTabs").onclick = (e) => {
 };
 
 // ---------- Helpers ----------
-const todayISO = () => new Date().toISOString().slice(0,10);
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
 const fmtDate = (d) => {
   if (!d) return "-";
   const dd = new Date(d + "T00:00:00");
@@ -299,8 +302,11 @@ const fmtDate = (d) => {
 // ---------- Laporan Harian ----------
 async function muatHarian() {
   const tgl = $("#tglLaporan").value || todayISO();
-  const tglStart = tgl + "T00:00:00Z";
-  const tglEnd = tgl + "T23:59:59Z";
+  const [ry, rm, rd] = tgl.split("-").map(Number);
+  const lokalStart = new Date(ry, rm - 1, rd, 0, 0, 0);
+  const lokalEnd = new Date(ry, rm - 1, rd, 23, 59, 59);
+  const tglStart = lokalStart.toISOString();
+  const tglEnd = lokalEnd.toISOString();
   const [rOrd, rPrd, rKeu, rPetty] = await Promise.all([
     sb().from("orders").select("total,status,created_at").gte("created_at", tglStart).lte("created_at", tglEnd),
     sb().from("produksi").select("total_hpp_digunakan").eq("tanggal", tgl).eq("status", "selesai"),
@@ -316,8 +322,9 @@ async function muatHarian() {
   let pendapatan = 0;
   if (!e1 && ord) {
     pendapatan = ord.filter(o => {
-      const d = new Date(o.created_at || 0).toISOString().slice(0,10);
-      return d === tgl && (o.status === "selesai" || o.status === "lunas");
+      const d = new Date(o.created_at || 0);
+      const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      return local === tgl && (o.status === "selesai" || o.status === "lunas");
     }).reduce((a,o) => a + Number(o.total || 0), 0);
   } else if (e1) toast(e1.message, "error");
 
@@ -355,10 +362,26 @@ $("#btnTutupBuku").onclick = async () => {
   }
   if (!await askDelete("Tutup buku?", "Data pada " + fmtDate(tgl) + " akan dikunci dan tidak dapat diubah lagi.")) return;
 
-  // Hitung ulang (sederhana)
-  const pendapatan = Number($("#kpiPendapatan").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
-  const hpp = Number($("#kpiHPP").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
-  const beban = Number($("#kpiBeban").textContent.replace(/[^0-9,-]/g,"").replace(".","").replace(",",".")) || 0;
+  // Hitung ulang dari database, bukan dari teks DOM
+  const [ry2, rm2, rd2] = tgl.split("-").map(Number);
+  const lokalStart2 = new Date(ry2, rm2 - 1, rd2, 0, 0, 0);
+  const lokalEnd2 = new Date(ry2, rm2 - 1, rd2, 23, 59, 59);
+  const [rO2, rP2, rK2, rPe2] = await Promise.all([
+    sb().from("orders").select("total,status,created_at").gte("created_at", lokalStart2.toISOString()).lte("created_at", lokalEnd2.toISOString()),
+    sb().from("produksi").select("total_hpp_digunakan").eq("tanggal", tgl).eq("status", "selesai"),
+    sb().from("keuangan").select("jumlah,kategori,tipe").eq("tanggal", tgl),
+    sb().from("petty_cash").select("pengeluaran").eq("tanggal", tgl)
+  ]);
+  const ord2 = (rO2.data || []).filter(o => {
+    const d = new Date(o.created_at || 0);
+    const local = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+    return local === tgl && (o.status === "selesai" || o.status === "lunas");
+  });
+  const pendapatan = ord2.reduce((a,o) => a + Number(o.total || 0), 0);
+  const hpp = (rP2.data || []).reduce((a,p) => a + Number(p.total_hpp_digunakan || 0), 0);
+  const bebanKeu = (rK2.data || []).filter(k => k.tipe === "pengeluaran" && k.kategori === "operasional").reduce((a,k) => a + Math.abs(Number(k.jumlah || 0)), 0);
+  const bebanPetty = (rPe2.data || []).reduce((a,p) => a + Number(p.pengeluaran || 0), 0);
+  const beban = bebanKeu + bebanPetty;
   const labaKotor = pendapatan - hpp;
   const labaRugi = labaKotor - beban;
 

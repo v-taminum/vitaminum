@@ -59,6 +59,7 @@ main.container{padding-top:1.25rem;padding-bottom:2rem}
 .kpi .lab{font-size:.75rem;color:var(--text-muted);margin-top:2px}
 .kpi .pos{color:var(--success)}
 .kpi .neg{color:var(--danger)}
+.kpi .warn{color:#b8860b}
 .label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
 input[type="text"],input[type="number"],input[type="date"],select{min-height:46px}
@@ -146,6 +147,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <div class="kpi"><div class="val" id="kpiTotalStok">-</div><div class="lab">Jenis Item</div></div>
           <div class="kpi"><div class="val neg" id="kpiStokRendah">0</div><div class="lab">Stok di Bawah Min</div></div>
           <div class="kpi"><div class="val warn" id="kpiExpired">0</div><div class="lab">Expired 3 Hari</div></div>
+
           <div class="kpi"><div class="val" id="kpiNilaiStok">Rp 0</div><div class="lab">Est. Nilai Stok</div></div>
         </div>
         <p class="muted">Item yang perlu pembelian ulang (stok ≤ min_stok):</p>
@@ -345,14 +347,17 @@ function fmtDate(d) {
   const dd = new Date(d + "T00:00:00");
   return dd.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
-const todayISO = () => new Date().toISOString().slice(0,10);
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
 
 // ---------- Master Item ----------
 async function renderItems() {
   const tb = $("#tabelItem");
-  tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Memuat...</td></tr>`;
+  tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Memuat...</td></tr>`;
   await loadAll();
-  if (!items.length) { tb.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center">Belum ada item.</td></tr>`; return; }
+  if (!items.length) { tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada item.</td></tr>`; return; }
   tb.innerHTML = items.map((i) => `<tr>
     <td data-l="Nama" class="cell-main"><b>${esc(i.nama)}</b></td>
     <td data-l="Tipe"><span class="badge">${esc(i.tipe)}</span></td>
@@ -390,8 +395,11 @@ function resetItemForm() {
   editingItemId = null;
   $("#btnSaveItem").textContent = "Simpan Item";
   $("#btnCancelItem").hidden = true;
+  enhanceSelect(document.getElementById("inTipe")).refresh();
+  enhanceSelect(document.getElementById("inSatuan")).refresh();
 }
 $("#btnCancelItem").onclick = resetItemForm;
+// ---------- Event delegation global untuk semua tombol aksi ----------
 $("#inventoryApp").addEventListener("click", async (e) => {
   const ed = e.target.closest("[data-edititem]");
   if (ed) {
@@ -417,6 +425,23 @@ $("#inventoryApp").addEventListener("click", async (e) => {
     const { error } = await sb().from("inventory_items").delete().eq("id", dl.dataset.delitem);
     toast(error ? error.message : "Item dihapus", error ? "error" : "success");
     if (!error) renderItems();
+    return;
+  }
+  const rb = e.target.closest("[data-rembeli]");
+  if (rb) {
+    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian pembelian.")) {
+      beliRows.splice(+rb.dataset.rembeli, 1);
+      renderBeliRows();
+    }
+    return;
+  }
+  const rp = e.target.closest("[data-remprod]");
+  if (rp) {
+    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian produksi.")) {
+      prodRows.splice(+rp.dataset.remprod, 1);
+      renderProdRows();
+    }
+    return;
   }
 });
 
@@ -517,6 +542,8 @@ $("#btnSimpanBeli").onclick = async () => {
   renderBeliRows();
   $("#formBeli").reset();
   $("#inTglBeli").valueAsDate = new Date();
+  enhanceSelect(document.getElementById("inMetode")).refresh();
+  enhanceSelect(document.getElementById("inBeliItem")).refresh();
   $("#totalBeli").textContent = fmtRp(0);
   toast("Pembelian disimpan dan stok ditambahkan (FIFO batch)");
   renderItems();
@@ -540,7 +567,7 @@ async function hitungKapasitas() {
   for (const r of resep) {
     const it = items.find(x => String(x.nama || "").toLowerCase() === String(r.item_nama || "").toLowerCase());
     const stok = it ? it.current_stock : 0;
-    const bisa = Math.floor(stok / Number(r.qty || 0));
+    const bisa = Number(r.qty) > 0 ? Math.floor(stok / Number(r.qty)) : 0;
     min = Math.min(min, bisa);
     detail.push(`${esc(r.item_nama)}: stok ${fmt2(stok)} ${esc(r.item_satuan)}, butuh ${fmt2(r.qty)} ${esc(r.item_satuan)}/unit → cukup untuk ${bisa} unit${r.item_harga > 0 ? ` · Rp ${fmtRp(r.qty * r.item_harga)}/unit produksi` : ""}`);
   }
@@ -565,7 +592,7 @@ $("#inProdMenu").onchange = async () => {
       item_satuan: it ? it.satuan : r.item_satuan,
       qty_per_unit: Number(r.qty) || 0,
       qty_total: 0,
-      harga_satuan: it && it.hpp_item_id ? (items.find(x=>String(x.id)===String(it.id)).current_stock || 0) : 0,
+      harga_satuan: Number(r.item_harga) || 0,
       subtotal: 0
     });
   }
@@ -577,8 +604,8 @@ function renderProdRows() {
   let totalHPP = 0;
   tb.innerHTML = prodRows.map((r) => {
     r.qty_total = r.qty_per_unit * qtyProduksi;
-    r.harga_satuan = 0;
-    r.subtotal = 0;
+    r.subtotal = r.harga_satuan * r.qty_total;
+    totalHPP += r.subtotal;
     return `<tr>
       <td data-l="Bahan">${esc(r.item_nama)}</td>
       <td data-l="Qty/Unit">${fmt2(r.qty_per_unit)} ${esc(r.item_satuan)}</td>
@@ -659,7 +686,8 @@ $("#btnSimpanProd").onclick = async () => {
         catatan: `Digunakan produksi ${esc(r.item_nama)}`
       });
     }
-    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (it.current_stock || 0) - r.qty_total }).eq("id", r.inventory_item_id));
+    const itProd = items.find(x => String(x.id) === String(r.inventory_item_id));
+    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (itProd?.current_stock || 0) - r.qty_total }).eq("id", r.inventory_item_id));
   }
   // Tambah stok produk jadi (menu)
   const menu = menus.find(m => String(m.id) === String(menuId));
@@ -701,30 +729,12 @@ $("#btnSimpanProd").onclick = async () => {
   toast("Produksi disimpan. Stok bahan dikurangi (FIFO), stok produk jadi & toko bertambah.");
   $("#formProd").reset();
   $("#inTglProd").valueAsDate = new Date();
+  $("#prodSatuanLabel").textContent = "(unit)";
+  enhanceSelect(document.getElementById("inProdMenu")).refresh();
   prodRows = [];
   renderProdRows();
   renderItems();
   renderDashboard();
-};
-
-// ---------- Event delegation global untuk tombol hapus di tabel ----------
-$("#inventoryApp").onclick = async (e) => {
-  const rb = e.target.closest("[data-rembeli]");
-  if (rb) {
-    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian pembelian.")) {
-      beliRows.splice(+rb.dataset.rembeli, 1);
-      renderBeliRows();
-    }
-    return;
-  }
-  const rp = e.target.closest("[data-remprod]");
-  if (rp) {
-    if (await askDelete("Hapus item?", "Item akan dihapus dari rincian produksi.")) {
-      prodRows.splice(+rp.dataset.remprod, 1);
-      renderProdRows();
-    }
-    return;
-  }
 };
 
 // ---------- Saldo kas helper ----------
