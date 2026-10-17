@@ -1,10 +1,10 @@
--- HAPUS semua data dummy di inventory (items, batches, transaksi)
+-- HAPUS semua data dummy di inventory (urutan: child dulu, baru parent)
 delete from public.inventory_transactions;
-delete from public.inventory_batches;
 delete from public.pembelian_items;
-delete from public.pembelian_bahan;
 delete from public.produksi_items;
+delete from public.inventory_batches;
 delete from public.produksi;
+delete from public.pembelian_bahan;
 delete from public.inventory_items;
 
 -- RESET sequence agar ID mulai dari 1
