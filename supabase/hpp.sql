@@ -43,7 +43,8 @@ create table if not exists public.hpp_resep (
 create index if not exists hpp_resep_menu_idx on public.hpp_resep(menu_id);
 
 -- Kalkulasi per menu di level SQL (harga live bila item ada, snapshot bila dihapus).
-create or replace view public.hpp_menu_kalkulasi as
+drop view if exists public.hpp_menu_kalkulasi;
+create view public.hpp_menu_kalkulasi as
 select
   m.id as menu_id,
   m.nama,

@@ -5,7 +5,8 @@ alter table public.hpp_menus add column if not exists satuan text not null defau
 alter table public.products add column if not exists hpp_menu_id bigint references public.hpp_menus(id) on delete set null;
 
 -- 3. Update view hpp_menu_kalkulasi agar bawa kolom satuan
-create or replace view public.hpp_menu_kalkulasi as
+drop view if exists public.hpp_menu_kalkulasi;
+create view public.hpp_menu_kalkulasi as
 select
   m.id as menu_id,
   m.nama,
