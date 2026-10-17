@@ -420,6 +420,28 @@ $("#inventoryApp").addEventListener("click", async (e) => {
   }
 });
 
+// ---------- Sync HPP dari Inventory ----------
+async function syncHPPDariBatch(itemIds) {
+  if (!itemIds?.length) return;
+  const uniqueIds = [...new Set(itemIds)];
+  for (const invId of uniqueIds) {
+    const inv = items.find(x => String(x.id) === String(invId));
+    if (!inv?.hpp_item_id) continue;
+    const { data: batches } = await sb().from("inventory_batches")
+      .select("qty_remaining, cost_per_unit")
+      .eq("item_id", invId)
+      .gt("qty_remaining", 0);
+    if (!batches?.length) continue;
+    const totalQty = batches.reduce((s, b) => s + (Number(b.qty_remaining) || 0), 0);
+    const totalCost = batches.reduce((s, b) => s + (Number(b.qty_remaining) || 0) * (Number(b.cost_per_unit) || 0), 0);
+    if (totalQty <= 0 || totalCost <= 0) continue;
+    const avgCost = totalCost / totalQty;
+    await sb().from("hpp_items")
+      .update({ qty_beli: 1, harga_beli: Math.round(avgCost) })
+      .eq("id", inv.hpp_item_id);
+  }
+}
+
 // ---------- Pembelian ----------
 async function fillBeliDropdowns() {
   const el = $("#inBeliItem");
@@ -489,6 +511,8 @@ $("#btnSimpanBeli").onclick = async () => {
   // kas keluar
   const saldo = await getSaldoKas();
   await sb().from("keuangan").insert({ tipe: "pengeluaran", kategori: "bahan", jumlah: -total, saldo_akhir: saldo - total, tanggal, referensi_type: "pembelian", referensi_id: pb.id, catatan: `Pembelian bahan dari ${supplier || "-"}` });
+  // auto-sync harga HPP dari weighted average batch tersisa
+  await syncHPPDariBatch(beliRows.map(r => r.inventory_item_id));
   beliRows = [];
   renderBeliRows();
   $("#formBeli").reset();
