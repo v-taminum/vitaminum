@@ -48,6 +48,7 @@ select
   m.id as menu_id,
   m.nama,
   m.kategori,
+  m.satuan,
   m.margin,
   coalesce(sum(r.qty * coalesce(i.harga_satuan, r.item_harga)), 0) as total_hpp,
   coalesce(sum(r.qty * coalesce(i.harga_satuan, r.item_harga)), 0) * (1 + m.margin / 100) as harga_jual,
