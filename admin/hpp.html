@@ -142,8 +142,8 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <span class="muted">Ditemukan data HPP lama tersimpan di browser ini.</span>
         </div>
         <div class="row" style="margin-top:.8rem">
-          <button class="btn btn-primary" id="btnSyncInventory"><i class="fa-solid fa-rotate"></i> Sinkron Harga dari Inventory</button>
-          <span class="muted">Tarik harga beli terbaru dari batch pembelian di inventory (weighted average stok tersisa).</span>
+          <button class="btn btn-primary" id="btnSyncInventory"><i class="fa-solid fa-arrows-rotate"></i> Tarik Item HPP ke Inventory</button>
+          <span class="muted">Buat item di Inventory dari daftar bahan &amp; operasional di HPP. Setelah itu belanja di tab Pembelian untuk isi stok.</span>
         </div>
         <h3 style="margin-top:1rem;color:var(--primary-dark)">Tabel Operasional &amp; Kemasan</h3>
         <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Qty Beli</th><th>Harga Beli</th><th>Harga Satuan</th><th>Aksi</th></tr></thead><tbody id="tabelOperasional"></tbody></table></div>
@@ -329,42 +329,49 @@ async function loadItems() {
 }
 const liveHarga = (id) => { const it = items.find((x) => String(x.id) === String(id)); return it ? it.harga_satuan : null; };
 
-// ---- Sinkron Harga dari Inventory ----
+// ---- Sinkron HPP → Inventory (tarik semua item HPP jadi item inventory) ----
 async function sinkronHargaInventory() {
-  // 1. Ambil semua inventory_items yang punya link hpp_item_id
-  const { data: invItems, error: e1 } = await sb().from("inventory_items")
-    .select("id, nama, satuan, tipe, hpp_item_id")
-    .not("hpp_item_id", "is", null);
-  if (e1) return toast(e1.message, "error");
-  if (!invItems?.length) return toast("Belum ada item inventory yang terlink ke HPP", "warn");
+  if (!items.length) return toast("Belum ada item di HPP", "warn");
 
-  let updated = 0, skipped = 0;
+  let created = 0, linked = 0, skipped = 0;
 
-  for (const inv of invItems) {
-    // 2. Hitung weighted average cost dari batch tersisa
-    const { data: batches } = await sb().from("inventory_batches")
-      .select("qty_remaining, cost_per_unit")
-      .eq("item_id", inv.id)
-      .gt("qty_remaining", 0);
+  for (const hpp of items) {
+    // Cek apakah sudah ada inventory_item yang link ke hpp_items ini
+    const { data: existing } = await sb().from("inventory_items")
+      .select("id")
+      .eq("hpp_item_id", hpp.id)
+      .maybeSingle();
 
-    if (!batches?.length) { skipped++; continue; }
+    if (existing) { linked++; continue; }
 
-    const totalQty = batches.reduce((s, b) => s + (Number(b.qty_remaining) || 0), 0);
-    const totalCost = batches.reduce((s, b) => s + (Number(b.qty_remaining) || 0) * (Number(b.cost_per_unit) || 0), 0);
-    if (totalQty <= 0 || totalCost <= 0) { skipped++; continue; }
+    // Cek apakah ada inventory_item dengan nama sama (belum terlink)
+    const { data: byName } = await sb().from("inventory_items")
+      .select("id")
+      .ilike("nama", hpp.nama)
+      .maybeSingle();
 
-    const avgCost = totalCost / totalQty;
+    if (byName) {
+      // Link yang sudah ada
+      await sb().from("inventory_items").update({ hpp_item_id: hpp.id }).eq("id", byName.id);
+      linked++;
+      continue;
+    }
 
-    // 3. Update hpp_items: qty_beli=1, harga_beli=avgCost → harga_satuan = avgCost
-    const { error: eu } = await sb().from("hpp_items")
-      .update({ qty_beli: 1, harga_beli: Math.round(avgCost) })
-      .eq("id", inv.hpp_item_id);
-    if (eu) { skipped++; continue; }
-    updated++;
+    // Buat baru di inventory_items
+    const invTipe = hpp.tipe === "operasional" ? "operasional" : "bahan_baku";
+    const { error: ei } = await sb().from("inventory_items").insert({
+      nama: hpp.nama,
+      satuan: hpp.satuan,
+      tipe: invTipe,
+      current_stock: 0,
+      min_stock: 0,
+      hpp_item_id: hpp.id
+    });
+    if (ei) { skipped++; continue; }
+    created++;
   }
 
-  await loadItems();
-  toast(`Sinkron selesai: ${updated} item diperbarui, ${skipped} dilewati (tidak ada batch stok)`);
+  toast(`Selesai: ${created} item baru dibuat di Inventory, ${linked} sudah terlink, ${skipped} gagal`);
 }
 function renderItemTables() {
   const mk = (list, tb) => {
