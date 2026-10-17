@@ -53,7 +53,7 @@ main.container{padding-top:1.25rem;padding-bottom:2rem}
 .grid3{display:grid;gap:10px}
 .grid3>*{min-width:0}
 @media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}
-.kpi-row{display:grid;gap:1rem;margin-bottom:1rem}
+.kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1rem}
 .kpi{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;text-align:center}
 .kpi .val{font-size:1.5rem;font-weight:700;color:var(--primary-dark)}
 .kpi .lab{font-size:.75rem;color:var(--text-muted);margin-top:2px}
