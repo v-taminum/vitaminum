@@ -70,7 +70,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 .badge.err{background:#f8d7da;color:#721c24}
 .summary-box{background:var(--primary-light);color:var(--primary-dark);padding:.8rem 1rem;border-radius:8px;margin-top:.8rem;font-weight:700;border:1px solid var(--border-color)}
 .kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1rem}
-.kpi-row.kpi-stack{grid-template-columns:1fr}
+.kpi-full{grid-column:1/-1}
 .kpi{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;text-align:center}
 .kpi .val{font-size:1.5rem;font-weight:700;color:var(--primary-dark)}
 .kpi .lab{font-size:.75rem;color:var(--text-muted);margin-top:2px}
@@ -172,7 +172,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <div class="kpi"><div class="val pos" id="kpiHPP">Rp 0</div><div class="lab">HPP</div></div>
           <div class="kpi"><div class="val pos" id="kpiLabaKotor">Rp 0</div><div class="lab">Laba Kotor</div></div>
           <div class="kpi"><div class="val neg" id="kpiBeban">Rp 0</div><div class="lab">Beban Operasional</div></div>
-          <div class="kpi"><div class="val" id="kpiLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Hari Ini</div></div>
+          <div class="kpi kpi-full"><div class="val" id="kpiLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Hari Ini</div></div>
         </div>
 
         <div class="summary-box">
@@ -194,12 +194,12 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatBulanan"><i class="fa-solid fa-refresh"></i> Muat Laporan</button></label>
         </div>
 
-        <div class="kpi-row kpi-stack">
+        <div class="kpi-row">
           <div class="kpi"><div class="val" id="kpiBlnPendapatan">Rp 0</div><div class="lab">Pendapatan Bulan Ini</div></div>
           <div class="kpi"><div class="val pos" id="kpiBlnHPP">Rp 0</div><div class="lab">HPP Bulan Ini</div></div>
           <div class="kpi"><div class="val pos" id="kpiBlnLabaKotor">Rp 0</div><div class="lab">Laba Kotor</div></div>
           <div class="kpi"><div class="val neg" id="kpiBlnBeban">Rp 0</div><div class="lab">Beban Operasional</div></div>
-          <div class="kpi"><div class="val" id="kpiBlnLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Bulanan</div></div>
+          <div class="kpi kpi-full"><div class="val" id="kpiBlnLabaRugi">Rp 0</div><div class="lab">Laba / Rugi Bulanan</div></div>
         </div>
       </div>
 
