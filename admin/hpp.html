@@ -334,42 +334,44 @@ const liveHarga = (id) => { const it = items.find((x) => String(x.id) === String
 async function sinkronHargaInventory() {
   if (!items.length) return toast("Belum ada item di HPP", "warn");
 
+  // Satu query untuk semua inventory items (hindari N+1)
+  const { data: invAll, error: eInv } = await sb().from("inventory_items").select("id,nama,hpp_item_id");
+  if (eInv) return toast(eInv.message, "error");
+  const invList = invAll || [];
+  const byHppId = new Map(invList.filter(i => i.hpp_item_id).map(i => [String(i.hpp_item_id), i]));
+  const byNama = new Map(invList.map(i => [String(i.nama || "").trim().toLowerCase(), i]));
+
   let created = 0, linked = 0, skipped = 0;
+  const newRows = [];
 
   for (const hpp of items) {
-    // Cek apakah sudah ada inventory_item yang link ke hpp_items ini
-    const { data: existing } = await sb().from("inventory_items")
-      .select("id")
-      .eq("hpp_item_id", hpp.id)
-      .maybeSingle();
+    // 1. Sudah terlink?
+    if (byHppId.has(String(hpp.id))) { linked++; continue; }
 
-    if (existing) { linked++; continue; }
-
-    // Cek apakah ada inventory_item dengan nama sama (belum terlink)
-    const { data: byName } = await sb().from("inventory_items")
-      .select("id")
-      .ilike("nama", hpp.nama)
-      .maybeSingle();
-
-    if (byName) {
-      // Link yang sudah ada
-      await sb().from("inventory_items").update({ hpp_item_id: hpp.id }).eq("id", byName.id);
+    // 2. Ada nama sama? -> link saja
+    const match = byNama.get(String(hpp.nama || "").trim().toLowerCase());
+    if (match) {
+      const { error: eu } = await sb().from("inventory_items").update({ hpp_item_id: hpp.id }).eq("id", match.id);
+      if (eu) { skipped++; console.warn("Link gagal:", eu.message); continue; }
       linked++;
       continue;
     }
 
-    // Buat baru di inventory_items
-    const invTipe = hpp.tipe === "operasional" ? "operasional" : "bahan_baku";
-    const { error: ei } = await sb().from("inventory_items").insert({
+    // 3. Buat baru
+    newRows.push({
       nama: hpp.nama,
       satuan: hpp.satuan,
-      tipe: invTipe,
+      tipe: hpp.tipe === "operasional" ? "operasional" : "bahan_baku",
       current_stock: 0,
       min_stock: 0,
       hpp_item_id: hpp.id
     });
-    if (ei) { skipped++; continue; }
-    created++;
+  }
+
+  if (newRows.length) {
+    const { data: inserted, error: ei } = await sb().from("inventory_items").insert(newRows).select("id");
+    if (ei) { skipped += newRows.length; console.warn("Insert gagal:", ei.message); }
+    else created = (inserted || []).length;
   }
 
   toast(`Selesai: ${created} item baru dibuat di Inventory, ${linked} sudah terlink, ${skipped} gagal`);
@@ -449,7 +451,8 @@ $("#hppApp").addEventListener("click", async (e) => {
     return;
   }
   const del = e.target.closest("[data-hppdel]");
-  if (del && await askDelete("Hapus item?", "Resep yang memakai item ini memakai harga snapshot.")) {
+  if (del && await askDelete("Hapus item?", "Resep yang memakai item ini memakai harga snapshot. Link ke Inventory juga dilepas.")) {
+    await sb().from("inventory_items").update({ hpp_item_id: null }).eq("hpp_item_id", del.dataset.hppdel);
     const { error } = await sb().from("hpp_items").delete().eq("id", del.dataset.hppdel);
     toast(error ? error.message : "Item dihapus", error ? "error" : "success");
     if (!error) loadItems();
@@ -557,11 +560,13 @@ $("#btnSaveMenu").onclick = async () => {
   if (!(margin >= 0)) return toast("Margin tidak valid", "error");
   const wasEdit = !!editingMenuId;
   let menuId = editingMenuId;
+  let oldRowIds = [];
   if (wasEdit) {
     const { error } = await sb().from("hpp_menus").update({ nama, kategori, satuan, margin }).eq("id", menuId);
     if (error) return toast(error.message, "error");
-    const { error: eDel } = await sb().from("hpp_resep").delete().eq("menu_id", menuId);
-    if (eDel) return toast(eDel.message, "error");
+    // Catat ID resep lama dulu (jangan hapus sebelum insert berhasil)
+    const { data: oldRows } = await sb().from("hpp_resep").select("id").eq("menu_id", menuId);
+    oldRowIds = (oldRows || []).map(r => r.id);
   } else {
     const { data: m, error: e1 } = await sb().from("hpp_menus").insert({ nama, kategori, satuan, margin }).select("id").single();
     if (e1) return toast(e1.message, "error");
@@ -569,7 +574,13 @@ $("#btnSaveMenu").onclick = async () => {
   }
   const rows = resepDraft.map((d) => ({ menu_id: menuId, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
   const { error: e2 } = await sb().from("hpp_resep").insert(rows);
-  if (e2) return toast(e2.message, "error");
+  if (e2) {
+    // Insert gagal - resep lama masih utuh, hapus menu baru kalau baru dibuat
+    if (!wasEdit) await sb().from("hpp_menus").delete().eq("id", menuId);
+    return toast(e2.message, "error");
+  }
+  // Insert berhasil - baru hapus resep lama
+  if (oldRowIds.length) await sb().from("hpp_resep").delete().in("id", oldRowIds);
   resetMenuForm();
   toast(wasEdit ? "Menu diperbarui" : "Menu tersimpan");
 };
@@ -702,11 +713,12 @@ $("#btnSaveTemplate").onclick = async () => {
   if (!(margin >= 0)) return toast("Margin tidak valid", "error");
   const wasEdit = !!editingTemplateId;
   let tplId = editingTemplateId;
+  let oldTplRowIds = [];
   if (wasEdit) {
     const { error } = await sb().from("hpp_templates").update({ nama, kategori, margin }).eq("id", tplId);
     if (error) return toast(error.message, "error");
-    const { error: eDel } = await sb().from("hpp_template_items").delete().eq("template_id", tplId);
-    if (eDel) return toast(eDel.message, "error");
+    const { data: oldRows } = await sb().from("hpp_template_items").select("id").eq("template_id", tplId);
+    oldTplRowIds = (oldRows || []).map(r => r.id);
   } else {
     const { data: t, error: e1 } = await sb().from("hpp_templates").insert({ nama, kategori, margin }).select("id").single();
     if (e1) return toast(e1.message, "error");
@@ -714,7 +726,11 @@ $("#btnSaveTemplate").onclick = async () => {
   }
   const rows = templateDraft.map((d) => ({ template_id: tplId, item_id: d.item_id, item_nama: d.item_nama, item_satuan: d.item_satuan, item_tipe: d.item_tipe, item_harga: d.item_harga, qty: d.qty }));
   const { error: e2 } = await sb().from("hpp_template_items").insert(rows);
-  if (e2) return toast(e2.message, "error");
+  if (e2) {
+    if (!wasEdit) await sb().from("hpp_templates").delete().eq("id", tplId);
+    return toast(e2.message, "error");
+  }
+  if (oldTplRowIds.length) await sb().from("hpp_template_items").delete().in("id", oldTplRowIds);
   resetTemplateForm();
   toast(wasEdit ? "Template diperbarui" : "Template tersimpan");
   loadTemplates();

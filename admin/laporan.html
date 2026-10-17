@@ -405,13 +405,15 @@ $("#btnMuatHarian").onclick = muatHarian;
 // ---------- Input Beban Operasional ----------
 $("#btnAddBeban").onclick = async () => {
   const tgl = $("#tglLaporan").value || todayISO();
+  const cek = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).maybeSingle();
+  if (cek.data?.status === "ditutup") return toast("Buku tanggal ini sudah ditutup, tidak bisa ditambah beban", "warning");
   const ket = $("#inBebanKet").value.trim();
   const jumlah = Number($("#inBebanJumlah").value) || 0;
   if (!ket) return toast("Keterangan wajib diisi", "error");
   if (!(jumlah > 0)) return toast("Jumlah harus > 0", "error");
 
   // Saldo kas terakhir
-  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("created_at", { ascending: false }).limit(1);
+  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
   const saldoSebelum = Number(lastKeu?.[0]?.saldo_akhir || 0);
 
   const { error } = await sb().from("keuangan").insert({
@@ -433,6 +435,8 @@ $("#btnAddBeban").onclick = async () => {
 // ---------- Input Petty Cash ----------
 $("#btnAddPetty").onclick = async () => {
   const tgl = $("#tglLaporan").value || todayISO();
+  const cek = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).maybeSingle();
+  if (cek.data?.status === "ditutup") return toast("Buku tanggal ini sudah ditutup, tidak bisa ditambah petty cash", "warning");
   const keg = $("#inPettyKeg").value.trim();
   const penerima = $("#inPettyPenerima").value.trim();
   const jumlah = Number($("#inPettyJumlah").value) || 0;
@@ -440,7 +444,7 @@ $("#btnAddPetty").onclick = async () => {
   if (!(jumlah > 0)) return toast("Pengeluaran harus > 0", "error");
 
   // Saldo kas terakhir
-  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("created_at", { ascending: false }).limit(1);
+  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
   const saldoSebelum = Number(lastKeu?.[0]?.saldo_akhir || 0);
 
   const { error } = await sb().from("petty_cash").insert({
@@ -451,6 +455,18 @@ $("#btnAddPetty").onclick = async () => {
     saldo_after: saldoSebelum - jumlah
   });
   if (error) return toast(error.message, "error");
+
+  // Mirror ke keuangan dengan kategori "petty" agar saldo kas konsisten
+  // (beban hanya menjumlah kategori "operasional" + petty_cash, jadi tidak double count)
+  const { error: eKeu } = await sb().from("keuangan").insert({
+    tipe: "pengeluaran",
+    kategori: "petty",
+    jumlah: -jumlah,
+    saldo_akhir: saldoSebelum - jumlah,
+    tanggal: tgl,
+    catatan: `Petty Cash: ${keg}${penerima ? " (" + penerima + ")" : ""}`
+  });
+  if (eKeu) toast("Petty cash tersimpan, tapi ledger kas gagal diupdate: " + eKeu.message, "warn");
 
   $("#inPettyKeg").value = "";
   $("#inPettyPenerima").value = "";

@@ -979,7 +979,7 @@ async function loadOrders() {
   tb.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center">Memuat pesanan...</td></tr>';
   const [{ data, error }, tRes] = await Promise.all([
     sb().from("orders").select("*").order("id", { ascending: false }).limit(500),
-    sb().from("orders").select("qty,total").limit(1000),
+    sb().from("orders").select("qty,total,status").neq("status", "batal").limit(10000),
   ]);
   if (error) {
     tb.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center">Gagal memuat. Klik Muat Ulang.</td></tr>';
