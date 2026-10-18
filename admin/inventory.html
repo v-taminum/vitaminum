@@ -1203,7 +1203,7 @@ $("#btnExportRiwayat").onclick = () => {
 // ---------- Harga per Supplier & Tren Harga ----------
 async function loadHistHarga() {
   const itemFilter = $("#histItemSel").value;
-  let q = sb().from("pembelian_items").select("inventory_item_id,qty,harga_satuan,created_at,pembelian_bahan(supplier,tanggal),inventory_items(nama,satuan)").order("created_at", { ascending: false }).limit(100);
+  let q = sb().from("pembelian_items").select("inventory_item_id,qty,harga_satuan,pembelian_bahan!inner(supplier,tanggal),inventory_items(nama,satuan)").order("tanggal", { referencedTable: "pembelian_bahan", ascending: false }).limit(100);
   if (itemFilter) q = q.eq("inventory_item_id", itemFilter);
   const { data, error } = await q;
   if (error) return toast(error.message, "error");
@@ -1211,8 +1211,7 @@ async function loadHistHarga() {
   tb.innerHTML = !data?.length
     ? `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada riwayat pembelian.</td></tr>`
     : data.map(r => {
-      const d = new Date(r.created_at);
-      return `<tr><td data-l="Tanggal">${d.toLocaleDateString("id-ID")}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")}</td><td data-l="Supplier">${esc(r.pembelian_bahan?.supplier || "-")}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Qty">${fmt2(r.qty)}</td></tr>`;
+      return `<tr><td data-l="Tanggal">${fmtDate(r.pembelian_bahan?.tanggal)}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")}</td><td data-l="Supplier">${esc(r.pembelian_bahan?.supplier || "-")}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Qty">${fmt2(r.qty)}</td></tr>`;
     }).join("");
 
   // Grafik tren harga (top 3 item berdasarkan frekuensi)
@@ -1220,13 +1219,13 @@ async function loadHistHarga() {
   (data || []).forEach(r => {
     const nm = r.inventory_items?.nama || "Item";
     if (!itemMap[nm]) itemMap[nm] = [];
-    itemMap[nm].push({ tgl: r.created_at, harga: Number(r.harga_satuan || 0) });
+    itemMap[nm].push({ tgl: r.pembelian_bahan?.tanggal, harga: Number(r.harga_satuan || 0) });
   });
   const topItems = Object.entries(itemMap).sort((a,b) => b[1].length - a[1].length).slice(0, 3);
   const colors = ["#40896c", "#255746", "#e6a23c"];
   const datasets = topItems.map(([nm, arr], idx) => ({
     label: nm,
-    data: arr.reverse().map(p => ({ x: new Date(p.tgl).toLocaleDateString("id-ID", {day:"2-digit",month:"short"}), y: p.harga })),
+    data: arr.reverse().map(p => ({ x: p.tgl ? fmtDate(p.tgl) : "", y: p.harga })),
     borderColor: colors[idx],
     backgroundColor: colors[idx] + "20",
     tension: .3,
