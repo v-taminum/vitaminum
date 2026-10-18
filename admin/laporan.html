@@ -293,6 +293,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <label>Dari Tanggal<input type="date" id="kasDari"></label>
           <label>Sampai<input type="date" id="kasSampai"></label>
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatKas"><i class="fa-solid fa-refresh"></i> Muat Arus Kas</button></label>
+          <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-success" id="btnSinkronKas"><i class="fa-solid fa-rotate"></i> Sinkron Kas Penjualan</button></label>
         </div>
 
         <div class="kas-row">
@@ -921,6 +922,60 @@ async function muatKas() {
   window._kasData = { dari, sampai, masuk, keluar, saldo, katEntries, rows };
 }
 $("#btnMuatKas").onclick = muatKas;
+
+// ---------- Sinkron Kas Penjualan ----------
+$("#btnSinkronKas").onclick = async () => {
+  if (!await askDelete("Sinkron kas penjualan?", "Semua order lunas yang belum tercatat di kas akan ditambahkan. Tidak ada double count.")) return;
+
+  // 1. Ambil semua order lunas
+  const { data: allOrders, error: eOrd } = await sb().from("orders")
+    .select("id,order_group,total,product_name,customer_name,created_at,status")
+    .eq("status", "lunas");
+  if (eOrd) return toast(eOrd.message, "error");
+  if (!allOrders?.length) return toast("Tidak ada order lunas", "warning");
+
+  // 2. Ambil semua entri kas yang sudah ada (referensi_type = "order")
+  const { data: existingKas } = await sb().from("keuangan")
+    .select("referensi_id")
+    .eq("referensi_type", "order");
+  const coveredIds = new Set((existingKas || []).map(k => String(k.referensi_id)));
+
+  // 3. Kelompokkan order lunas berdasarkan order_group (sama seperti admin.html)
+  const groupMap = {};
+  allOrders.forEach(o => {
+    const key = o.order_group || ("g-" + o.id);
+    if (!groupMap[key]) groupMap[key] = { items: [], total: 0, maxId: 0, name: o.customer_name || "", created: o.created_at };
+    groupMap[key].items.push(o);
+    groupMap[key].total += Number(o.total || 0);
+    groupMap[key].maxId = Math.max(groupMap[key].maxId, o.id);
+  });
+
+  // 4. Cek mana yang belum tercatat
+  const belumTercatat = Object.values(groupMap).filter(g => !coveredIds.has(String(g.maxId)));
+  if (!belumTercatat.length) return toast("Semua penjualan lunas sudah tercatat di kas.", "success");
+
+  // 5. Insert ke keuangan
+  let saldo = 0;
+  const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+  saldo = Number(lastKeu?.[0]?.saldo_akhir || 0);
+
+  let inserted = 0, failed = 0;
+  for (const g of belumTercatat) {
+    const tgl = g.created ? g.created.slice(0, 10) : todayISO();
+    saldo += g.total;
+    const { error } = await sb().from("keuangan").insert({
+      tipe: "pendapatan_penjualan", kategori: "penjualan", jumlah: g.total,
+      saldo_akhir: saldo, tanggal: tgl,
+      referensi_type: "order", referensi_id: g.maxId,
+      catatan: `Sinkron: Penjualan ${g.name || "pelanggan"} (${g.items.length} item)`
+    });
+    if (error) { failed++; console.warn("Sinkron kas gagal:", error.message); }
+    else inserted++;
+  }
+
+  toast(`Sinkron selesai: ${inserted} transaksi ditambahkan${failed ? `, ${failed} gagal` : ""}`);
+  muatKas();
+};
 
 // Hapus transaksi kas + recalculate saldo_akhir
 $("#laporanApp").addEventListener("click", async (e) => {
