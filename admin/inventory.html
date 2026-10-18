@@ -947,17 +947,36 @@ async function renderDashboardExtras() {
     keluarMap[t.item_id] = (keluarMap[t.item_id] || 0) + Math.abs(Number(t.qty || 0));
   });
 
+  // Estimasi pemakaian/hari dari resep × produksi rata-rata
+  const [{ data: resepRows }, { data: prodRows }] = await Promise.all([
+    sb().from("hpp_resep").select("item_id,qty_per_unit"),
+    sb().from("produksi").select("qty_produksi,tanggal").gte("tanggal", tgl30ISO).eq("status", "selesai")
+  ]);
+  const prodPerHari = (prodRows || []).length > 0 ? (prodRows || []).reduce((a,p) => a + Number(p.qty_produksi || 0), 0) / 30 : 0;
+  const resepMap = {};
+  (resepRows || []).forEach(r => { resepMap[r.item_id] = (resepMap[r.item_id] || 0) + Number(r.qty_per_unit || 0); });
+
   // Reorder suggestion
   const tbR = $("#tabelReorder");
   const reorderRows = items.filter(i => i.current_stock <= i.min_stock && i.tipe !== "produk_jadi").map(i => {
-    const daily = (keluarMap[i.id] || 0) / 30;
-    const sisaHari = daily > 0 ? Math.floor(i.current_stock / daily) : 999;
-    const usulan = daily > 0 ? Math.ceil(daily * 7) : Math.max(i.min_stock * 2, 1);
-    return { nama: i.nama, stok: i.current_stock, satuan: i.satuan, daily, sisaHari, usulan };
-  });
+    // Prioritas 1: data pemakaian riil (30 hari)
+    // Prioritas 2: estimasi dari resep × produksi rata-rata
+    let daily = (keluarMap[i.id] || 0) / 30;
+    let sumber = "riil";
+    if (daily <= 0 && resepMap[i.id] && prodPerHari > 0) {
+      daily = resepMap[i.id] * prodPerHari;
+      sumber = "estimasi";
+    }
+    if (daily <= 0) return null; // Tidak ada data → jangan suggest
+    const sisaHari = Math.floor(i.current_stock / daily);
+    // Usulan: cukup untuk 7 hari + cadangan min_stock − stok sekarang
+    const usulan = Math.max(0, Math.ceil(daily * 7 + i.min_stock - i.current_stock));
+    if (usulan <= 0) return null;
+    return { nama: i.nama, stok: i.current_stock, satuan: i.satuan, daily, sisaHari, usulan, sumber };
+  }).filter(Boolean);
   tbR.innerHTML = !reorderRows.length
     ? `<tr><td colspan="5" class="muted" style="text-align:center">Semua stok aman atau belum ada data pemakaian.</td></tr>`
-    : reorderRows.map(r => `<tr><td data-l="Item" class="cell-main"><b>${esc(r.nama)}</b></td><td data-l="Stok">${fmt2(r.stok)} ${esc(r.satuan)}</td><td data-l="Pemakaian">${fmt2(r.daily.toFixed(2))} ${esc(r.satuan)}/hari</td><td data-l="Sisa" class="${r.sisaHari <= 2 ? 'neg' : ''}">${r.sisaHari >= 999 ? "-" : r.sisaHari + " hari"}</td><td data-l="Usulan" style="color:var(--success)"><b>${fmt2(r.usulan)} ${esc(r.satuan)}</b></td></tr>`).join("");
+    : reorderRows.map(r => `<tr><td data-l="Item" class="cell-main"><b>${esc(r.nama)}</b></td><td data-l="Stok">${fmt2(r.stok)} ${esc(r.satuan)}</td><td data-l="Pemakaian">${fmt2(r.daily.toFixed(2))} ${esc(r.satuan)}/hari <span class="badge">${r.sumber}</span></td><td data-l="Sisa" class="${r.sisaHari <= 2 ? 'neg' : ''}">${r.sisaHari <= 0 ? "HABIS" : r.sisaHari + " hari"}</td><td data-l="Usulan" style="color:var(--success)"><b>${fmt2(r.usulan)} ${esc(r.satuan)}</b></td></tr>`).join("");
 
   // Batch Expiry Detail (7 hari ke depan)
   const limit7 = new Date(); limit7.setDate(limit7.getDate() + 7);
