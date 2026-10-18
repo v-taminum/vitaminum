@@ -260,7 +260,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
         <!-- Statistik Bulanan -->
         <div class="stat-row">
-          <div class="stat"><div class="sv" id="stBlnHariTutup">0</div><div class="sl">Hari Tutup Buku</div></div>
+          <div class="stat"><div class="sv" id="stBlnHariTutup">0</div><div class="sl">Hari Ada Transaksi</div></div>
           <div class="stat"><div class="sv" id="stBlnRataHari">Rp 0</div><div class="sl">Rata-rata Pendapatan/Hari</div></div>
           <div class="stat"><div class="sv" id="stBlnRataLaba">Rp 0</div><div class="sl">Rata-rata Laba/Hari</div></div>
           <div class="stat"><div class="sv" id="stBlnSaldoAkhir">Rp 0</div><div class="sl">Saldo Kas Akhir</div></div>
@@ -693,21 +693,45 @@ async function muatBulanan() {
   const lastDay = new Date(y, m, 0).getDate();
   const tglAwal = bln + "-01";
   const tglAkhir = bln + "-" + String(lastDay).padStart(2, "0");
-  const { data: rows, error: e } = await sb()
-    .from("penutupan_buku_harian")
-    .select("*")
-    .gte("tanggal", tglAwal)
-    .lte("tanggal", tglAkhir)
-    .eq("status", "ditutup")
-    .order("tanggal");
-  if (e) return toast(e.message, "error");
-  const list = rows || [];
-  const pendapatan = list.reduce((a,r) => a + Number(r.total_penjualan || 0), 0);
-  const hpp = list.reduce((a,r) => a + Number(r.total_hpp || 0), 0);
-  const labaKotor = list.reduce((a,r) => a + Number(r.laba_kotor || 0), 0);
-  const beban = list.reduce((a,r) => a + Number(r.total_beban_operasional || 0), 0);
-  const labaRugi = list.reduce((a,r) => a + Number(r.laba_rugi_harian || 0), 0);
-  const jmlHari = list.length;
+  const tglStartISO = new Date(y, m - 1, 1, 0, 0, 0).toISOString();
+  const tglEndISO = new Date(y, m - 1, lastDay, 23, 59, 59).toISOString();
+
+  // Query data mentah langsung (tidak bergantung tutup buku)
+  const [rOrd, rPrd, rKeu, rPetty] = await Promise.all([
+    sb().from("orders").select("total,status,created_at").gte("created_at", tglStartISO).lte("created_at", tglEndISO).eq("status", "lunas"),
+    sb().from("produksi").select("total_hpp_digunakan,tanggal").gte("tanggal", tglAwal).lte("tanggal", tglAkhir).eq("status", "selesai"),
+    sb().from("keuangan").select("jumlah,kategori,tipe,tanggal").gte("tanggal", tglAwal).lte("tanggal", tglAkhir).eq("tipe", "pengeluaran").eq("kategori", "operasional"),
+    sb().from("petty_cash").select("pengeluaran,tanggal").gte("tanggal", tglAwal).lte("tanggal", tglAkhir)
+  ]);
+
+  // Helper: konversi created_at UTC → tanggal lokal YYYY-MM-DD
+  const localDate = (ts) => {
+    const d = new Date(ts || 0);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  };
+
+  // Group per tanggal
+  const dayMap = {};
+  const ensureDay = (ds) => { if (!dayMap[ds]) dayMap[ds] = { pendapatan: 0, hpp: 0, beban: 0 }; return dayMap[ds]; };
+
+  (rOrd.data || []).forEach(o => { ensureDay(localDate(o.created_at)).pendapatan += Number(o.total || 0); });
+  (rPrd.data || []).forEach(p => { ensureDay(p.tanggal).hpp += Number(p.total_hpp_digunakan || 0); });
+  (rKeu.data || []).forEach(k => { ensureDay(k.tanggal).beban += Math.abs(Number(k.jumlah || 0)); });
+  (rPetty.data || []).forEach(p => { ensureDay(p.tanggal).beban += Number(p.pengeluaran || 0); });
+
+  // Hitung laba per hari + total bulanan
+  const sortedDates = Object.keys(dayMap).sort();
+  const dailyList = sortedDates.map(ds => {
+    const v = dayMap[ds];
+    const labaKotor = v.pendapatan - v.hpp;
+    return { tanggal: ds, ...v, labaKotor, labaRugi: labaKotor - v.beban };
+  });
+  const pendapatan = dailyList.reduce((a,r) => a + r.pendapatan, 0);
+  const hpp = dailyList.reduce((a,r) => a + r.hpp, 0);
+  const labaKotor = dailyList.reduce((a,r) => a + r.labaKotor, 0);
+  const beban = dailyList.reduce((a,r) => a + r.beban, 0);
+  const labaRugi = dailyList.reduce((a,r) => a + r.labaRugi, 0);
+  const jmlHari = dailyList.length;
   const rataHari = jmlHari > 0 ? pendapatan / jmlHari : 0;
   const rataLaba = jmlHari > 0 ? labaRugi / jmlHari : 0;
 
@@ -730,7 +754,7 @@ async function muatBulanan() {
   $("#stBlnSaldoAkhir").textContent = fmtRp(saldoAkhir);
 
   // Grafik tren harian
-  const labels = list.map(r => {
+  const labels = dailyList.map(r => {
     const d = new Date(r.tanggal + "T00:00:00");
     return d.getDate() + "/" + (d.getMonth()+1);
   });
@@ -739,8 +763,8 @@ async function muatBulanan() {
     data: {
       labels,
       datasets: [
-        { label: "Pendapatan", data: list.map(r => Number(r.total_penjualan||0)), borderColor: "#40896c", backgroundColor: "rgba(64,137,108,.15)", fill: true, tension: .3 },
-        { label: "Laba/Rugi", data: list.map(r => Number(r.laba_rugi_harian||0)), borderColor: "#255746", backgroundColor: "rgba(37,87,70,.1)", fill: true, tension: .3 }
+        { label: "Pendapatan", data: dailyList.map(r => r.pendapatan), borderColor: "#40896c", backgroundColor: "rgba(64,137,108,.15)", fill: true, tension: .3 },
+        { label: "Laba/Rugi", data: dailyList.map(r => r.labaRugi), borderColor: "#255746", backgroundColor: "rgba(37,87,70,.1)", fill: true, tension: .3 }
       ]
     },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true } } }
