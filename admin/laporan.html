@@ -830,7 +830,7 @@ async function muatKas() {
   const sampai = $("#kasSampai").value;
   if (!dari || !sampai) return toast("Isi tanggal awal dan akhir", "error");
   const { data, error } = await sb().from("keuangan")
-    .select("tanggal,tipe,kategori,jumlah,saldo_akhir,catatan")
+    .select("id,tanggal,tipe,kategori,jumlah,saldo_akhir,catatan,referensi_type,referensi_id")
     .gte("tanggal", dari).lte("tanggal", sampai)
     .order("tanggal").order("created_at");
   if (error) return toast(error.message, "error");

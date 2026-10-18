@@ -975,7 +975,7 @@ async function renderDashboardExtras() {
     return { nama: i.nama, stok: i.current_stock, satuan: i.satuan, daily, sisaHari, usulan, sumber };
   }).filter(Boolean);
   tbR.innerHTML = !reorderRows.length
-    ? `<tr><td colspan="5" class="muted" style="text-align:center">Semua stok aman atau belum ada data pemakaian.</td></tr>`
+    ? `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada data pemakaian. Lakukan <b>pembelian</b> dan <b>produksi</b> dulu agar sistem bisa menghitung saran pembelian otomatis.</td></tr>`
     : reorderRows.map(r => `<tr><td data-l="Item" class="cell-main"><b>${esc(r.nama)}</b></td><td data-l="Stok">${fmt2(r.stok)} ${esc(r.satuan)}</td><td data-l="Pemakaian">${fmt2(r.daily.toFixed(2))} ${esc(r.satuan)}/hari <span class="badge">${r.sumber}</span></td><td data-l="Sisa" class="${r.sisaHari <= 2 ? 'neg' : ''}">${r.sisaHari <= 0 ? "HABIS" : r.sisaHari + " hari"}</td><td data-l="Usulan" style="color:var(--success)"><b>${fmt2(r.usulan)} ${esc(r.satuan)}</b></td></tr>`).join("");
 
   // Batch Expiry Detail (7 hari ke depan)
