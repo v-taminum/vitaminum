@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="../assets/dropdown.css?v=2">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --primary:#40896c;--primary-dark:#255746;--primary-light:#bdddcc;
@@ -82,6 +83,15 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 .detail-list{margin:.2rem 0 .2rem 1.1rem;font-size:.82rem}
 .detail-list li{margin-bottom:2px}
 .formula{background:#f7faf8;border:1px dashed var(--border-color);border-radius:8px;padding:.55rem .8rem;font-size:.78rem;color:var(--text-muted);margin-top:.6rem}
+.section-title{font-size:.95rem;font-weight:700;color:var(--primary-dark);margin:1.2rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.8rem;margin-bottom:1rem}
+.stat{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:.6rem .8rem;text-align:center}
+.stat .sv{font-size:1rem;font-weight:700;color:var(--primary-dark)}
+.stat .sl{font-size:.7rem;color:var(--text-muted)}
+.chart-box{background:var(--white);border:1px solid var(--border-color);border-radius:10px;padding:1rem;margin-bottom:1rem}
+.chart-box h3{font-size:.9rem;color:var(--primary-dark);margin-bottom:.6rem}
+.chart-wrap{position:relative;width:100%;max-height:260px}
+.export-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
 .pager{display:flex;align-items:center;gap:.4rem;justify-content:flex-end;margin-top:.7rem;flex-wrap:wrap}
 @media(max-width:768px){.container,.navbar{padding-left:16px;padding-right:16px}.navbar{flex-wrap:wrap;gap:.75rem}}
 @media(max-width:640px){
@@ -139,6 +149,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <button class="tab" data-t="master">Master Item</button>
         <button class="tab" data-t="beli">Pembelian Bahan</button>
         <button class="tab" data-t="produksi">Produksi</button>
+        <button class="tab" data-t="riwayat">Riwayat Stok</button>
         <button class="tab" data-t="alat">Alat &amp; BEP</button>
       </div>
 
@@ -153,6 +164,18 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         </div>
         <p class="muted">Item yang perlu pembelian ulang (stok ≤ min_stok):</p>
         <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Stok</th><th>Min</th><th>Expired</th><th>Aksi</th></tr></thead><tbody id="tabelStokRendah"></tbody></table></div>
+
+        <!-- Auto Reorder Suggestion -->
+        <div class="section-title"><i class="fa-solid fa-cart-shopping"></i> Saran Pembelian Otomatis</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Stok</th><th>Pemakaian/Hari</th><th>Sisa Hari</th><th>Usulan Beli</th></tr></thead><tbody id="tabelReorder"></tbody></table></div>
+
+        <!-- Batch Expiry Detail -->
+        <div class="section-title"><i class="fa-solid fa-hourglass-half"></i> Batch Mendekati Expired</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Qty Tersisa</th><th>Expired</th><th>Sisa Hari</th></tr></thead><tbody id="tabelBatchExpiry"></tbody></table></div>
+
+        <!-- Dead Stock -->
+        <div class="section-title"><i class="fa-solid fa-skull-crossbones"></i> Dead Stock (Tidak Bergerak &gt; 30 Hari)</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Stok</th><th>Nilai</th><th>Terakhir Bergerak</th></tr></thead><tbody id="tabelDeadStock"></tbody></table></div>
       </div>
 
       <!-- MASTER ITEM -->
@@ -167,6 +190,17 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         </form>
         <h3 style="margin-top:1rem;color:var(--primary-dark)">Daftar Item</h3>
         <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Tipe</th><th>Stok</th><th>Satuan</th><th>Expired</th><th>Aksi</th></tr></thead><tbody id="tabelItem"></tbody></table></div>
+
+        <!-- Riwayat Harga per Supplier -->
+        <div class="section-title"><i class="fa-solid fa-truck"></i> Riwayat Harga per Supplier</div>
+        <div class="row" style="margin-bottom:.6rem">
+          <label>Pilih Item<select id="histItemSel"><option value="">Semua Item</option></select></label>
+          <label>&nbsp;<button type="button" class="btn btn-outline" id="btnLoadHist"><i class="fa-solid fa-refresh"></i> Muat Riwayat</button></label>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Item</th><th>Supplier</th><th>Harga Satuan</th><th>Qty</th></tr></thead><tbody id="tabelHistHarga"></tbody></table></div>
+
+        <!-- Grafik Tren Harga -->
+        <div class="chart-box" style="margin-top:1rem"><h3><i class="fa-solid fa-chart-line"></i> Tren Harga Beli</h3><div class="chart-wrap"><canvas id="chartHargaTrend"></canvas></div></div>
       </div>
 
       <!-- PEMBELIAN BAHAN -->
@@ -203,6 +237,60 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <div class="table-wrap"><table><thead><tr><th>Bahan</th><th>Qty Per Unit</th><th>Qty Total Digunakan</th><th>Harga Satuan</th><th>Subtotal</th><th>Aksi</th></tr></thead><tbody id="tabelProdRows"></tbody></table></div>
           <div class="row" style="margin-top:.5rem"><span class="muted">Total HPP Produksi: <b id="totalProdHPP">Rp 0</b></span> <button type="button" class="btn btn-success" id="btnSimpanProd" style="margin-left:auto">Simpan Produksi &amp; Kurangi Stok</button></div>
         </div>
+
+        <!-- Riwayat Produksi & Yield Ratio -->
+        <div class="section-title"><i class="fa-solid fa-percent"></i> Riwayat Produksi &amp; Yield Ratio</div>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Menu</th><th>Qty Produksi</th><th>Total Bahan</th><th>Yield</th><th>HPP/Satuan</th></tr></thead><tbody id="tabelYield"></tbody></table></div>
+      </div>
+
+      <!-- RIWAYAT STOK -->
+      <div class="tabpane" data-pane="riwayat">
+        <!-- Input Waste / Susut -->
+        <div class="card" style="margin-bottom:1rem;padding:1rem">
+          <h3 style="font-size:.95rem;color:var(--primary-dark);margin-bottom:.6rem"><i class="fa-solid fa-trash-can"></i> Input Waste / Susut Bahan</h3>
+          <div class="grid3">
+            <label>Item<select id="inWasteItem"></select></label>
+            <label>Qty Susut<input id="inWasteQty" type="number" step="any" min="0" placeholder="0.5"></label>
+            <label>Alasan<select id="inWasteAlasan"><option value="expired">Expired</option><option value="rusak">Rusak / Pecah</option><option value="tumpah">Tumpah</option><option value="salah_timbang">Salah Timbang</option><option value="lainnya">Lainnya</option></select></label>
+          </div>
+          <div class="row" style="margin-top:.6rem">
+            <button type="button" class="btn btn-danger" id="btnAddWaste"><i class="fa-solid fa-trash"></i> Catat Waste</button>
+            <span class="muted">Waste akan mengurangi stok &amp; tercatat sebagai kerugian.</span>
+          </div>
+        </div>
+
+        <!-- Stock Opname -->
+        <div class="card" style="margin-bottom:1rem;padding:1rem">
+          <h3 style="font-size:.95rem;color:var(--primary-dark);margin-bottom:.6rem"><i class="fa-solid fa-clipboard-check"></i> Stock Opname / Penyesuaian</h3>
+          <div class="grid3">
+            <label>Item<select id="inOpnameItem"></select></label>
+            <label>Stok Sistem<input id="inOpnameSistem" readonly value="-"></label>
+            <label>Stok Fisik (Hitung Aktual)<input id="inOpnameFisik" type="number" step="any" min="0" placeholder="0"></label>
+          </div>
+          <div class="row" style="margin-top:.6rem">
+            <button type="button" class="btn btn-primary" id="btnAddOpname"><i class="fa-solid fa-check"></i> Catat Penyesuaian</button>
+            <span class="muted" id="opnameDiff"></span>
+          </div>
+        </div>
+
+        <!-- Rekap Penggunaan Bahan Hari Ini -->
+        <div class="section-title"><i class="fa-solid fa-calendar-day"></i> Rekap Penggunaan Bahan Hari Ini</div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Masuk</th><th>Keluar (Produksi)</th><th>Waste</th><th>Net</th></tr></thead><tbody id="tabelRekapHariIni"></tbody></table></div>
+
+        <!-- Grafik Penggunaan Bahan -->
+        <div class="section-title"><i class="fa-solid fa-chart-line"></i> Grafik Penggunaan Bahan (30 Hari Terakhir)</div>
+        <div class="chart-box"><div class="chart-wrap"><canvas id="chartPenggunaan"></canvas></div></div>
+
+        <!-- Tabel Riwayat Lengkap -->
+        <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Lengkap</div>
+        <div class="row" style="margin-bottom:.6rem">
+          <label>Dari<input type="date" id="riwDari"></label>
+          <label>Sampai<input type="date" id="riwSampai"></label>
+          <label>Item<select id="riwItemFilter"><option value="">Semua Item</option></select></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatRiwayat"><i class="fa-solid fa-refresh"></i> Muat</button></label>
+          <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-outline" id="btnExportRiwayat"><i class="fa-solid fa-print"></i> Cetak</button></label>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Item</th><th>Tipe</th><th>Qty</th><th>Harga</th><th>Total</th><th>Keterangan</th></tr></thead><tbody id="tabelRiwayatStok"></tbody></table></div>
       </div>
 
       <!-- ALAT & BEP -->
@@ -316,6 +404,7 @@ try {
     $("#inAlatTgl").valueAsDate = new Date();
     await loadAll();
     renderDashboard();
+    renderDashboardExtras();
     renderItems();
   }
 } catch (e) {
@@ -328,10 +417,11 @@ $("#invTabs").onclick = (e) => {
   const b = e.target.closest(".tab"); if (!b) return;
   $$("#invTabs .tab").forEach((t) => t.classList.toggle("on", t === b));
   $$("#inventoryApp [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === b.dataset.t));
-  if (b.dataset.t === "dashboard") renderDashboard();
-  if (b.dataset.t === "master") renderItems();
+  if (b.dataset.t === "dashboard") { renderDashboard(); renderDashboardExtras(); }
+  if (b.dataset.t === "master") { renderItems(); fillHistItemSel(); loadHistHarga(); }
   if (b.dataset.t === "beli") fillBeliDropdowns();
-  if (b.dataset.t === "produksi") { fillProdMenu(); renderProdRows(); }
+  if (b.dataset.t === "produksi") { fillProdMenu(); renderProdRows(); loadYield(); }
+  if (b.dataset.t === "riwayat") loadRiwayatTab();
   if (b.dataset.t === "alat") loadAlat();
 };
 
@@ -830,6 +920,348 @@ $("#btnSimpanProd").onclick = async () => {
   renderItems();
   renderDashboard();
 };
+
+// ---------- Chart helper ----------
+const _charts = {};
+function makeChart(id, cfg) {
+  if (_charts[id]) _charts[id].destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  _charts[id] = new Chart(el.getContext("2d"), cfg);
+}
+
+// ---------- Dashboard Enhancements ----------
+async function renderDashboardExtras() {
+  // Auto Reorder: hitung pemakaian 30 hari terakhir per item
+  const tgl30 = new Date(); tgl30.setDate(tgl30.getDate() - 30);
+  const tgl30ISO = `${tgl30.getFullYear()}-${String(tgl30.getMonth()+1).padStart(2,"0")}-${String(tgl30.getDate()).padStart(2,"0")}`;
+  const today = todayISO();
+  const [{ data: trx30 }, { data: allBatches2 }] = await Promise.all([
+    sb().from("inventory_transactions").select("item_id,qty,tipe,created_at").gte("created_at", tgl30.toISOString()),
+    sb().from("inventory_batches").select("item_id,qty_remaining,cost_per_unit,expired_date").gt("qty_remaining", 0)
+  ]);
+
+  // Pemakaian keluar per item (produksi_keluar + waste)
+  const keluarMap = {};
+  (trx30 || []).filter(t => ["produksi_keluar","waste"].includes(t.tipe)).forEach(t => {
+    keluarMap[t.item_id] = (keluarMap[t.item_id] || 0) + Math.abs(Number(t.qty || 0));
+  });
+
+  // Reorder suggestion
+  const tbR = $("#tabelReorder");
+  const reorderRows = items.filter(i => i.current_stock <= i.min_stock && i.tipe !== "produk_jadi").map(i => {
+    const daily = (keluarMap[i.id] || 0) / 30;
+    const sisaHari = daily > 0 ? Math.floor(i.current_stock / daily) : 999;
+    const usulan = daily > 0 ? Math.ceil(daily * 7) : Math.max(i.min_stock * 2, 1);
+    return { nama: i.nama, stok: i.current_stock, satuan: i.satuan, daily, sisaHari, usulan };
+  });
+  tbR.innerHTML = !reorderRows.length
+    ? `<tr><td colspan="5" class="muted" style="text-align:center">Semua stok aman atau belum ada data pemakaian.</td></tr>`
+    : reorderRows.map(r => `<tr><td data-l="Item" class="cell-main"><b>${esc(r.nama)}</b></td><td data-l="Stok">${fmt2(r.stok)} ${esc(r.satuan)}</td><td data-l="Pemakaian">${fmt2(r.daily.toFixed(2))} ${esc(r.satuan)}/hari</td><td data-l="Sisa" class="${r.sisaHari <= 2 ? 'neg' : ''}">${r.sisaHari >= 999 ? "-" : r.sisaHari + " hari"}</td><td data-l="Usulan" style="color:var(--success)"><b>${fmt2(r.usulan)} ${esc(r.satuan)}</b></td></tr>`).join("");
+
+  // Batch Expiry Detail (7 hari ke depan)
+  const limit7 = new Date(); limit7.setDate(limit7.getDate() + 7);
+  const tbBE = $("#tabelBatchExpiry");
+  const batchExp = (allBatches2 || []).filter(b => b.expired_date && new Date(b.expired_date) <= limit7).map(b => {
+    const itm = items.find(x => String(x.id) === String(b.item_id));
+    const sisaHari = Math.ceil((new Date(b.expired_date) - new Date(today)) / 86400000);
+    return { nama: itm?.nama || "?", qty: b.qty_remaining, satuan: itm?.satuan || "", expired: b.expired_date, sisaHari };
+  }).sort((a,b) => a.sisaHari - b.sisaHari);
+  tbBE.innerHTML = !batchExp.length
+    ? `<tr><td colspan="4" class="muted" style="text-align:center">Tidak ada batch mendekati expired.</td></tr>`
+    : batchExp.map(b => `<tr><td data-l="Item" class="cell-main">${esc(b.nama)}</td><td data-l="Qty">${fmt2(b.qty)} ${esc(b.satuan)}</td><td data-l="Expired">${fmtDate(b.expired)}</td><td data-l="Sisa" style="color:${b.sisaHari <= 2 ? 'var(--danger)' : 'var(--text-muted)'}"><b>${b.sisaHari} hari</b></td></tr>`).join("");
+
+  // Dead Stock: tidak ada transaksi keluar 30 hari, stok > 0
+  const tbDS = $("#tabelDeadStock");
+  const lastMoveMap = {};
+  (trx30 || []).forEach(t => { if (!lastMoveMap[t.item_id] || new Date(t.created_at) > new Date(lastMoveMap[t.item_id])) lastMoveMap[t.item_id] = t.created_at; });
+  // Query older transactions for items not in trx30
+  const { data: trxOld } = await sb().from("inventory_transactions").select("item_id,created_at").lt("created_at", tgl30.toISOString()).order("created_at", { ascending: false }).limit(200);
+  (trxOld || []).forEach(t => { if (!lastMoveMap[t.item_id]) lastMoveMap[t.item_id] = t.created_at; });
+
+  const deadRows = items.filter(i => i.current_stock > 0 && (!lastMoveMap[i.id] || new Date(lastMoveMap[i.id]) < tgl30)).map(i => {
+    const batches = (allBatches2 || []).filter(b => String(b.item_id) === String(i.id));
+    const nilai = batches.reduce((a,b) => a + Number(b.qty_remaining||0) * Number(b.cost_per_unit||0), 0);
+    return { nama: i.nama, stok: i.current_stock, satuan: i.satuan, nilai, lastMove: lastMoveMap[i.id] };
+  });
+  tbDS.innerHTML = !deadRows.length
+    ? `<tr><td colspan="4" class="muted" style="text-align:center">Semua item aktif bergerak.</td></tr>`
+    : deadRows.map(d => `<tr><td data-l="Item" class="cell-main">${esc(d.nama)}</td><td data-l="Stok">${fmt2(d.stok)} ${esc(d.satuan)}</td><td data-l="Nilai">${fmtRp(d.nilai)}</td><td data-l="Terakhir">${d.lastMove ? fmtDate(d.lastMove.slice(0,10)) : "Belum pernah"}</td></tr>`).join("");
+}
+
+// ---------- Riwayat Stok ----------
+async function loadRiwayatTab() {
+  // Fill item dropdowns
+  const opts = items.map(i => `<option value="${i.id}">${esc(i.nama)} (${fmt2(i.current_stock)} ${esc(i.satuan)})</option>`).join("");
+  $("#inWasteItem").innerHTML = `<option value="">Pilih item...</option>` + opts;
+  $("#inOpnameItem").innerHTML = `<option value="">Pilih item...</option>` + opts;
+  $("#riwItemFilter").innerHTML = `<option value="">Semua Item</option>` + items.map(i => `<option value="${i.id}">${esc(i.nama)}</option>`).join("");
+  enhanceSelect(document.getElementById("inWasteItem")).refresh();
+  enhanceSelect(document.getElementById("inOpnameItem")).refresh();
+  enhanceSelect(document.getElementById("riwItemFilter")).refresh();
+  if (!$("#riwDari").value) {
+    const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+    $("#riwDari").value = `${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,"0")}-${String(d30.getDate()).padStart(2,"0")}`;
+    $("#riwSampai").value = todayISO();
+  }
+  loadRekapHariIni();
+  loadGrafikPenggunaan();
+  loadTabelRiwayat();
+}
+
+async function loadRekapHariIni() {
+  const today = todayISO();
+  const start = new Date(); const [y,m,d] = today.split("-").map(Number);
+  const startISO = new Date(y, m-1, d, 0, 0, 0).toISOString();
+  const endISO = new Date(y, m-1, d, 23, 59, 59).toISOString();
+  const { data: trx } = await sb().from("inventory_transactions").select("item_id,qty,tipe").gte("created_at", startISO).lte("created_at", endISO);
+  const map = {};
+  (trx || []).forEach(t => {
+    if (!map[t.item_id]) map[t.item_id] = { masuk: 0, produksi: 0, waste: 0 };
+    const q = Math.abs(Number(t.qty || 0));
+    if (t.tipe === "pembelian_masuk") map[t.item_id].masuk += q;
+    else if (t.tipe === "produksi_keluar") map[t.item_id].produksi += q;
+    else if (t.tipe === "waste") map[t.item_id].waste += q;
+  });
+  const tb = $("#tabelRekapHariIni");
+  const entries = Object.entries(map);
+  tb.innerHTML = !entries.length
+    ? `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada transaksi hari ini.</td></tr>`
+    : entries.map(([id, v]) => {
+      const itm = items.find(x => String(x.id) === String(id));
+      const net = v.masuk - v.produksi - v.waste;
+      return `<tr><td data-l="Item" class="cell-main"><b>${esc(itm?.nama || "?")}</b></td><td data-l="Masuk" style="color:var(--success)">${fmt2(v.masuk)}</td><td data-l="Produksi" style="color:var(--danger)">${fmt2(v.produksi)}</td><td data-l="Waste" style="color:var(--danger)">${v.waste > 0 ? fmt2(v.waste) : "-"}</td><td data-l="Net"><b>${fmt2(net)}</b></td></tr>`;
+    }).join("");
+}
+
+async function loadGrafikPenggunaan() {
+  // Top 5 most used items in last 30 days
+  const tgl30 = new Date(); tgl30.setDate(tgl30.getDate() - 30);
+  const { data: trx } = await sb().from("inventory_transactions").select("item_id,qty,tipe,created_at").gte("created_at", tgl30.toISOString()).in("tipe", ["produksi_keluar","waste"]);
+  // Group by date + item
+  const dateItemMap = {};
+  const itemTotals = {};
+  (trx || []).forEach(t => {
+    const dt = new Date(t.created_at);
+    const ds = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+    const key = `${t.item_id}|${ds}`;
+    dateItemMap[key] = (dateItemMap[key] || 0) + Math.abs(Number(t.qty || 0));
+    itemTotals[t.item_id] = (itemTotals[t.item_id] || 0) + Math.abs(Number(t.qty || 0));
+  });
+  const topIds = Object.entries(itemTotals).sort((a,b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+  // Build daily labels
+  const labels = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    labels.push(`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`);
+  }
+  const dsDates = labels.map(l => { const [dd,mm] = l.split("/"); return `${new Date().getFullYear()}-${mm}-${dd}`; });
+  const colors = ["#40896c", "#255746", "#e6a23c", "#b3261e", "#6b7280"];
+  const datasets = topIds.map((id, idx) => {
+    const itm = items.find(x => String(x.id) === String(id));
+    return {
+      label: itm?.nama || "Item " + id,
+      data: dsDates.map(ds => dateItemMap[`${id}|${ds}`] || 0),
+      borderColor: colors[idx],
+      backgroundColor: colors[idx] + "20",
+      tension: .3,
+      fill: false
+    };
+  });
+  makeChart("chartPenggunaan", {
+    type: "line",
+    data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+}
+
+async function loadTabelRiwayat() {
+  const dari = $("#riwDari").value;
+  const sampai = $("#riwSampai").value;
+  const itemFilter = $("#riwItemFilter").value;
+  let q = sb().from("inventory_transactions").select("created_at,qty,harga_satuan,total,tipe,catatan,item_id,inventory_items(nama,satuan)").order("created_at", { ascending: false }).limit(200);
+  if (dari) { const [y,m,d] = dari.split("-").map(Number); q = q.gte("created_at", new Date(y, m-1, d, 0, 0, 0).toISOString()); }
+  if (sampai) { const [y,m,d] = sampai.split("-").map(Number); q = q.lte("created_at", new Date(y, m-1, d, 23, 59, 59).toISOString()); }
+  if (itemFilter) q = q.eq("item_id", itemFilter);
+  const { data, error } = await q;
+  if (error) return toast(error.message, "error");
+  const tb = $("#tabelRiwayatStok");
+  const tipeBadge = (t) => {
+    const map = { pembelian_masuk: ["ok","Beli Masuk"], produksi_masuk: ["ok","Produksi Masuk"], produksi_keluar: ["warn","Produksi Keluar"], waste: ["err","Waste"] };
+    const [cls, label] = map[t] || ["", t];
+    return `<span class="badge ${cls}">${label}</span>`;
+  };
+  tb.innerHTML = !data?.length
+    ? `<tr><td colspan="7" class="muted" style="text-align:center">Tidak ada transaksi.</td></tr>`
+    : data.map(r => {
+      const d = new Date(r.created_at);
+      return `<tr><td data-l="Tanggal">${d.toLocaleDateString("id-ID")} ${d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")} <span class="muted">(${esc(r.inventory_items?.satuan||"")})</span></td><td data-l="Tipe">${tipeBadge(r.tipe)}</td><td data-l="Qty">${fmt2(Math.abs(Number(r.qty||0)))}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Total">${fmtRp(r.total)}</td><td data-l="Keterangan" class="cell-main">${esc(r.catatan || "-")}</td></tr>`;
+    }).join("");
+}
+
+// Waste input
+$("#btnAddWaste").onclick = async () => {
+  const itemId = $("#inWasteItem").value;
+  const qty = Number($("#inWasteQty").value) || 0;
+  const alasan = $("#inWasteAlasan").value;
+  if (!itemId) return toast("Pilih item", "error");
+  if (!(qty > 0)) return toast("Qty harus > 0", "error");
+  const itm = items.find(x => String(x.id) === String(itemId));
+  if (!itm || itm.current_stock < qty) return toast(`Stok ${itm?.nama || "item"} tidak cukup. Sisa: ${fmt2(itm?.current_stock||0)}`, "error");
+
+  if (!await askDelete("Catat waste?", `${fmt2(qty)} ${itm.satuan} ${itm.nama} akan dibuang (${alasan}). Stok berkurang.`)) return;
+
+  // FIFO deduction
+  const { data: batches } = await sb().from("inventory_batches").select("id,qty_remaining").eq("item_id", itemId).gt("qty_remaining", 0).order("received_date");
+  let sisa = qty;
+  const batchUpdates = [];
+  for (const b of (batches || [])) {
+    if (sisa <= 0) break;
+    const ambil = Math.min(Number(b.qty_remaining || 0), sisa);
+    batchUpdates.push(sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id));
+    sisa -= ambil;
+  }
+  await Promise.all(batchUpdates);
+  await sb().from("inventory_items").update({ current_stock: Number(itm.current_stock) - qty }).eq("id", itemId);
+  const { error } = await sb().from("inventory_transactions").insert({
+    item_id: itemId, tipe: "waste", qty: -qty, harga_satuan: 0, total: 0,
+    catatan: `Waste: ${alasan}`
+  });
+  if (error) return toast(error.message, "error");
+  $("#inWasteQty").value = "";
+  toast("Waste dicatat");
+  await loadAll();
+  renderDashboard();
+  renderDashboardExtras();
+  loadRiwayatTab();
+};
+
+// Opname input
+$("#inOpnameItem").onchange = () => {
+  const itm = items.find(x => String(x.id) === String($("#inOpnameItem").value));
+  $("#inOpnameSistem").value = itm ? `${fmt2(itm.current_stock)} ${itm.satuan}` : "-";
+  $("#opnameDiff").textContent = "";
+};
+$("#inOpnameFisik").oninput = () => {
+  const itm = items.find(x => String(x.id) === String($("#inOpnameItem").value));
+  if (!itm) return;
+  const fisik = Number($("#inOpnameFisik").value) || 0;
+  const diff = fisik - Number(itm.current_stock);
+  const el = $("#opnameDiff");
+  if (diff === 0) { el.textContent = "✓ Stok fisik sama dengan sistem."; el.style.color = "var(--success)"; }
+  else if (diff > 0) { el.textContent = `Stok fisik lebih ${fmt2(diff)} ${itm.satuan} dari sistem.`; el.style.color = "var(--success)"; }
+  else { el.textContent = `Stok fisik kurang ${fmt2(Math.abs(diff))} ${itm.satuan} dari sistem.`; el.style.color = "var(--danger)"; }
+};
+$("#btnAddOpname").onclick = async () => {
+  const itemId = $("#inOpnameItem").value;
+  const fisik = Number($("#inOpnameFisik").value) || 0;
+  if (!itemId) return toast("Pilih item", "error");
+  if (!(fisik >= 0)) return toast("Stok fisik tidak valid", "error");
+  const itm = items.find(x => String(x.id) === String(itemId));
+  if (!itm) return toast("Item tidak ditemukan", "error");
+  const diff = fisik - Number(itm.current_stock);
+  if (diff === 0) return toast("Stok fisik sama dengan sistem, tidak perlu penyesuaian", "warning");
+  if (!await askDelete("Catat penyesuaian?", `${itm.nama}: sistem ${fmt2(itm.current_stock)} → fisik ${fmt2(fisik)} (selisih ${diff > 0 ? "+" : ""}${fmt2(diff)} ${itm.satuan})`)) return;
+  const { error } = await sb().from("inventory_transactions").insert({
+    item_id: itemId, tipe: "penyesuaian", qty: diff, harga_satuan: 0, total: 0,
+    catatan: `Opname: sistem ${fmt2(itm.current_stock)} → fisik ${fmt2(fisik)}`
+  });
+  if (error) return toast(error.message, "error");
+  await sb().from("inventory_items").update({ current_stock: fisik }).eq("id", itemId);
+  $("#inOpnameFisik").value = "";
+  $("#opnameDiff").textContent = "";
+  toast("Penyesuaian stok dicatat");
+  await loadAll();
+  renderDashboard();
+  renderDashboardExtras();
+  loadRiwayatTab();
+};
+
+$("#btnMuatRiwayat").onclick = loadTabelRiwayat;
+
+// Export riwayat
+$("#btnExportRiwayat").onclick = () => {
+  const rows = $("#tabelRiwayatStok").querySelectorAll("tr");
+  if (rows.length < 2) return toast("Tidak ada data untuk dicetak", "warning");
+  const w = window.open("", "_blank", "width=900,height=600");
+  w.document.write(`<!DOCTYPE html><html><head><title>Riwayat Stok</title><style>
+    body{font-family:'Segoe UI',Arial,sans-serif;padding:1.5rem;color:#0e201b}
+    h1{font-size:1.2rem;color:#255746} .meta{font-size:.8rem;color:#666;margin-bottom:.8rem}
+    table{width:100%;border-collapse:collapse;font-size:.78rem}
+    th,td{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}
+    th{background:#e8f3ee;color:#255746}
+    @media print{body{padding:1rem}}
+  </style></head><body>
+  <h1>Riwayat Stok - Vitaminum</h1>
+  <div class="meta">Periode: ${$("#riwDari").value || "semua"} s/d ${$("#riwSampai").value || "semua"} | Dicetak: ${new Date().toLocaleString("id-ID")}</div>
+  <table>${$("#tabelRiwayatStok").closest("table").outerHTML}</table>
+  <script>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+};
+
+// ---------- Harga per Supplier & Tren Harga ----------
+async function loadHistHarga() {
+  const itemFilter = $("#histItemSel").value;
+  let q = sb().from("pembelian_items").select("inventory_item_id,qty,harga_satuan,created_at,pembelian_bahan(supplier,tanggal),inventory_items(nama,satuan)").order("created_at", { ascending: false }).limit(100);
+  if (itemFilter) q = q.eq("inventory_item_id", itemFilter);
+  const { data, error } = await q;
+  if (error) return toast(error.message, "error");
+  const tb = $("#tabelHistHarga");
+  tb.innerHTML = !data?.length
+    ? `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada riwayat pembelian.</td></tr>`
+    : data.map(r => {
+      const d = new Date(r.created_at);
+      return `<tr><td data-l="Tanggal">${d.toLocaleDateString("id-ID")}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")}</td><td data-l="Supplier">${esc(r.pembelian_bahan?.supplier || "-")}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Qty">${fmt2(r.qty)}</td></tr>`;
+    }).join("");
+
+  // Grafik tren harga (top 3 item berdasarkan frekuensi)
+  const itemMap = {};
+  (data || []).forEach(r => {
+    const nm = r.inventory_items?.nama || "Item";
+    if (!itemMap[nm]) itemMap[nm] = [];
+    itemMap[nm].push({ tgl: r.created_at, harga: Number(r.harga_satuan || 0) });
+  });
+  const topItems = Object.entries(itemMap).sort((a,b) => b[1].length - a[1].length).slice(0, 3);
+  const colors = ["#40896c", "#255746", "#e6a23c"];
+  const datasets = topItems.map(([nm, arr], idx) => ({
+    label: nm,
+    data: arr.reverse().map(p => ({ x: new Date(p.tgl).toLocaleDateString("id-ID", {day:"2-digit",month:"short"}), y: p.harga })),
+    borderColor: colors[idx],
+    backgroundColor: colors[idx] + "20",
+    tension: .3,
+    fill: false
+  }));
+  makeChart("chartHargaTrend", {
+    type: "line",
+    data: { datasets },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, scales: { y: { beginAtZero: false } } }
+  });
+}
+
+async function fillHistItemSel() {
+  const { data } = await sb().from("inventory_items").select("id,nama").order("nama");
+  $("#histItemSel").innerHTML = `<option value="">Semua Item</option>` + (data || []).map(i => `<option value="${i.id}">${esc(i.nama)}</option>`).join("");
+  enhanceSelect(document.getElementById("histItemSel")).refresh();
+}
+$("#btnLoadHist").onclick = loadHistHarga;
+
+// ---------- Yield Ratio Produksi ----------
+async function loadYield() {
+  const { data: prod, error } = await sb().from("produksi").select("id,qty_produksi,hpp_satuan_saat_produksi,tanggal,menus(nama)").order("tanggal", { ascending: false }).limit(20);
+  if (error) return;
+  const { data: items2 } = await sb().from("produksi_items").select("produksi_id,qty_per_unit");
+  const tb = $("#tabelYield");
+  if (!prod?.length) { tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada produksi.</td></tr>`; return; }
+  const bahanMap = {};
+  (items2 || []).forEach(p => { bahanMap[p.produksi_id] = (bahanMap[p.produksi_id] || 0) + Number(p.qty_per_unit || 0); });
+  tb.innerHTML = prod.map(p => {
+    const totalBahan = bahanMap[p.id] || 0;
+    const qty = Number(p.qty_produksi || 1);
+    const yieldPct = totalBahan > 0 ? (qty / totalBahan * 100) : 0;
+    return `<tr><td data-l="Tanggal">${fmtDate(p.tanggal)}</td><td data-l="Menu" class="cell-main">${esc(p.menus?.nama || "?")}</td><td data-l="Qty">${fmt2(qty)}</td><td data-l="Total Bahan">${fmt2(totalBahan)}</td><td data-l="Yield" style="color:${yieldPct >= 80 ? 'var(--success)' : yieldPct >= 50 ? 'var(--text-muted)' : 'var(--danger)'}"><b>${yieldPct.toFixed(1)}%</b></td><td data-l="HPP/Satuan">${fmtRp(p.hpp_satuan_saat_produksi)}</td></tr>`;
+  }).join("");
+}
 
 // ---------- ALAT PRODUKSI & BEP ----------
 let alatList = [];
