@@ -771,8 +771,6 @@ async function muatBulanan() {
   });
 
   // Menu terlaris (query orders bulan ini, status lunas)
-  const tglEndISO = new Date(y, m - 1, lastDay, 23, 59, 59).toISOString();
-  const tglStartISO = new Date(y, m - 1, 1, 0, 0, 0).toISOString();
   const { data: ordBln } = await sb().from("orders").select("product_name,qty,total,status,created_at").gte("created_at", tglStartISO).lte("created_at", tglEndISO).eq("status", "lunas");
   const menuMap = {};
   (ordBln || []).forEach(o => {
