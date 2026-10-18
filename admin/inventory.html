@@ -193,9 +193,9 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
         <!-- Riwayat Harga per Supplier -->
         <div class="section-title"><i class="fa-solid fa-truck"></i> Riwayat Harga per Supplier</div>
-        <div class="row" style="margin-bottom:.6rem">
+        <div class="row" style="margin-bottom:.6rem;align-items:end">
           <label>Pilih Item<select id="histItemSel"><option value="">Semua Item</option></select></label>
-          <label>&nbsp;<button type="button" class="btn btn-outline" id="btnLoadHist"><i class="fa-solid fa-refresh"></i> Muat Riwayat</button></label>
+          <label>&nbsp;<button type="button" class="btn btn-outline" id="btnLoadHist" style="min-height:46px"><i class="fa-solid fa-refresh"></i> Muat Riwayat</button></label>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Item</th><th>Supplier</th><th>Harga Satuan</th><th>Qty</th></tr></thead><tbody id="tabelHistHarga"></tbody></table></div>
 
@@ -283,12 +283,12 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
         <!-- Tabel Riwayat Lengkap -->
         <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Lengkap</div>
-        <div class="row" style="margin-bottom:.6rem">
+        <div class="row" style="margin-bottom:.6rem;align-items:end">
           <label>Dari<input type="date" id="riwDari"></label>
           <label>Sampai<input type="date" id="riwSampai"></label>
           <label>Item<select id="riwItemFilter"><option value="">Semua Item</option></select></label>
-          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatRiwayat"><i class="fa-solid fa-refresh"></i> Muat</button></label>
-          <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-outline" id="btnExportRiwayat"><i class="fa-solid fa-print"></i> Cetak</button></label>
+          <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatRiwayat" style="min-height:46px"><i class="fa-solid fa-refresh"></i> Muat</button></label>
+          <label>&nbsp;<button type="button" class="btn btn-outline" id="btnExportRiwayat" style="min-height:46px"><i class="fa-solid fa-print"></i> Cetak</button></label>
         </div>
         <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Item</th><th>Tipe</th><th>Qty</th><th>Harga</th><th>Total</th><th>Keterangan</th></tr></thead><tbody id="tabelRiwayatStok"></tbody></table></div>
       </div>
