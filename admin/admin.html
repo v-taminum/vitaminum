@@ -393,6 +393,7 @@ if (!isConfigured) document.getElementById("cfgWarn").style.display = "";
 else if (configError) { const w = document.getElementById("cfgWarn"); w.style.display = ""; w.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + configError; }
 const $ = (s) => document.querySelector(s), $$ = (s) => [...document.querySelectorAll(s)];
 const fmt = (n) => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n||0);
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const fmtNum = (n) => new Intl.NumberFormat("id-ID").format(n || 0);
 const parseRp = (s) => +(String(s == null ? "" : s).replace(/\D/g, "") || 0);
 function bindRp(input, preview) {
@@ -1221,9 +1222,30 @@ async function openNota(gid) {
   if (sel) enhanceSelect(sel);
   if (sel) sel.onchange = async () => {
     const ids = g.items.map((r) => r.id);
+    const prevStatus = g.status;
     const { error } = await sb().from("orders").update({ status: sel.value }).in("id", ids);
-    if (!error) { g.items.forEach((r) => (r.status = sel.value)); g.status = sel.value; g.mixed = false; loadOrders(); }
-    toast(error ? error.message : "Status: " + sel.value, error ? "error" : "success");
+    if (error) { toast(error.message, "error"); return; }
+    g.items.forEach((r) => (r.status = sel.value));
+    g.status = sel.value;
+    g.mixed = false;
+
+    // Sinkron kas: saat jadi lunas → catat pemasukan; saat berubah dari lunas → hapus
+    const kasRef = { referensi_type: "order", referensi_id: g.maxId };
+    if (sel.value === "lunas" && prevStatus !== "lunas") {
+      const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+      const saldoSebelum = Number(lastKeu?.[0]?.saldo_akhir || 0);
+      const { error: eK } = await sb().from("keuangan").insert({
+        tipe: "pendapatan_penjualan", kategori: "penjualan", jumlah: Number(g.total || 0),
+        saldo_akhir: saldoSebelum + Number(g.total || 0), tanggal: todayISO(),
+        ...kasRef, catatan: `Penjualan ${g.name || "pelanggan"} (${g.items.length} item)`
+      });
+      if (eK) toast("Tapi gagal catat kas: " + eK.message, "warn");
+    } else if (prevStatus === "lunas" && sel.value !== "lunas") {
+      await sb().from("keuangan").delete().eq("referensi_type", kasRef.referensi_type).eq("referensi_id", kasRef.referensi_id);
+    }
+
+    loadOrders();
+    toast("Status: " + sel.value);
   };
   document.getElementById("notaOverlay").hidden = false;
   document.body.style.overflow = "hidden";
