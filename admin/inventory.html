@@ -689,7 +689,7 @@ $("#btnSimpanBeli").onclick = async () => {
     if (eb) return toast(eb.message, "error");
     batchRows.push({ pembelian_id: pb.id, inventory_item_id: r.inventory_item_id, batch_id: b.id, qty: r.qty, satuan: r.item_satuan, harga_satuan: r.harga_satuan, subtotal: r.subtotal });
     itemUpdates.push(sb().from("inventory_items").update({ current_stock: (items.find(x=>String(x.id)===String(r.inventory_item_id)).current_stock || 0) + r.qty }).eq("id", r.inventory_item_id));
-    transRows.push({ item_id: r.inventory_item_id, batch_id: b.id, tipe: "pembelian", qty: r.qty, harga_satuan: r.harga_satuan, total: r.subtotal, reference_type: "pembelian", reference_id: pb.id, catatan: `Pembelian dari ${supplier || "-"}` });
+    transRows.push({ item_id: r.inventory_item_id, batch_id: b.id, tipe: "pembelian_masuk", qty: r.qty, harga_satuan: r.harga_satuan, total: r.subtotal, reference_type: "pembelian", reference_id: pb.id, catatan: `Pembelian dari ${supplier || "-"}` });
   }
   const { error: e2 } = await sb().from("pembelian_items").insert(batchRows);
   if (e2) return toast(e2.message, "error");
