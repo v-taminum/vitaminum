@@ -396,6 +396,69 @@ const fmt = (n) => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const fmtNum = (n) => new Intl.NumberFormat("id-ID").format(n || 0);
 const parseRp = (s) => +(String(s == null ? "" : s).replace(/\D/g, "") || 0);
+
+// Sinkron inventory saat order lunas: kurangi stok produk jadi
+async function kurangiStokInventory(orderItems) {
+  try {
+    for (const r of orderItems) {
+      if (!r.product_name || !r.qty) continue;
+      // Cari product → hpp_menu_id → inventory_items (produk_jadi)
+      const { data: prod } = await sb().from("products").select("id,hpp_menu_id,name").eq("name", r.product_name).limit(1);
+      if (!prod?.length) continue;
+      const menuId = prod[0].hpp_menu_id;
+      let invItem = null;
+      if (menuId) {
+        const { data: menu } = await sb().from("menus").select("nama").eq("id", menuId).limit(1);
+        if (menu?.length) {
+          const { data: inv } = await sb().from("inventory_items").select("id,current_stock,satuan,nama").eq("tipe", "produk_jadi").ilike("nama", menu[0].nama).limit(1);
+          if (inv?.length) invItem = inv[0];
+        }
+      }
+      if (!invItem) {
+        const { data: inv } = await sb().from("inventory_items").select("id,current_stock,satuan,nama").eq("tipe", "produk_jadi").ilike("nama", r.product_name).limit(1);
+        if (inv?.length) invItem = inv[0];
+      }
+      if (!invItem) continue;
+      const baru = Number(invItem.current_stock || 0) - Number(r.qty);
+      const { error } = await sb().from("inventory_items").update({ current_stock: baru }).eq("id", invItem.id);
+      if (error) { console.warn("Gagal kurangi stok inventory:", error.message); continue; }
+      // Catat transaksi inventory
+      await sb().from("inventory_transactions").insert({
+        item_id: invItem.id, tipe: "penjualan_keluar", qty: -Number(r.qty),
+        harga_satuan: 0, total: 0,
+        reference_type: "order", reference_id: null,
+        catatan: `Penjualan: ${r.product_name} × ${r.qty}`
+      }).catch(() => {});
+    }
+  } catch (e) { console.warn("syncInventory error:", e?.message); }
+}
+
+// Kembalikan stok inventory saat revert dari lunas
+async function tambahStokInventory(orderItems) {
+  try {
+    for (const r of orderItems) {
+      if (!r.product_name || !r.qty) continue;
+      const { data: prod } = await sb().from("products").select("id,hpp_menu_id,name").eq("name", r.product_name).limit(1);
+      if (!prod?.length) continue;
+      const menuId = prod[0].hpp_menu_id;
+      let invItem = null;
+      if (menuId) {
+        const { data: menu } = await sb().from("menus").select("nama").eq("id", menuId).limit(1);
+        if (menu?.length) {
+          const { data: inv } = await sb().from("inventory_items").select("id,current_stock").eq("tipe", "produk_jadi").ilike("nama", menu[0].nama).limit(1);
+          if (inv?.length) invItem = inv[0];
+        }
+      }
+      if (!invItem) {
+        const { data: inv } = await sb().from("inventory_items").select("id,current_stock").eq("tipe", "produk_jadi").ilike("nama", r.product_name).limit(1);
+        if (inv?.length) invItem = inv[0];
+      }
+      if (!invItem) continue;
+      const baru = Number(invItem.current_stock || 0) + Number(r.qty);
+      await sb().from("inventory_items").update({ current_stock: baru }).eq("id", invItem.id);
+    }
+  } catch (e) { console.warn("revertInventory error:", e?.message); }
+}
 function bindRp(input, preview) {
   const render = () => {
     const d = input.value.replace(/\D/g, "").slice(0, 12);
@@ -856,7 +919,7 @@ async function uploadImage(file) {
   return sb().storage.from("product-images").getPublicUrl(path).data.publicUrl;
 }
 const pState = { page: 1, size: 10, total: 0, q: "", sort: "name_asc" };
-const escP = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const escP = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const oState = { page: 1, size: 10, total: 0 };
 function renderPager(el, state, go) {
   if (!el) return;
@@ -996,7 +1059,7 @@ async function loadOrders() {
   if (oState.page > pages) oState.page = pages;
   const slice = groups.slice((oState.page - 1) * oState.size, oState.page * oState.size);
   const fmtDt = (t) => { try { return new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return t || "-"; } };
-  const escO = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const escO = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   const escA = (t) => escO(t).replace(/"/g, "&quot;");
   tb.innerHTML = slice.map((g) => `<tr>
     <td data-l="Waktu" style="white-space:nowrap">${fmtDt(g.created)}</td>
@@ -1161,7 +1224,7 @@ $("#oExport").onclick = async () => {
   if (!data?.length) return toast("Belum ada pesanan untuk diekspor", "error");
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const rows = [["Grup", "ID", "Waktu", "Nama", "No HP", "Alamat", "Produk", "Harga", "Qty", "Total", "Status", "Catatan"]];
-  data.forEach((o) => rows.push([o.order_group || ("g-" + o.id), o.id, new Date(o.created_at).toLocaleString("id-ID"), o.customer_name, o.customer_wa, o.customer_address, o.product_name, o.price, o.qty, o.total, o.status, o.catatan || ""].map(q).join(";")));
+  data.forEach((o) => rows.push([o.order_group || ("g-" + o.id), o.id, new Date(o.created_at).toLocaleString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}), o.customer_name, o.customer_wa, o.customer_address, o.product_name, o.price, o.qty, o.total, o.status, o.catatan || ""].map(q).join(";")));
   const blob = new Blob(["﻿" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -1197,7 +1260,7 @@ function notaText(g, s) {
   return L.join("\n");
 }
 function notaHtml(g, s) {
-  const escN = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const escN = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   const notes = g.items.map((r) => r.catatan).filter(Boolean);
   return `<div class="nota">
     <div class="nota-head">${s.app_logo ? `<img src="${s.app_logo}" alt="logo">` : ""}<div><b>${escN(s.app_name || "Vitaminum")}</b><span>Nota Pemesanan</span></div></div>
@@ -1229,7 +1292,7 @@ async function openNota(gid) {
     g.status = sel.value;
     g.mixed = false;
 
-    // Sinkron kas: saat jadi lunas → catat pemasukan; saat berubah dari lunas → hapus
+    // Sinkron kas + inventory: saat jadi lunas → catat pemasukan & kurangi stok; saat revert → hapus & kembalikan stok
     const kasRef = { referensi_type: "order", referensi_id: g.maxId };
     if (sel.value === "lunas" && prevStatus !== "lunas") {
       const { data: lastKeu } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
@@ -1240,8 +1303,10 @@ async function openNota(gid) {
         ...kasRef, catatan: `Penjualan ${g.name || "pelanggan"} (${g.items.length} item)`
       });
       if (eK) toast("Tapi gagal catat kas: " + eK.message, "warn");
+      await kurangiStokInventory(g.items);
     } else if (prevStatus === "lunas" && sel.value !== "lunas") {
       await sb().from("keuangan").delete().eq("referensi_type", kasRef.referensi_type).eq("referensi_id", kasRef.referensi_id);
+      await tambahStokInventory(g.items);
     }
 
     loadOrders();

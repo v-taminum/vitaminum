@@ -238,7 +238,7 @@ import { enhanceSelect } from "../assets/dropdown.js?v=2";
 await loadLocalConfig();
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
 const fmt2 = (v) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
@@ -379,7 +379,7 @@ async function sinkronHargaInventory() {
 function renderItemTables() {
   const mk = (list, tb) => {
     document.getElementById(tb).innerHTML = list.map((b) => `<tr>
-      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(b.nama)}</b></div></td>
+      <td data-l="Nama" class="cell-main"><div class="cell-body"><b>${esc(b.nama)}</b>${b.auto_sync === false ? ' <span class="badge" style="font-size:.65em;background:var(--warning);color:#000" title="Harga dikelola manual, tidak diupdate otomatis dari batch">Manual</span>' : ''}</div></td>
       <td data-l="Qty Beli">${fmt2(b.qty_beli)} ${esc(b.satuan)}</td>
       <td data-l="Harga Beli">${fmtRp(b.harga_beli)}</td>
       <td data-l="Harga Satuan">${fmtRp(b.harga_satuan)} / ${esc(b.satuan)}</td>
@@ -418,9 +418,10 @@ $("#formBahan").onsubmit = async (e) => {
   const wasEdit = !!editingItemId;
   let error;
   if (wasEdit) {
-    ({ error } = await sb().from("hpp_items").update(payload).eq("id", editingItemId));
+    // auto_sync = false → harga_beli dikelola manual, tidak diupdate otomatis dari batch
+    ({ error } = await sb().from("hpp_items").update({ ...payload, auto_sync: false }).eq("id", editingItemId));
   } else {
-    ({ error } = await sb().from("hpp_items").insert(payload));
+    ({ error } = await sb().from("hpp_items").insert({ ...payload, auto_sync: true }));
   }
   if (error) return toast(error.message, "error");
   resetItemForm();

@@ -208,6 +208,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <form id="formBeli" class="grid3" style="margin-bottom:1rem">
           <label>Supplier<input id="inSupplier" placeholder="Toko Buah Segar"></label>
           <label>Tanggal<input id="inTglBeli" type="date"></label>
+          <label>Expired Date (opsional)<input id="inBeliExpired" type="date"></label>
           <label>Metode Pembayaran<select id="inMetode"><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="dana">DANA</option></select></label>
         </form>
         <div class="recipe-builder">
@@ -339,7 +340,7 @@ import { enhanceSelect } from "../assets/dropdown.js?v=2";
 await loadLocalConfig();
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
-const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
 const fmt2 = (v) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
@@ -608,6 +609,9 @@ async function syncHPPDariBatch(itemIds) {
   for (const invId of uniqueIds) {
     const inv = items.find(x => String(x.id) === String(invId));
     if (!inv?.hpp_item_id) continue;
+    // Cek auto_sync — jika false, harga_beli dikelola manual, jangan ditimpa
+    const { data: hppRow } = await sb().from("hpp_items").select("qty_beli,auto_sync").eq("id", inv.hpp_item_id).single();
+    if (hppRow && hppRow.auto_sync === false) continue; // harga manual, skip
     const { data: batches } = await sb().from("inventory_batches")
       .select("qty_remaining, cost_per_unit")
       .eq("item_id", invId)
@@ -617,8 +621,6 @@ async function syncHPPDariBatch(itemIds) {
     const totalCost = batches.reduce((s, b) => s + (Number(b.qty_remaining) || 0) * (Number(b.cost_per_unit) || 0), 0);
     if (totalQty <= 0 || totalCost <= 0) continue;
     const avgCost = totalCost / totalQty;
-    // Pertahankan qty_beli manual user; harga_beli = avgCost * qty_beli agar harga_satuan = avgCost
-    const { data: hppRow } = await sb().from("hpp_items").select("qty_beli").eq("id", inv.hpp_item_id).single();
     const qtyBeli = Number(hppRow?.qty_beli) > 0 ? Number(hppRow.qty_beli) : 1;
     const { error: eu } = await sb().from("hpp_items")
       .update({ harga_beli: Math.round(avgCost * qtyBeli) })
@@ -672,6 +674,7 @@ $("#btnSimpanBeli").onclick = async () => {
   try {
     const supplier = $("#inSupplier").value.trim();
     const tanggal = $("#inTglBeli").value || todayISO();
+    const expiredDate = $("#inBeliExpired").value || null;
     const metode = $("#inMetode").value;
     const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
 
@@ -693,7 +696,7 @@ $("#btnSimpanBeli").onclick = async () => {
         item_id: r.inventory_item_id,
         qty_remaining: r.qty,
         cost_per_unit: r.harga_satuan,
-        expired_date: null,
+        expired_date: expiredDate,
         received_date: tanggal
       }).select("id").single();
       if (eb) { toast("Gagal buat batch: " + eb.message, "error"); return; }
@@ -729,6 +732,7 @@ $("#btnSimpanBeli").onclick = async () => {
     renderBeliRows();
     $("#formBeli").reset();
     $("#inTglBeli").value = todayISO();
+    $("#inBeliExpired").value = "";
     enhanceSelect(document.getElementById("inMetode")).refresh();
     enhanceSelect(document.getElementById("inBeliItem")).refresh();
     $("#totalBeli").textContent = fmtRp(0);
@@ -1187,7 +1191,7 @@ async function loadTabelRiwayat() {
     ? `<tr><td colspan="7" class="muted" style="text-align:center">Tidak ada transaksi.</td></tr>`
     : data.map(r => {
       const d = new Date(r.created_at);
-      return `<tr><td data-l="Tanggal">${d.toLocaleDateString("id-ID")} ${d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")} <span class="muted">(${esc(r.inventory_items?.satuan||"")})</span></td><td data-l="Tipe">${tipeBadge(r.tipe)}</td><td data-l="Qty">${fmt2(Math.abs(Number(r.qty||0)))}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Total">${fmtRp(r.total)}</td><td data-l="Keterangan" class="cell-main">${esc(r.catatan || "-")}</td></tr>`;
+      return `<tr><td data-l="Tanggal">${d.toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"})} ${d.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</td><td data-l="Item" class="cell-main">${esc(r.inventory_items?.nama || "?")} <span class="muted">(${esc(r.inventory_items?.satuan||"")})</span></td><td data-l="Tipe">${tipeBadge(r.tipe)}</td><td data-l="Qty">${fmt2(Math.abs(Number(r.qty||0)))}</td><td data-l="Harga">${fmtRp(r.harga_satuan)}</td><td data-l="Total">${fmtRp(r.total)}</td><td data-l="Keterangan" class="cell-main">${esc(r.catatan || "-")}</td></tr>`;
     }).join("");
 }
 
