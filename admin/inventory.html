@@ -63,7 +63,7 @@ main.container{padding-top:1.25rem;padding-bottom:2rem}
 .kpi .warn{color:#b8860b}
 .label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
-input[type="text"],input[type="number"],input[type="date"],select{min-height:46px}
+input[type="text"],input[type="number"],input.dateid,select{min-height:46px}
 select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23255746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;cursor:pointer}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
 .table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
@@ -185,7 +185,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <label>Tipe<select id="inTipe"><option value="bahan_baku">Bahan Baku</option><option value="operasional">Operasional</option><option value="produk_jadi">Produk Jadi</option></select></label>
           <label>Satuan<select id="inSatuan"><option value="pcs">Pcs / Buah</option><option value="gram">Gram</option><option value="ml">ml</option><option value="liter">Liter</option><option value="bulan">Bulan</option></select></label>
           <label>Stok Minimal<input id="inMin" type="number" min="0" value="0"></label>
-          <label>Expired Date (produk jadi)<input id="inExpired" type="date"></label>
+          <label>Expired Date (produk jadi)<input id="inExpired" type="text" class="dateid" placeholder="dd/mm/yyyy"></label>
           <label style="grid-column:1/-1;display:flex;gap:.5rem;margin-top:.8rem;"><button type="submit" class="btn btn-primary" id="btnSaveItem" style="flex:1">Simpan Item</button><button type="button" class="btn btn-outline" id="btnCancelItem" hidden style="flex:1">Batal</button></label>
         </form>
         <h3 style="margin-top:1rem;color:var(--primary-dark)">Daftar Item</h3>
@@ -207,8 +207,8 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <div class="tabpane" data-pane="beli">
         <form id="formBeli" class="grid3" style="margin-bottom:1rem">
           <label>Supplier<input id="inSupplier" placeholder="Toko Buah Segar"></label>
-          <label>Tanggal<input id="inTglBeli" type="date"></label>
-          <label>Expired Date (opsional)<input id="inBeliExpired" type="date"></label>
+          <label>Tanggal<input id="inTglBeli" type="text" class="dateid" placeholder="dd/mm/yyyy"></label>
+          <label>Expired Date (opsional)<input id="inBeliExpired" type="text" class="dateid" placeholder="dd/mm/yyyy"></label>
           <label>Metode Pembayaran<select id="inMetode"><option value="tunai">Tunai</option><option value="transfer">Transfer</option><option value="dana">DANA</option></select></label>
         </form>
         <div class="recipe-builder">
@@ -229,7 +229,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <form id="formProd" class="grid3">
           <label>Produk<select id="inProdMenu"></select></label>
           <label>Qty Produksi <span id="prodSatuanLabel">(unit)</span><input id="inProdQty" type="number" min="1" placeholder="1"></label>
-          <label>Tanggal<input id="inTglProd" type="date"></label>
+          <label>Tanggal<input id="inTglProd" type="text" class="dateid" placeholder="dd/mm/yyyy"></label>
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnCekKapasitas" style="margin-bottom:1rem"><i class="fa-solid fa-calculator"></i> Cek Kapasitas Maks</button></label>
         </form>
         <div id="boxKapasitas" class="summary-box" style="display:none"></div>
@@ -285,8 +285,8 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
         <!-- Tabel Riwayat Lengkap -->
         <div class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Lengkap</div>
         <div class="row" style="margin-bottom:.6rem;align-items:end">
-          <label>Dari<input type="date" id="riwDari"></label>
-          <label>Sampai<input type="date" id="riwSampai"></label>
+          <label>Dari<input type="text" class="dateid" id="riwDari" placeholder="dd/mm/yyyy"></label>
+          <label>Sampai<input type="text" class="dateid" id="riwSampai" placeholder="dd/mm/yyyy"></label>
           <label>Item<select id="riwItemFilter"><option value="">Semua Item</option></select></label>
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatRiwayat" style="min-height:46px"><i class="fa-solid fa-refresh"></i> Muat</button></label>
           <label>&nbsp;<button type="button" class="btn btn-outline" id="btnExportRiwayat" style="min-height:46px"><i class="fa-solid fa-print"></i> Cetak</button></label>
@@ -300,7 +300,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
           <label>Nama Alat<input id="inAlatNama" placeholder="Mesin Press Cup / Blender / Gelas Ukur" required></label>
           <label>Kategori<select id="inAlatKategori"><option value="mesin">Mesin Berat (umur 5 thn)</option><option value="peralatan_kecil">Peralatan Kecil (umur 2 thn)</option><option value="perabot">Perabot / Furnitur (umur 5 thn)</option></select></label>
           <label>Harga Beli (Rp)<input id="inAlatHarga" type="number" min="0" placeholder="2500000" required></label>
-          <label>Tanggal Beli<input id="inAlatTgl" type="date"></label>
+          <label>Tanggal Beli<input id="inAlatTgl" type="text" class="dateid" placeholder="dd/mm/yyyy"></label>
           <label>Umur Manfaat (tahun)<input id="inAlatUmur" type="number" min="1" max="50" value="5"></label>
           <label>Sisa Nilai / Salvage (Rp)<input id="inAlatSisa" type="number" min="0" value="0"></label>
           <label>Kondisi<select id="inAlatKondisi"><option value="baik">Baik</option><option value="rusak">Rusak</option><option value="dijual">Dijual / Tidak Dipakai</option></select></label>
@@ -337,6 +337,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 <script type="module">
 import { sb, isConfigured, loadLocalConfig } from "../assets/supabaseClient.js?v=20261017";
 import { enhanceSelect } from "../assets/dropdown.js?v=2";
+import { getTgl, setTgl, setupDateInputs } from "../assets/dateid.js?v=1";
 await loadLocalConfig();
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -401,9 +402,10 @@ try {
     $("#inventoryApp").style.display = "";
     applyIdentity();
     ["inTipe","inSatuan","inMetode","inProdMenu","inBeliItem","inAlatKategori","inAlatKondisi"].forEach((id) => enhanceSelect(document.getElementById(id)));
-    $("#inTglBeli").value = todayISO();
-    $("#inTglProd").value = todayISO();
-    $("#inAlatTgl").value = todayISO();
+    setTgl($("#inTglBeli"), todayISO());
+    setTgl($("#inTglProd"), todayISO());
+    setTgl($("#inAlatTgl"), todayISO());
+    setupDateInputs();
     await loadAll();
     renderDashboard();
     renderDashboardExtras();
@@ -499,7 +501,7 @@ $("#formItem").onsubmit = async (e) => {
     tipe: $("#inTipe").value,
     satuan: $("#inSatuan").value,
     min_stock: Number($("#inMin").value) || 0,
-    expired_date: $("#inExpired").value || null
+    expired_date: getTgl($("#inExpired")) || null
   };
   if (!payload.nama) return toast("Nama wajib diisi", "error");
   const wasEdit = !!editingItemId;
@@ -534,7 +536,7 @@ $("#inventoryApp").addEventListener("click", async (e) => {
     $("#inTipe").value = it.tipe;
     $("#inSatuan").value = it.satuan;
     $("#inMin").value = it.min_stock;
-    $("#inExpired").value = it.expired_date || "";
+    setTgl($("#inExpired"), it.expired_date);
     enhanceSelect(document.getElementById("inTipe")).refresh();
     enhanceSelect(document.getElementById("inSatuan")).refresh();
     $("#btnSaveItem").textContent = "Update Item";
@@ -581,7 +583,7 @@ $("#inventoryApp").addEventListener("click", async (e) => {
     $("#inAlatNama").value = a.nama || "";
     $("#inAlatKategori").value = a.kategori || "mesin";
     $("#inAlatHarga").value = a.harga_beli || 0;
-    $("#inAlatTgl").value = a.tanggal_beli || todayISO();
+    setTgl($("#inAlatTgl"), a.tanggal_beli || todayISO());
     $("#inAlatUmur").value = a.umur_tahun || 5;
     $("#inAlatSisa").value = a.sisa_nilai || 0;
     $("#inAlatKondisi").value = a.kondisi || "baik";
@@ -636,7 +638,7 @@ async function fillBeliDropdowns() {
   el.innerHTML = list.length ? list.map(i => `<option value="${i.id}">${esc(i.nama)} (${esc(i.satuan)})</option>`).join("") : `<option value="">Bahan Kosong</option>`;
   enhanceSelect(el).refresh();
 }
-$("#inTglBeli").value = todayISO();
+setTgl($("#inTglBeli"), todayISO());
 
 function addBeliRow() {
   const id = $("#inBeliItem").value;
@@ -673,8 +675,8 @@ $("#btnSimpanBeli").onclick = async () => {
   btn.disabled = true; btn.textContent = "Menyimpan...";
   try {
     const supplier = $("#inSupplier").value.trim();
-    const tanggal = $("#inTglBeli").value || todayISO();
-    const expiredDate = $("#inBeliExpired").value || null;
+    const tanggal = getTgl($("#inTglBeli")) || todayISO();
+    const expiredDate = getTgl($("#inBeliExpired")) || null;
     const metode = $("#inMetode").value;
     const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
 
@@ -731,8 +733,8 @@ $("#btnSimpanBeli").onclick = async () => {
     beliRows = [];
     renderBeliRows();
     $("#formBeli").reset();
-    $("#inTglBeli").value = todayISO();
-    $("#inBeliExpired").value = "";
+    setTgl($("#inTglBeli"), todayISO());
+    setTgl($("#inBeliExpired"), "");
     enhanceSelect(document.getElementById("inMetode")).refresh();
     enhanceSelect(document.getElementById("inBeliItem")).refresh();
     $("#totalBeli").textContent = fmtRp(0);
@@ -841,7 +843,7 @@ $("#btnSimpanProd").onclick = async () => {
   if (btn.disabled) return;
   const menuId = $("#inProdMenu").value;
   const qtyProduksi = Number($("#inProdQty").value) || 0;
-  const tanggal = $("#inTglProd").value || todayISO();
+  const tanggal = getTgl($("#inTglProd")) || todayISO();
   if (!menuId) return toast("Pilih menu", "error");
   if (!(qtyProduksi > 0)) return toast("Qty produksi wajib > 0", "error");
   if (!prodRows.length) return toast("Rincian produksi kosong. Pilih menu lalu qty akan otomatis terisi.", "error");
@@ -983,7 +985,7 @@ $("#btnSimpanProd").onclick = async () => {
 
     toast("Produksi disimpan. Stok bahan dikurangi (FIFO), stok produk jadi & toko bertambah.");
     $("#formProd").reset();
-    $("#inTglProd").value = todayISO();
+    setTgl($("#inTglProd"), todayISO());
     $("#prodSatuanLabel").textContent = "(unit)";
     prodRows = [];
     await fillProdMenu(); // reload menu + auto-populate prodRows
@@ -1094,10 +1096,10 @@ async function loadRiwayatTab() {
   enhanceSelect(document.getElementById("inWasteItem")).refresh();
   enhanceSelect(document.getElementById("inOpnameItem")).refresh();
   enhanceSelect(document.getElementById("riwItemFilter")).refresh();
-  if (!$("#riwDari").value) {
+  if (!getTgl($("#riwDari"))) {
     const d30 = new Date(); d30.setDate(d30.getDate() - 30);
-    $("#riwDari").value = `${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,"0")}-${String(d30.getDate()).padStart(2,"0")}`;
-    $("#riwSampai").value = todayISO();
+    setTgl($("#riwDari"), `${d30.getFullYear()}-${String(d30.getMonth()+1).padStart(2,"0")}-${String(d30.getDate()).padStart(2,"0")}`);
+    setTgl($("#riwSampai"), todayISO());
   }
   loadRekapHariIni();
   loadGrafikPenggunaan();
@@ -1172,8 +1174,8 @@ async function loadGrafikPenggunaan() {
 }
 
 async function loadTabelRiwayat() {
-  const dari = $("#riwDari").value;
-  const sampai = $("#riwSampai").value;
+  const dari = getTgl($("#riwDari"));
+  const sampai = getTgl($("#riwSampai"));
   const itemFilter = $("#riwItemFilter").value;
   let q = sb().from("inventory_transactions").select("created_at,qty,harga_satuan,total,tipe,catatan,item_id,inventory_items(nama,satuan)").order("created_at", { ascending: false }).limit(200);
   if (dari) { const [y,m,d] = dari.split("-").map(Number); q = q.gte("created_at", new Date(y, m-1, d, 0, 0, 0).toISOString()); }
@@ -1342,7 +1344,7 @@ $("#btnExportRiwayat").onclick = () => {
     @media print{body{padding:1rem}}
   </style></head><body>
   <h1>Riwayat Stok - Vitaminum</h1>
-  <div class="meta">Periode: ${$("#riwDari").value || "semua"} s/d ${$("#riwSampai").value || "semua"} | Dicetak: ${new Date().toLocaleString("id-ID")}</div>
+  <div class="meta">Periode: ${getTgl($("#riwDari")) || "semua"} s/d ${getTgl($("#riwSampai")) || "semua"} | Dicetak: ${new Date().toLocaleString("id-ID")}</div>
   <table>${$("#tabelRiwayatStok").closest("table").outerHTML}</table>
   <script>setTimeout(()=>window.print(),300)<\/script>
   </body></html>`);
@@ -1535,7 +1537,7 @@ function resetAlatForm() {
   editingAlatId = null;
   $("#btnSaveAlat").textContent = "Simpan Alat";
   $("#btnCancelAlat").hidden = true;
-  $("#inAlatTgl").value = todayISO();
+  setTgl($("#inAlatTgl"), todayISO());
   $("#inAlatUmur").value = UMUR_DEFAULT[$("#inAlatKategori").value] || 5;
   enhanceSelect(document.getElementById("inAlatKategori")).refresh();
   enhanceSelect(document.getElementById("inAlatKondisi")).refresh();
@@ -1557,7 +1559,7 @@ $("#formAlat").onsubmit = async (e) => {
   if (!(umur > 0)) return toast("Umur manfaat harus > 0", "error");
   const payload = {
     nama, kategori: $("#inAlatKategori").value, harga_beli: harga,
-    tanggal_beli: $("#inAlatTgl").value || todayISO(),
+    tanggal_beli: getTgl($("#inAlatTgl")) || todayISO(),
     umur_tahun: umur, sisa_nilai: Number($("#inAlatSisa").value) || 0,
     kondisi: $("#inAlatKondisi").value, catatan: $("#inAlatCatatan").value.trim() || null
   };
