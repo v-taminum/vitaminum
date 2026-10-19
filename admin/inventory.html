@@ -342,6 +342,7 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
 const fmt2 = (v) => (Number(v) || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
 function toast(msg, icon = "success") { Toast.fire({ icon, title: msg }); }
 async function askDelete(title, text) {
@@ -473,10 +474,6 @@ function fmtDate(d) {
   const dd = new Date(d + "T00:00:00");
   return dd.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
-const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-};
 
 // ---------- Master Item ----------
 async function renderItems() {
