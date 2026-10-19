@@ -486,7 +486,7 @@ async function renderItems() {
   if (!items.length) { tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada item.</td></tr>`; return; }
   tb.innerHTML = items.map((i) => `<tr>
     <td data-l="Nama" class="cell-main"><b>${esc(i.nama)}</b></td>
-    <td data-l="Tipe"><span class="badge">${esc(i.tipe)}</span></td>
+    <td data-l="Tipe"><span class="badge">${i.tipe === "operasional" ? "Operasional & Kemasan" : i.tipe === "bahan_baku" ? "Bahan Baku" : i.tipe === "produk_jadi" ? "Produk Jadi" : esc(i.tipe)}</span></td>
     <td data-l="Stok">${fmt2(i.current_stock)} ${esc(i.satuan)}</td>
     <td data-l="Min">${fmt2(i.min_stock)} ${esc(i.satuan)}</td>
     <td data-l="Expired">${i.expired_date ? fmtDate(i.expired_date) : "-"} </td>
