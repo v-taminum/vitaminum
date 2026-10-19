@@ -275,7 +275,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 
         <!-- Rekap Penggunaan Bahan Hari Ini -->
         <div class="section-title"><i class="fa-solid fa-calendar-day"></i> Rekap Penggunaan Bahan Hari Ini</div>
-        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Masuk</th><th>Keluar (Produksi)</th><th>Waste</th><th>Net</th></tr></thead><tbody id="tabelRekapHariIni"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Item</th><th>Masuk</th><th>Keluar (Produksi)</th><th>Waste</th><th>Opname</th><th>Net</th></tr></thead><tbody id="tabelRekapHariIni"></tbody></table></div>
 
         <!-- Grafik Penggunaan Bahan -->
         <div class="section-title"><i class="fa-solid fa-chart-line"></i> Grafik Penggunaan Bahan (30 Hari Terakhir)</div>
@@ -399,9 +399,9 @@ try {
     $("#inventoryApp").style.display = "";
     applyIdentity();
     ["inTipe","inSatuan","inMetode","inProdMenu","inBeliItem","inAlatKategori","inAlatKondisi"].forEach((id) => enhanceSelect(document.getElementById(id)));
-    $("#inTglBeli").valueAsDate = new Date();
-    $("#inTglProd").valueAsDate = new Date();
-    $("#inAlatTgl").valueAsDate = new Date();
+    $("#inTglBeli").value = todayISO();
+    $("#inTglProd").value = todayISO();
+    $("#inAlatTgl").value = todayISO();
     await loadAll();
     renderDashboard();
     renderDashboardExtras();
@@ -436,15 +436,15 @@ async function loadAll() {
   menus = (mn || []);
 }
 async function loadBatches(itemId) {
-  const { data, error } = await sb().from("inventory_batches").select("*").eq("item_id", itemId).order("received_date", { ascending: true });
-  if (error) return [];
+  const { data, error } = await sb().from("inventory_batches").select("*").eq("item_id", itemId).gt("qty_remaining", 0).order("received_date", { ascending: true }).order("id", { ascending: true });
+  if (error) { console.warn("loadBatches error:", error.message); return []; }
   return data || [];
 }
 
 // ---------- Render Dashboard ----------
 async function renderDashboard() {
   const totalItems = items.length;
-  const stokRendah = items.filter(i => i.current_stock <= i.min_stock);
+  const stokRendah = items.filter(i => i.min_stock > 0 && i.current_stock <= i.min_stock);
   const today = new Date();
   const limit = new Date(); limit.setDate(today.getDate() + 3);
   const expiredSoon = items.filter(i => i.tipe === "produk_jadi" && i.expired_date && new Date(i.expired_date) <= limit);
@@ -637,7 +637,7 @@ async function fillBeliDropdowns() {
   el.innerHTML = list.length ? list.map(i => `<option value="${i.id}">${esc(i.nama)} (${esc(i.satuan)})</option>`).join("") : `<option value="">Bahan Kosong</option>`;
   enhanceSelect(el).refresh();
 }
-$("#inTglBeli").valueAsDate = new Date();
+$("#inTglBeli").value = todayISO();
 
 function addBeliRow() {
   const id = $("#inBeliItem").value;
@@ -669,49 +669,80 @@ function renderBeliRows() {
 
 $("#btnSimpanBeli").onclick = async () => {
   if (!beliRows.length) return toast("Isi rincian pembelian dulu", "error");
-  const supplier = $("#inSupplier").value.trim();
-  const tanggal = $("#inTglBeli").value || todayISO();
-  const metode = $("#inMetode").value;
-  const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
-  const { data: pb, error: e1 } = await sb().from("pembelian_bahan").insert({ supplier, tanggal, total_bayar: total, metode_pembayaran: metode, status: "selesai" }).select("id").single();
-  if (e1) return toast(e1.message, "error");
-  const batchRows = [];
-  const itemUpdates = [];
-  const transRows = [];
-  for (const r of beliRows) {
-    const { data: b, error: eb } = await sb().from("inventory_batches").insert({
-      item_id: r.inventory_item_id,
-      qty_remaining: r.qty,
-      cost_per_unit: r.harga_satuan,
-      expired_date: null,
-      received_date: tanggal
-    }).select("id").single();
-    if (eb) return toast(eb.message, "error");
-    batchRows.push({ pembelian_id: pb.id, inventory_item_id: r.inventory_item_id, batch_id: b.id, qty: r.qty, satuan: r.item_satuan, harga_satuan: r.harga_satuan, subtotal: r.subtotal });
-    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (items.find(x=>String(x.id)===String(r.inventory_item_id)).current_stock || 0) + r.qty }).eq("id", r.inventory_item_id));
-    transRows.push({ item_id: r.inventory_item_id, batch_id: b.id, tipe: "pembelian_masuk", qty: r.qty, harga_satuan: r.harga_satuan, total: r.subtotal, reference_type: "pembelian", reference_id: pb.id, catatan: `Pembelian dari ${supplier || "-"}` });
+  const btn = $("#btnSimpanBeli");
+  if (btn.disabled) return;
+  btn.disabled = true; btn.textContent = "Menyimpan...";
+  try {
+    const supplier = $("#inSupplier").value.trim();
+    const tanggal = $("#inTglBeli").value || todayISO();
+    const metode = $("#inMetode").value;
+    const total = beliRows.reduce((a,r) => a + r.subtotal, 0);
+
+    // Gabungkan item duplikat (qty & subtotal diakumulasi, batch tetap terpisah)
+    const mergedMap = {};
+    for (const r of beliRows) {
+      if (!mergedMap[r.inventory_item_id]) mergedMap[r.inventory_item_id] = { ...r, qty: 0, subtotal: 0 };
+      mergedMap[r.inventory_item_id].qty += r.qty;
+      mergedMap[r.inventory_item_id].subtotal += r.subtotal;
+    }
+
+    const { data: pb, error: e1 } = await sb().from("pembelian_bahan").insert({ supplier, tanggal, total_bayar: total, metode_pembayaran: metode, status: "selesai" }).select("id").single();
+    if (e1) { toast(e1.message, "error"); return; }
+
+    const batchRows = [];
+    const transRows = [];
+    for (const r of beliRows) {
+      const { data: b, error: eb } = await sb().from("inventory_batches").insert({
+        item_id: r.inventory_item_id,
+        qty_remaining: r.qty,
+        cost_per_unit: r.harga_satuan,
+        expired_date: null,
+        received_date: tanggal
+      }).select("id").single();
+      if (eb) { toast("Gagal buat batch: " + eb.message, "error"); return; }
+      batchRows.push({ pembelian_id: pb.id, inventory_item_id: r.inventory_item_id, batch_id: b.id, qty: r.qty, satuan: r.item_satuan, harga_satuan: r.harga_satuan, subtotal: r.subtotal });
+      transRows.push({ item_id: r.inventory_item_id, batch_id: b.id, tipe: "pembelian_masuk", qty: r.qty, harga_satuan: r.harga_satuan, total: r.subtotal, reference_type: "pembelian", reference_id: pb.id, catatan: `Pembelian dari ${supplier || "-"}` });
+    }
+
+    const { error: e2 } = await sb().from("pembelian_items").insert(batchRows);
+    if (e2) { toast("Gagal simpan item pembelian: " + e2.message, "error"); return; }
+
+    // Update stok — pakai merged (per item) dan cek error
+    const stockResults = await Promise.all(
+      Object.values(mergedMap).map(r => {
+        const itm = items.find(x => String(x.id) === String(r.inventory_item_id));
+        const base = itm ? Number(itm.current_stock || 0) : 0;
+        return sb().from("inventory_items").update({ current_stock: base + r.qty }).eq("id", r.inventory_item_id);
+      })
+    );
+    const stockErrs = stockResults.filter(r => r.error);
+    if (stockErrs.length) toast(`Sebagian stok gagal diupdate: ${stockErrs[0].error.message}`, "warn");
+
+    const { error: e3 } = await sb().from("inventory_transactions").insert(transRows);
+    if (e3) { toast("Gagal catat transaksi: " + e3.message, "warn"); }
+
+    // kas keluar
+    const saldo = await getSaldoKas(tanggal);
+    const { error: eKeu } = await sb().from("keuangan").insert({ tipe: "pengeluaran", kategori: "bahan", jumlah: -total, saldo_akhir: saldo - total, tanggal, referensi_type: "pembelian", referensi_id: pb.id, catatan: `Pembelian bahan dari ${supplier || "-"}` });
+    if (eKeu) toast("Pembelian tersimpan, tapi kas gagal dicatat: " + eKeu.message, "warn");
+
+    // auto-sync harga HPP dari weighted average batch tersisa
+    await syncHPPDariBatch(beliRows.map(r => r.inventory_item_id));
+    beliRows = [];
+    renderBeliRows();
+    $("#formBeli").reset();
+    $("#inTglBeli").value = todayISO();
+    enhanceSelect(document.getElementById("inMetode")).refresh();
+    enhanceSelect(document.getElementById("inBeliItem")).refresh();
+    $("#totalBeli").textContent = fmtRp(0);
+    toast("Pembelian disimpan dan stok ditambahkan (FIFO batch)");
+    renderItems();
+    renderDashboard();
+  } catch (err) {
+    toast("Error: " + err.message, "error");
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan Pembelian';
   }
-  const { error: e2 } = await sb().from("pembelian_items").insert(batchRows);
-  if (e2) return toast(e2.message, "error");
-  await Promise.all(itemUpdates);
-  const { error: e3 } = await sb().from("inventory_transactions").insert(transRows);
-  if (e3) return toast(e3.message, "error");
-  // kas keluar
-  const saldo = await getSaldoKas();
-  const { error: eKeu } = await sb().from("keuangan").insert({ tipe: "pengeluaran", kategori: "bahan", jumlah: -total, saldo_akhir: saldo - total, tanggal, referensi_type: "pembelian", referensi_id: pb.id, catatan: `Pembelian bahan dari ${supplier || "-"}` });
-  if (eKeu) toast("Pembelian tersimpan, tapi kas gagal dicatat: " + eKeu.message, "warn");
-  // auto-sync harga HPP dari weighted average batch tersisa
-  await syncHPPDariBatch(beliRows.map(r => r.inventory_item_id));
-  beliRows = [];
-  renderBeliRows();
-  $("#formBeli").reset();
-  $("#inTglBeli").valueAsDate = new Date();
-  enhanceSelect(document.getElementById("inMetode")).refresh();
-  enhanceSelect(document.getElementById("inBeliItem")).refresh();
-  $("#totalBeli").textContent = fmtRp(0);
-  toast("Pembelian disimpan dan stok ditambahkan (FIFO batch)");
-  renderItems();
-  renderDashboard();
 };
 
 // ---------- Produksi ----------
@@ -719,6 +750,27 @@ async function fillProdMenu() {
   const el = $("#inProdMenu");
   el.innerHTML = menus.length ? menus.map(m => `<option value="${m.id}">${esc(m.nama)} (Margin ${m.margin}%)</option>`).join("") : `<option value="">Menu Kosong</option>`;
   enhanceSelect(el).refresh();
+  // Auto-populate prodRows dari menu pertama (agar tidak kosong saat klik Simpan)
+  prodRows = [];
+  if (menus.length) {
+    const firstMenuId = menus[0].id;
+    const selectedMenu = menus[0];
+    $("#prodSatuanLabel").textContent = selectedMenu?.satuan ? `(${selectedMenu.satuan})` : "(unit)";
+    const { data: resep } = await sb().from("hpp_resep").select("*").eq("menu_id", firstMenuId);
+    for (const r of (resep || [])) {
+      const it = items.find(x => String(x.nama || "").toLowerCase() === String(r.item_nama || "").toLowerCase());
+      prodRows.push({
+        inventory_item_id: it ? it.id : null,
+        item_nama: it ? it.nama : r.item_nama,
+        item_satuan: it ? it.satuan : r.item_satuan,
+        qty_per_unit: Number(r.qty) || 0,
+        qty_total: 0,
+        harga_satuan: Number(r.item_harga) || 0,
+        subtotal: 0
+      });
+    }
+    renderProdRows();
+  }
 }
 async function hitungKapasitas() {
   const menuId = $("#inProdMenu").value;
@@ -784,12 +836,14 @@ function renderProdRows() {
 $("#inProdQty").onchange = renderProdRows;
 
 $("#btnSimpanProd").onclick = async () => {
+  const btn = $("#btnSimpanProd");
+  if (btn.disabled) return;
   const menuId = $("#inProdMenu").value;
   const qtyProduksi = Number($("#inProdQty").value) || 0;
   const tanggal = $("#inTglProd").value || todayISO();
   if (!menuId) return toast("Pilih menu", "error");
   if (!(qtyProduksi > 0)) return toast("Qty produksi wajib > 0", "error");
-  if (!prodRows.length) return toast("Rincian produksi kosong", "error");
+  if (!prodRows.length) return toast("Rincian produksi kosong. Pilih menu lalu qty akan otomatis terisi.", "error");
 
   // Hitung total HPP dari view hpp_menu_kalkulasi (snapshot)
   const { data: kalk, error: ek } = await sb().from("hpp_menu_kalkulasi").select("total_hpp,harga_jual").eq("menu_id", menuId).single();
@@ -797,128 +851,149 @@ $("#btnSimpanProd").onclick = async () => {
   const hppSatuan = Number(kalk?.total_hpp || 0);
   const totalHPP = hppSatuan * qtyProduksi;
 
-  // Cek stok bahan cukup (FIFO sederhana)
+  // Pre-check: load semua batch dulu, pastikan FIFO cukup
+  const batchCache = {};
   for (const r of prodRows) {
     if (!r.inventory_item_id) {
       return toast(`Item "${r.item_nama}" belum terlink ke Inventory. Buka tab Master Item dan pastikan nama item di HPP sama dengan di Inventory.`, "error");
     }
     const it = items.find(x => String(x.id) === String(r.inventory_item_id));
     if (!it || it.current_stock < r.qty_total) {
-      return toast(`Stok ${esc(r.item_nama)} tidak cukup untuk produksi ${qtyProduksi} unit`, "error");
+      return toast(`Stok ${r.item_nama} tidak cukup. Butuh ${fmt2(r.qty_total)}, tersedia ${fmt2(it?.current_stock || 0)}.`, "error");
+    }
+    // Load batches dan cek total tersedia
+    const batches = await loadBatches(r.inventory_item_id);
+    batchCache[r.inventory_item_id] = batches;
+    const totalTersedia = batches.reduce((s, b) => s + Number(b.qty_remaining || 0), 0);
+    if (totalTersedia < r.qty_total) {
+      return toast(`Batch ${r.item_nama} tidak cukup. Butuh ${fmt2(r.qty_total)}, tersedia di batch ${fmt2(totalTersedia)}.`, "error");
     }
   }
 
-  const { data: prd, error: e1 } = await sb().from("produksi").insert({
-    menu_id: menuId,
-    nama_batch: `BATCH-${tanggal}-${Math.floor(Math.random()*1000)}`,
-    qty_produksi: qtyProduksi,
-    hpp_satuan_saat_produksi: hppSatuan,
-    total_hpp_digunakan: totalHPP,
-    tanggal,
-    status: "selesai"
-  }).select("id").single();
-  if (e1) return toast(e1.message, "error");
+  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-gears"></i> Memproses...';
+  try {
+    const { data: prd, error: e1 } = await sb().from("produksi").insert({
+      menu_id: menuId,
+      nama_batch: `BATCH-${tanggal}-${Math.floor(Math.random()*1000)}`,
+      qty_produksi: qtyProduksi,
+      hpp_satuan_saat_produksi: hppSatuan,
+      total_hpp_digunakan: totalHPP,
+      tanggal,
+      status: "selesai"
+    }).select("id").single();
+    if (e1) { toast(e1.message, "error"); return; }
 
-  const prodItemRows = [];
-  const itemUpdates = [];
-  const transRows = [];
-  for (const r of prodRows) {
-    // FIFO: kurangi dari batch terlama
-    let sisa = r.qty_total;
-    const batches = await loadBatches(r.inventory_item_id);
-    for (const b of batches) {
-      if (sisa <= 0) break;
-      const ambil = Math.min(Number(b.qty_remaining || 0), sisa);
-      const { error: eFifo } = await sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id);
-      if (eFifo) console.warn("FIFO batch update gagal:", eFifo.message);
-      sisa -= ambil;
-      prodItemRows.push({
-        produksi_id: prd.id,
-        inventory_item_id: r.inventory_item_id,
-        batch_id: b.id,
-        item_nama_snapshot: r.item_nama,
-        item_satuan_snapshot: r.item_satuan,
-        qty_digunakan: ambil,
-        harga_satuan_snapshot: Number(b.cost_per_unit || 0),
-        subtotal: ambil * Number(b.cost_per_unit || 0)
-      });
+    const prodItemRows = [];
+    const itemUpdates = [];
+    const transRows = [];
+    let fifoShortfall = false;
+    for (const r of prodRows) {
+      // FIFO: kurangi dari batch terlama (pakai cache)
+      let sisa = r.qty_total;
+      const batches = batchCache[r.inventory_item_id] || [];
+      for (const b of batches) {
+        if (sisa <= 0) break;
+        const ambil = Math.min(Number(b.qty_remaining || 0), sisa);
+        const { error: eFifo } = await sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id);
+        if (eFifo) { console.warn("FIFO batch update gagal:", eFifo.message); fifoShortfall = true; }
+        sisa -= ambil;
+        prodItemRows.push({
+          produksi_id: prd.id,
+          inventory_item_id: r.inventory_item_id,
+          batch_id: b.id,
+          item_nama_snapshot: r.item_nama,
+          item_satuan_snapshot: r.item_satuan,
+          qty_digunakan: ambil,
+          harga_satuan_snapshot: Number(b.cost_per_unit || 0),
+          subtotal: ambil * Number(b.cost_per_unit || 0)
+        });
+        transRows.push({
+          item_id: r.inventory_item_id,
+          batch_id: b.id,
+          tipe: "produksi_keluar",
+          qty: -ambil,
+          harga_satuan: Number(b.cost_per_unit || 0),
+          total: -ambil * Number(b.cost_per_unit || 0),
+          reference_type: "produksi",
+          reference_id: prd.id,
+          catatan: `Digunakan produksi ${r.item_nama}`
+        });
+      }
+      if (sisa > 0) { fifoShortfall = true; console.warn(`FIFO shortfall: ${r.item_nama} sisa ${sisa}`); }
+      const itProd = items.find(x => String(x.id) === String(r.inventory_item_id));
+      itemUpdates.push(sb().from("inventory_items").update({ current_stock: (itProd?.current_stock || 0) - r.qty_total }).eq("id", r.inventory_item_id));
+    }
+
+    // Tambah stok produk jadi (menu)
+    const menu = menus.find(m => String(m.id) === String(menuId));
+    const jadiItem = items.find(i => i.tipe === "produk_jadi" && String(i.nama || "").toLowerCase() === String(menu?.nama || "").toLowerCase());
+    let newBatchId = null;
+    if (jadiItem) {
+      const { data: newBch, error: eBch } = await sb().from("inventory_batches").insert({
+        item_id: jadiItem.id,
+        qty_remaining: qtyProduksi,
+        cost_per_unit: hppSatuan,
+        expired_date: null,
+        received_date: tanggal
+      }).select("id").single();
+      if (eBch) toast("Batch produk jadi gagal dibuat: " + eBch.message, "warn");
+      else newBatchId = newBch.id;
+
+      const { error: eJadi } = await sb().from("inventory_items").update({ current_stock: (jadiItem.current_stock || 0) + qtyProduksi }).eq("id", jadiItem.id);
+      if (eJadi) toast("Stok produk jadi gagal diupdate: " + eJadi.message, "warn");
+
       transRows.push({
-        item_id: r.inventory_item_id,
-        batch_id: b.id,
-        tipe: "produksi_keluar",
-        qty: -ambil,
-        harga_satuan: Number(b.cost_per_unit || 0),
-        total: -ambil * Number(b.cost_per_unit || 0),
+        item_id: jadiItem.id,
+        batch_id: newBatchId,
+        tipe: "produksi_masuk",
+        qty: qtyProduksi,
+        harga_satuan: hppSatuan,
+        total: totalHPP,
         reference_type: "produksi",
         reference_id: prd.id,
-        catatan: `Digunakan produksi ${esc(r.item_nama)}`
+        catatan: `Hasil produksi ${menu?.nama || "?"}`
       });
-    }
-    const itProd = items.find(x => String(x.id) === String(r.inventory_item_id));
-    itemUpdates.push(sb().from("inventory_items").update({ current_stock: (itProd?.current_stock || 0) - r.qty_total }).eq("id", r.inventory_item_id));
-  }
-  // Tambah stok produk jadi (menu)
-  const menu = menus.find(m => String(m.id) === String(menuId));
-  const jadiItem = items.find(i => i.tipe === "produk_jadi" && String(i.nama || "").toLowerCase() === String(menu?.nama || "").toLowerCase());
-  if (jadiItem) {
-    const { error: eJadi } = await sb().from("inventory_items").update({ current_stock: (jadiItem.current_stock || 0) + qtyProduksi }).eq("id", jadiItem.id);
-    if (eJadi) toast("Stok produk jadi gagal diupdate: " + eJadi.message, "warn");
-    const { error: eBch } = await sb().from("inventory_batches").insert({
-      item_id: jadiItem.id,
-      qty_remaining: qtyProduksi,
-      cost_per_unit: hppSatuan,
-      expired_date: null,
-      received_date: tanggal
-    });
-    if (eBch) toast("Batch produk jadi gagal dibuat: " + eBch.message, "warn");
-    transRows.push({
-      item_id: jadiItem.id,
-      batch_id: null,
-      tipe: "produksi_masuk",
-      qty: qtyProduksi,
-      harga_satuan: hppSatuan,
-      total: totalHPP,
-      reference_type: "produksi",
-      reference_id: prd.id,
-      catatan: `Hasil produksi ${esc(menu.nama)}`
-    });
-  } else {
-    toast("Peringatan: produk jadi untuk menu ini belum ada di inventory_items. Stok produk jadi tidak bertambah.", "warn");
-  }
-  const { error: ePi } = await sb().from("produksi_items").insert(prodItemRows);
-  if (ePi) toast("Rincian produksi gagal dicatat: " + ePi.message, "warn");
-  const results = await Promise.all(itemUpdates);
-  const failUpd = results.find(r => r.error);
-  if (failUpd) toast("Stok item gagal diupdate: " + failUpd.error.message, "warn");
-  const { error: eTr } = await sb().from("inventory_transactions").insert(transRows);
-  if (eTr) toast("Transaksi stok gagal dicatat: " + eTr.message, "warn");
-
-  // Sync stok ke products (toko) berdasarkan hpp_menu_id, fallback ke nama
-  try {
-    let prodRow = null;
-    const { data: byMenu, error: eProd1 } = await sb().from("products").select("id,stock").eq("hpp_menu_id", menuId).limit(1);
-    if (!eProd1 && byMenu?.length) {
-      prodRow = byMenu[0];
     } else {
-      const { data: byName, error: eProd2 } = await sb().from("products").select("id,stock").eq("name", menu?.nama || "").limit(1);
-      if (!eProd2 && byName?.length) prodRow = byName[0];
+      toast(`Peringatan: item produk jadi "${menu?.nama || "?"}" belum ada di inventory_items (tipe: Produk Jadi, nama sama persis). Stok produk jadi tidak bertambah.`, "warn");
     }
-    if (prodRow) {
-      const { error: eUpd } = await sb().from("products").update({ stock: (Number(prodRow.stock) || 0) + qtyProduksi }).eq("id", prodRow.id);
-      if (eUpd) toast("Stok produk toko gagal diupdate: " + eUpd.message, "warn");
-    }
-  } catch {}
 
-  // Kas: produksi tidak langsung keluar kas (hpp sudah dibeli sebelumnya), tapi catat HPP digunakan sebagai internal
-  toast("Produksi disimpan. Stok bahan dikurangi (FIFO), stok produk jadi & toko bertambah.");
-  $("#formProd").reset();
-  $("#inTglProd").valueAsDate = new Date();
-  $("#prodSatuanLabel").textContent = "(unit)";
-  enhanceSelect(document.getElementById("inProdMenu")).refresh();
-  prodRows = [];
-  renderProdRows();
-  renderItems();
-  renderDashboard();
+    const { error: ePi } = await sb().from("produksi_items").insert(prodItemRows);
+    if (ePi) toast("Rincian produksi gagal dicatat: " + ePi.message, "warn");
+    const results = await Promise.all(itemUpdates);
+    const failUpd = results.find(r => r.error);
+    if (failUpd) toast("Stok item gagal diupdate: " + failUpd.error.message, "warn");
+    const { error: eTr } = await sb().from("inventory_transactions").insert(transRows);
+    if (eTr) toast("Transaksi stok gagal dicatat: " + eTr.message, "warn");
+
+    // Sync stok ke products (toko) berdasarkan hpp_menu_id, fallback ke nama
+    try {
+      let prodRow = null;
+      const { data: byMenu } = await sb().from("products").select("id,stock").eq("hpp_menu_id", menuId).limit(1);
+      if (byMenu?.length) prodRow = byMenu[0];
+      else {
+        const { data: byName } = await sb().from("products").select("id,stock").eq("name", menu?.nama || "").limit(1);
+        if (byName?.length) prodRow = byName[0];
+      }
+      if (prodRow) {
+        const { error: eUpd } = await sb().from("products").update({ stock: (Number(prodRow.stock) || 0) + qtyProduksi }).eq("id", prodRow.id);
+        if (eUpd) toast("Stok produk toko gagal diupdate: " + eUpd.message, "warn");
+      }
+    } catch (eProd) { console.warn("Sync products error:", eProd?.message); }
+
+    toast("Produksi disimpan. Stok bahan dikurangi (FIFO), stok produk jadi & toko bertambah.");
+    $("#formProd").reset();
+    $("#inTglProd").value = todayISO();
+    $("#prodSatuanLabel").textContent = "(unit)";
+    prodRows = [];
+    await fillProdMenu(); // reload menu + auto-populate prodRows
+    renderProdRows();
+    renderItems();
+    renderDashboard();
+  } catch (err) {
+    toast("Error produksi: " + err.message, "error");
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-gears"></i> Simpan Produksi';
+  }
 };
 
 // ---------- Chart helper ----------
@@ -949,12 +1024,12 @@ async function renderDashboardExtras() {
 
   // Estimasi pemakaian/hari dari resep × produksi rata-rata
   const [{ data: resepRows }, { data: prodRows }] = await Promise.all([
-    sb().from("hpp_resep").select("item_id,qty_per_unit"),
+    sb().from("hpp_resep").select("item_id,qty"),
     sb().from("produksi").select("qty_produksi,tanggal").gte("tanggal", tgl30ISO).eq("status", "selesai")
   ]);
   const prodPerHari = (prodRows || []).length > 0 ? (prodRows || []).reduce((a,p) => a + Number(p.qty_produksi || 0), 0) / 30 : 0;
   const resepMap = {};
-  (resepRows || []).forEach(r => { resepMap[r.item_id] = (resepMap[r.item_id] || 0) + Number(r.qty_per_unit || 0); });
+  (resepRows || []).forEach(r => { resepMap[r.item_id] = (resepMap[r.item_id] || 0) + Number(r.qty || 0); });
 
   // Reorder suggestion
   const tbR = $("#tabelReorder");
@@ -1030,26 +1105,27 @@ async function loadRiwayatTab() {
 
 async function loadRekapHariIni() {
   const today = todayISO();
-  const start = new Date(); const [y,m,d] = today.split("-").map(Number);
+  const [y,m,d] = today.split("-").map(Number);
   const startISO = new Date(y, m-1, d, 0, 0, 0).toISOString();
   const endISO = new Date(y, m-1, d, 23, 59, 59).toISOString();
   const { data: trx } = await sb().from("inventory_transactions").select("item_id,qty,tipe").gte("created_at", startISO).lte("created_at", endISO);
   const map = {};
   (trx || []).forEach(t => {
-    if (!map[t.item_id]) map[t.item_id] = { masuk: 0, produksi: 0, waste: 0 };
+    if (!map[t.item_id]) map[t.item_id] = { masuk: 0, produksi: 0, waste: 0, penyesuaian: 0 };
     const q = Math.abs(Number(t.qty || 0));
     if (t.tipe === "pembelian_masuk") map[t.item_id].masuk += q;
     else if (t.tipe === "produksi_keluar") map[t.item_id].produksi += q;
     else if (t.tipe === "waste") map[t.item_id].waste += q;
+    else if (t.tipe === "penyesuaian") map[t.item_id].penyesuaian += Number(t.qty || 0);
   });
   const tb = $("#tabelRekapHariIni");
   const entries = Object.entries(map);
   tb.innerHTML = !entries.length
-    ? `<tr><td colspan="5" class="muted" style="text-align:center">Belum ada transaksi hari ini.</td></tr>`
+    ? `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada transaksi hari ini.</td></tr>`
     : entries.map(([id, v]) => {
       const itm = items.find(x => String(x.id) === String(id));
-      const net = v.masuk - v.produksi - v.waste;
-      return `<tr><td data-l="Item" class="cell-main"><b>${esc(itm?.nama || "?")}</b></td><td data-l="Masuk" style="color:var(--success)">${fmt2(v.masuk)}</td><td data-l="Produksi" style="color:var(--danger)">${fmt2(v.produksi)}</td><td data-l="Waste" style="color:var(--danger)">${v.waste > 0 ? fmt2(v.waste) : "-"}</td><td data-l="Net"><b>${fmt2(net)}</b></td></tr>`;
+      const net = v.masuk - v.produksi - v.waste + v.penyesuaian;
+      return `<tr><td data-l="Item" class="cell-main"><b>${esc(itm?.nama || "?")}</b></td><td data-l="Masuk" style="color:var(--success)">${fmt2(v.masuk)}</td><td data-l="Produksi" style="color:var(--danger)">${fmt2(v.produksi)}</td><td data-l="Waste" style="color:var(--danger)">${v.waste > 0 ? fmt2(v.waste) : "-"}</td><td data-l="Opname" style="color:${v.penyesuaian !== 0 ? 'var(--warning)' : 'inherit'}">${v.penyesuaian !== 0 ? (v.penyesuaian > 0 ? "+" : "") + fmt2(v.penyesuaian) : "-"}</td><td data-l="Net"><b>${fmt2(net)}</b></td></tr>`;
     }).join("");
 }
 
@@ -1106,7 +1182,7 @@ async function loadTabelRiwayat() {
   if (error) return toast(error.message, "error");
   const tb = $("#tabelRiwayatStok");
   const tipeBadge = (t) => {
-    const map = { pembelian_masuk: ["ok","Beli Masuk"], produksi_masuk: ["ok","Produksi Masuk"], produksi_keluar: ["warn","Produksi Keluar"], waste: ["err","Waste"] };
+    const map = { pembelian_masuk: ["ok","Beli Masuk"], produksi_masuk: ["ok","Produksi Masuk"], produksi_keluar: ["warn","Produksi Keluar"], waste: ["err","Waste"], penyesuaian: ["","Opname"] };
     const [cls, label] = map[t] || ["", t];
     return `<span class="badge ${cls}">${label}</span>`;
   };
@@ -1130,23 +1206,40 @@ $("#btnAddWaste").onclick = async () => {
 
   if (!await askDelete("Catat waste?", `${fmt2(qty)} ${itm.satuan} ${itm.nama} akan dibuang (${alasan}). Stok berkurang.`)) return;
 
-  // FIFO deduction
-  const { data: batches } = await sb().from("inventory_batches").select("id,qty_remaining").eq("item_id", itemId).gt("qty_remaining", 0).order("received_date");
-  let sisa = qty;
+  // FIFO: hitung biaya waste dari batch + siapkan update
+  const { data: batches, error: batchErr } = await sb().from("inventory_batches").select("id,qty_remaining,cost_per_unit").eq("item_id", itemId).gt("qty_remaining", 0).order("received_date", { ascending: true }).order("id", { ascending: true });
+  if (batchErr) return toast("Gagal load batch: " + batchErr.message, "error");
+  let sisa = qty, totalBiaya = 0;
   const batchUpdates = [];
   for (const b of (batches || [])) {
     if (sisa <= 0) break;
     const ambil = Math.min(Number(b.qty_remaining || 0), sisa);
+    totalBiaya += ambil * Number(b.cost_per_unit || 0);
     batchUpdates.push(sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id));
     sisa -= ambil;
   }
-  await Promise.all(batchUpdates);
-  await sb().from("inventory_items").update({ current_stock: Number(itm.current_stock) - qty }).eq("id", itemId);
-  const { error } = await sb().from("inventory_transactions").insert({
-    item_id: itemId, tipe: "waste", qty: -qty, harga_satuan: 0, total: 0,
+  // 1. Insert transaksi DULU (audit record) — qty negatif, harga dari batch
+  const { error: txErr } = await sb().from("inventory_transactions").insert({
+    item_id: itemId, tipe: "waste", qty: -qty,
+    harga_satuan: qty > 0 ? totalBiaya / qty : 0, total: totalBiaya,
     catatan: `Waste: ${alasan}`
   });
-  if (error) return toast(error.message, "error");
+  if (txErr) return toast("Gagal catat waste: " + txErr.message, "error");
+  // 2. Update batch FIFO
+  await Promise.all(batchUpdates);
+  // 3. Update stok
+  const { error: stockErr } = await sb().from("inventory_items").update({ current_stock: Number(itm.current_stock) - qty }).eq("id", itemId);
+  if (stockErr) console.warn("Gagal update stok:", stockErr.message);
+  // 4. Catat sebagai kerugian di keuangan
+  if (totalBiaya > 0) {
+    const tgl = todayISO();
+    const prevSaldo = await getSaldoKas(tgl);
+    await sb().from("keuangan").insert({
+      tipe: "waste", kategori: "waste", jumlah: -totalBiaya,
+      saldo_akhir: prevSaldo - totalBiaya, tanggal: tgl,
+      referensi_type: "inventory", catatan: `Waste: ${fmt2(qty)} ${itm.satuan} ${itm.nama} (${alasan})`
+    }).catch(() => {});
+  }
   $("#inWasteQty").value = "";
   toast("Waste dicatat");
   await loadAll();
@@ -1173,23 +1266,58 @@ $("#inOpnameFisik").oninput = () => {
 };
 $("#btnAddOpname").onclick = async () => {
   const itemId = $("#inOpnameItem").value;
-  const fisik = Number($("#inOpnameFisik").value) || 0;
+  const rawFisik = $("#inOpnameFisik").value.trim();
   if (!itemId) return toast("Pilih item", "error");
-  if (!(fisik >= 0)) return toast("Stok fisik tidak valid", "error");
+  if (rawFisik === "" || isNaN(Number(rawFisik))) return toast("Stok fisik wajib diisi dengan angka", "error");
+  const fisik = Number(rawFisik);
+  if (fisik < 0) return toast("Stok fisik tidak boleh negatif", "error");
+  // Refresh data terbaru agar diff akurat
+  await loadAll();
   const itm = items.find(x => String(x.id) === String(itemId));
   if (!itm) return toast("Item tidak ditemukan", "error");
   const diff = fisik - Number(itm.current_stock);
   if (diff === 0) return toast("Stok fisik sama dengan sistem, tidak perlu penyesuaian", "warning");
   if (!await askDelete("Catat penyesuaian?", `${itm.nama}: sistem ${fmt2(itm.current_stock)} → fisik ${fmt2(fisik)} (selisih ${diff > 0 ? "+" : ""}${fmt2(diff)} ${itm.satuan})`)) return;
+
+  // 1. Insert transaksi dulu (audit record)
   const { error } = await sb().from("inventory_transactions").insert({
     item_id: itemId, tipe: "penyesuaian", qty: diff, harga_satuan: 0, total: 0,
     catatan: `Opname: sistem ${fmt2(itm.current_stock)} → fisik ${fmt2(fisik)}`
   });
-  if (error) return toast(error.message, "error");
-  await sb().from("inventory_items").update({ current_stock: fisik }).eq("id", itemId);
+  if (error) return toast("Gagal catat penyesuaian: " + error.message, "error");
+
+  // 2. Update current_stock — cek error
+  const { error: stockErr } = await sb().from("inventory_items").update({ current_stock: fisik }).eq("id", itemId);
+  if (stockErr) return toast("Gagal update stok: " + stockErr.message, "error");
+
+  // 3. Sinkronkan inventory_batches agar Σ batch = current_stock
+  //    Jika diff > 0 (stok fisik lebih), tambahkan ke batch terakhir (atau buat batch opname)
+  //    Jika diff < 0 (stok fisik kurang), kurangkan dari batch FIFO (paling baru dulu)
+  const { data: allBatches } = await sb().from("inventory_batches").select("id,qty_remaining").eq("item_id", itemId).gt("qty_remaining", 0).order("received_date", { ascending: false }).order("id", { ascending: false });
+  const batchArr = allBatches || [];
+  const batchSum = batchArr.reduce((s, b) => s + Number(b.qty_remaining || 0), 0);
+  const batchDiff = fisik - batchSum; // selisih antara batch dan target fisik
+
+  if (batchDiff > 0) {
+    // Tambah batch baru dari opname
+    await sb().from("inventory_batches").insert({
+      item_id: itemId, qty_received: batchDiff, qty_remaining: batchDiff,
+      cost_per_unit: 0, received_date: todayISO(), supplier_name: "Opname"
+    }).catch(() => {});
+  } else if (batchDiff < 0) {
+    // Kurangkan dari batch terbaru (FIFO reverse)
+    let kurang = Math.abs(batchDiff);
+    for (const b of batchArr) {
+      if (kurang <= 0) break;
+      const ambil = Math.min(Number(b.qty_remaining || 0), kurang);
+      await sb().from("inventory_batches").update({ qty_remaining: Number(b.qty_remaining || 0) - ambil }).eq("id", b.id);
+      kurang -= ambil;
+    }
+  }
+
   $("#inOpnameFisik").value = "";
   $("#opnameDiff").textContent = "";
-  toast("Penyesuaian stok dicatat");
+  toast("Penyesuaian stok dicatat & batch disinkronkan");
   await loadAll();
   renderDashboard();
   renderDashboardExtras();
@@ -1203,6 +1331,7 @@ $("#btnExportRiwayat").onclick = () => {
   const rows = $("#tabelRiwayatStok").querySelectorAll("tr");
   if (rows.length < 2) return toast("Tidak ada data untuk dicetak", "warning");
   const w = window.open("", "_blank", "width=900,height=600");
+  if (!w) return toast("Popup diblokir browser. Izinkan popup untuk mencetak.", "error");
   w.document.write(`<!DOCTYPE html><html><head><title>Riwayat Stok</title><style>
     body{font-family:'Segoe UI',Arial,sans-serif;padding:1.5rem;color:#0e201b}
     h1{font-size:1.2rem;color:#255746} .meta{font-size:.8rem;color:#666;margin-bottom:.8rem}
@@ -1267,17 +1396,19 @@ $("#btnLoadHist").onclick = loadHistHarga;
 // ---------- Yield Ratio Produksi ----------
 async function loadYield() {
   const { data: prod, error } = await sb().from("produksi").select("id,qty_produksi,hpp_satuan_saat_produksi,tanggal,menus(nama)").order("tanggal", { ascending: false }).limit(20);
-  if (error) return;
-  const { data: items2 } = await sb().from("produksi_items").select("produksi_id,qty_per_unit");
+  if (error) { console.warn("loadYield produksi error:", error.message); return; }
+  const { data: items2, error: eItems } = await sb().from("produksi_items").select("produksi_id,qty_digunakan");
+  if (eItems) console.warn("loadYield produksi_items error:", eItems.message);
   const tb = $("#tabelYield");
   if (!prod?.length) { tb.innerHTML = `<tr><td colspan="6" class="muted" style="text-align:center">Belum ada produksi.</td></tr>`; return; }
   const bahanMap = {};
-  (items2 || []).forEach(p => { bahanMap[p.produksi_id] = (bahanMap[p.produksi_id] || 0) + Number(p.qty_per_unit || 0); });
+  (items2 || []).forEach(p => { bahanMap[p.produksi_id] = (bahanMap[p.produksi_id] || 0) + Number(p.qty_digunakan || 0); });
   tb.innerHTML = prod.map(p => {
     const totalBahan = bahanMap[p.id] || 0;
     const qty = Number(p.qty_produksi || 1);
+    // Yield = berat hasil jadi / berat total bahan × 100 (efisiensi material)
     const yieldPct = totalBahan > 0 ? (qty / totalBahan * 100) : 0;
-    return `<tr><td data-l="Tanggal">${fmtDate(p.tanggal)}</td><td data-l="Menu" class="cell-main">${esc(p.menus?.nama || "?")}</td><td data-l="Qty">${fmt2(qty)}</td><td data-l="Total Bahan">${fmt2(totalBahan)}</td><td data-l="Yield" style="color:${yieldPct >= 80 ? 'var(--success)' : yieldPct >= 50 ? 'var(--text-muted)' : 'var(--danger)'}"><b>${yieldPct.toFixed(1)}%</b></td><td data-l="HPP/Satuan">${fmtRp(p.hpp_satuan_saat_produksi)}</td></tr>`;
+    return `<tr><td data-l="Tanggal">${fmtDate(p.tanggal)}</td><td data-l="Menu" class="cell-main">${esc(p.menus?.nama || "?")}</td><td data-l="Qty">${fmt2(qty)}</td><td data-l="Total Bahan">${fmt2(totalBahan)}</td><td data-l="Yield" style="color:${yieldPct >= 80 ? 'var(--success)' : yieldPct >= 50 ? 'var(--text-muted)' : 'var(--danger)'}"><b>${yieldPct > 0 ? yieldPct.toFixed(1) + '%' : '-'}</b></td><td data-l="HPP/Satuan">${fmtRp(p.hpp_satuan_saat_produksi)}</td></tr>`;
   }).join("");
 }
 
@@ -1403,7 +1534,7 @@ function resetAlatForm() {
   editingAlatId = null;
   $("#btnSaveAlat").textContent = "Simpan Alat";
   $("#btnCancelAlat").hidden = true;
-  $("#inAlatTgl").valueAsDate = new Date();
+  $("#inAlatTgl").value = todayISO();
   $("#inAlatUmur").value = UMUR_DEFAULT[$("#inAlatKategori").value] || 5;
   enhanceSelect(document.getElementById("inAlatKategori")).refresh();
   enhanceSelect(document.getElementById("inAlatKondisi")).refresh();
@@ -1440,8 +1571,10 @@ $("#formAlat").onsubmit = async (e) => {
 };
 
 // ---------- Saldo kas helper ----------
-async function getSaldoKas() {
-  const { data } = await sb().from("keuangan").select("saldo_akhir").order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
+async function getSaldoKas(tgl) {
+  let q = sb().from("keuangan").select("saldo_akhir");
+  if (tgl) q = q.lte("tanggal", tgl);
+  const { data } = await q.order("tanggal", { ascending: false }).order("created_at", { ascending: false }).limit(1);
   return data?.[0]?.saldo_akhir ?? 0;
 }
 </script>
