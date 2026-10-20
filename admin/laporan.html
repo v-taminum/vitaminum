@@ -55,7 +55,7 @@ main.container{padding-top:1.25rem;padding-bottom:2rem}
 @media(min-width:720px){.grid3{grid-template-columns:1fr 1fr 1fr}}
 label{font-size:.8rem;font-weight:700;display:grid;gap:4px}
 input,select,textarea{border:1px solid var(--border-color);border-radius:8px;padding:.6rem .8rem;font:inherit;width:100%;background:var(--white);color:var(--text-color);font-weight:500}
-input[type="text"],input[type="number"],input.dateid,select{min-height:46px}
+input[type="text"],input[type="number"],input[type="date"],select{min-height:46px}
 select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23255746' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;cursor:pointer}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--primary);border-color:var(--primary)}
 .table-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border-color);border-radius:8px}
@@ -163,7 +163,7 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <!-- HARIAN -->
       <div class="tabpane on" data-pane="harian">
         <div class="row" style="margin-bottom:1rem">
-          <label>Tanggal<input type="text" class="dateid" id="tglLaporan" placeholder="dd/mm/yyyy"></label>
+          <label>Tanggal<input type="date" id="tglLaporan"></label>
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatHarian"><i class="fa-solid fa-refresh"></i> Muat Laporan</button></label>
           <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-success" id="btnTutupBuku" style="background:var(--success);border-color:var(--success)"><i class="fa-solid fa-lock"></i> Tutup Buku Hari Ini</button></label>
         </div>
@@ -290,8 +290,8 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
       <!-- KAS / ARUS KAS -->
       <div class="tabpane" data-pane="kas">
         <div class="row" style="margin-bottom:1rem">
-          <label>Dari Tanggal<input type="text" class="dateid" id="kasDari" placeholder="dd/mm/yyyy"></label>
-          <label>Sampai<input type="text" class="dateid" id="kasSampai" placeholder="dd/mm/yyyy"></label>
+          <label>Dari Tanggal<input type="date" id="kasDari"></label>
+          <label>Sampai<input type="date" id="kasSampai"></label>
           <label>&nbsp;<button type="button" class="btn btn-primary" id="btnMuatKas"><i class="fa-solid fa-refresh"></i> Muat Arus Kas</button></label>
           <label style="margin-left:auto">&nbsp;<button type="button" class="btn btn-success" id="btnSinkronKas"><i class="fa-solid fa-rotate"></i> Sinkron Kas Penjualan</button></label>
         </div>
@@ -320,12 +320,15 @@ img.thumb{width:52px;height:52px;object-fit:cover;border-radius:8px;background:#
 <script type="module">
 import { sb, isConfigured, loadLocalConfig } from "../assets/supabaseClient.js?v=20261017";
 import { enhanceSelect } from "../assets/dropdown.js?v=2";
-import { getTgl, setTgl, setupDateInputs } from "../assets/dateid.js?v=1";
 await loadLocalConfig();
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const fmtRp = (v) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number(v) || 0);
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
 const Toast = Swal.mixin({ toast: true, position: "top-end", showConfirmButton: false, timer: 2200, timerProgressBar: true });
 function toast(msg, icon = "success") { Toast.fire({ icon, title: msg }); }
 async function askDelete(title, text) {
@@ -375,8 +378,7 @@ try {
     $("#siteHeader").style.display = "";
     $("#laporanApp").style.display = "";
     applyIdentity();
-    setTgl($("#tglLaporan"), todayISO());
-    setupDateInputs();
+    $("#tglLaporan").value = todayISO();
     const m = new Date().toISOString().slice(0,7);
     $("#blnLaporan").value = m;
     muatHarian();
@@ -397,10 +399,6 @@ $("#laporanTabs").onclick = (e) => {
 };
 
 // ---------- Helpers ----------
-const todayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-};
 const fmtDate = (d) => {
   if (!d) return "-";
   const dd = new Date(d + "T00:00:00");
@@ -419,7 +417,7 @@ function makeChart(id, cfg) {
 // ---------- Laporan Harian ----------
 let _harianData = {};
 async function muatHarian() {
-  const tgl = getTgl($("#tglLaporan")) || todayISO();
+  const tgl = $("#tglLaporan").value || todayISO();
   const [ry, rm, rd] = tgl.split("-").map(Number);
   const lokalStart = new Date(ry, rm - 1, rd, 0, 0, 0);
   const lokalEnd = new Date(ry, rm - 1, rd, 23, 59, 59);
@@ -567,7 +565,7 @@ async function muatHarian() {
 
 // Simpan / Tutup buku harian
 $("#btnTutupBuku").onclick = async () => {
-  const tgl = getTgl($("#tglLaporan")) || todayISO();
+  const tgl = $("#tglLaporan").value || todayISO();
   const existing = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).single();
   if (existing.data && existing.data.status === "ditutup") {
     return toast("Buku hari ini sudah ditutup", "warning");
@@ -616,7 +614,7 @@ $("#btnMuatHarian").onclick = muatHarian;
 
 // ---------- Input Beban Operasional ----------
 $("#btnAddBeban").onclick = async () => {
-  const tgl = getTgl($("#tglLaporan")) || todayISO();
+  const tgl = $("#tglLaporan").value || todayISO();
   const cek = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).maybeSingle();
   if (cek.data?.status === "ditutup") return toast("Buku tanggal ini sudah ditutup, tidak bisa ditambah beban", "warning");
   const ket = $("#inBebanKet").value.trim();
@@ -646,7 +644,7 @@ $("#btnAddBeban").onclick = async () => {
 
 // ---------- Input Petty Cash ----------
 $("#btnAddPetty").onclick = async () => {
-  const tgl = getTgl($("#tglLaporan")) || todayISO();
+  const tgl = $("#tglLaporan").value || todayISO();
   const cek = await sb().from("penutupan_buku_harian").select("status").eq("tanggal", tgl).maybeSingle();
   if (cek.data?.status === "ditutup") return toast("Buku tanggal ini sudah ditutup, tidak bisa ditambah petty cash", "warning");
   const keg = $("#inPettyKeg").value.trim();
@@ -837,7 +835,7 @@ async function muatRiwayat() {
 $("#laporanApp").addEventListener("click", (e) => {
   const open = e.target.closest("[data-open]");
   if (open) {
-    setTgl($("#tglLaporan"), open.dataset.open);
+    $("#tglLaporan").value = open.dataset.open;
     muatHarian();
     document.querySelector('#laporanTabs .tab[data-t="harian"]').click();
   }
@@ -847,13 +845,12 @@ $("#laporanApp").addEventListener("click", (e) => {
 function initKasDates() {
   const now = new Date();
   const y = now.getFullYear(), m = now.getMonth();
-  setTgl($("#kasDari"), `${y}-${String(m+1).padStart(2,"0")}-01`);
-  setTgl($("#kasSampai"), todayISO());
-  setupDateInputs();
+  $("#kasDari").value = `${y}-${String(m+1).padStart(2,"0")}-01`;
+  $("#kasSampai").value = todayISO();
 }
 async function muatKas() {
-  const dari = getTgl($("#kasDari"));
-  const sampai = getTgl($("#kasSampai"));
+  const dari = $("#kasDari").value;
+  const sampai = $("#kasSampai").value;
   if (!dari || !sampai) return toast("Isi tanggal awal dan akhir", "error");
   const { data, error } = await sb().from("keuangan")
     .select("id,tanggal,tipe,kategori,jumlah,saldo_akhir,catatan,referensi_type,referensi_id")
